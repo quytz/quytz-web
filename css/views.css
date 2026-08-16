@@ -1,5 +1,5 @@
 /* ==========================================================================
-   QuizMaster Web - Study Views, Modals, 3D Flashcard & Reading Pane
+   QuizMaster Web - Study Views, Modals, 3D Flashcard & Reading Pane (Mobile-Optimized)
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  min-height: 230px;
+  min-height: 220px;
 }
 
 .quiz-card-header {
@@ -48,12 +48,15 @@
 .study-modes-row {
   display: flex;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .study-modes-row .btn {
   flex: 1;
-  font-size: var(--text-sm);
-  padding: 0.45rem 0.65rem;
+  min-width: 80px;
+  font-size: var(--text-xs);
+  padding: 0.5rem 0.6rem;
+  min-height: 38px;
 }
 
 /* --------------------------------------------------------------------------
@@ -69,18 +72,23 @@
   flex-direction: column;
   overflow: hidden;
   animation: fadeIn 0.2s ease-out;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .study-header {
-  padding: var(--space-3) var(--space-5);
+  padding: 0.65rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2);
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  flex-shrink: 0;
 }
 
 .study-body-split {
@@ -93,20 +101,25 @@
 .study-main-area {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-6);
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .study-footer {
-  padding: var(--space-3) var(--space-5);
+  padding: 0.65rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-3);
   background: var(--bg-card);
   border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .shortcuts-hint {
@@ -114,16 +127,17 @@
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .kbd-tag {
   background: var(--bg-secondary);
   border: 1px solid var(--border-strong);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   font-family: var(--font-family-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
@@ -134,30 +148,31 @@
   background: var(--bg-card);
   border: 1.5px solid var(--border-card);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: 1rem 1.15rem;
   box-shadow: var(--shadow-sm);
 }
 
 .question-text {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-primary);
-  margin-top: var(--space-3);
+  margin-top: 0.5rem;
   word-break: break-word;
 }
 
 .options-grid {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 0.65rem;
 }
 
 .option-btn {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 0.95rem;
+  min-height: 50px; /* Touch friendly */
   background: var(--bg-card);
   border: 1.5px solid var(--border-card);
   border-radius: var(--radius-md);
@@ -166,6 +181,10 @@
   transition: all var(--transition-fast);
   color: var(--text-primary);
   width: 100%;
+}
+
+.option-btn:active {
+  transform: scale(0.99);
 }
 
 .option-btn:hover:not(:disabled) {
@@ -192,6 +211,7 @@
   flex: 1;
   font-size: var(--text-base);
   line-height: 1.4;
+  word-break: break-word;
 }
 
 /* Option States */
@@ -239,7 +259,7 @@
 
 /* Explanation Banner */
 .explanation-card {
-  padding: var(--space-4);
+  padding: 0.9rem 1rem;
   border-radius: var(--radius-md);
   border: 1.5px solid;
   animation: slideInUp 0.3s ease-out;
@@ -268,9 +288,10 @@
 
 .explanation-content {
   margin-top: var(--space-2);
-  font-size: var(--text-base);
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: 1.55;
   color: var(--text-primary);
+  word-break: break-word;
 }
 
 /* --------------------------------------------------------------------------
@@ -283,10 +304,12 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: var(--space-4);
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-3);
   gap: var(--space-3);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  z-index: 120;
 }
 
 .nav-grid {
@@ -297,6 +320,7 @@
 
 .nav-item-btn {
   aspect-ratio: 1;
+  min-height: 38px;
   border-radius: var(--radius-sm);
   border: 2px solid transparent;
   background: var(--bg-secondary);
@@ -308,6 +332,10 @@
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+}
+
+.nav-item-btn:active {
+  transform: scale(0.92);
 }
 
 .nav-item-btn:hover {
@@ -340,18 +368,19 @@
 }
 
 /* --------------------------------------------------------------------------
-   5. Reading Passage Pane (Side-by-side)
+   5. Reading Passage Pane (Side-by-side on desktop, Collapsible on Mobile)
    -------------------------------------------------------------------------- */
 .reading-pane {
-  width: 420px;
-  min-width: 300px;
+  width: 400px;
+  min-width: 280px;
   max-width: 500px;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width var(--transition-normal);
+  transition: all var(--transition-normal);
+  z-index: 110;
 }
 
 .reading-pane-header {
@@ -361,6 +390,7 @@
   justify-content: space-between;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-card);
+  flex-shrink: 0;
 }
 
 .reading-customizer-drawer {
@@ -375,7 +405,8 @@
 .reading-content-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-5);
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
   line-height: var(--reading-line-height, 1.6);
   font-size: var(--reading-font-size, var(--text-base));
   font-family: var(--reading-font-family, var(--font-family-serif));
@@ -401,7 +432,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   6. 3D Flashcard Component (Smooth Spacebar Flip)
+   6. 3D Flashcard Component (Smooth Spacebar / Touch Flip)
    -------------------------------------------------------------------------- */
 .flashcard-stage {
   flex: 1;
@@ -409,14 +440,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-6);
+  padding: 1rem;
   perspective: 1200px;
+  width: 100%;
 }
 
 .flashcard-3d-box {
-  width: 580px;
-  max-width: 90vw;
-  height: 360px;
+  width: 540px;
+  max-width: 100%;
+  height: 340px;
+  max-height: 52vh;
   position: relative;
   transform-style: preserve-3d;
   transition: transform var(--transition-flip);
@@ -434,13 +467,15 @@
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: var(--radius-xl);
-  padding: var(--space-6);
+  padding: 1.25rem;
   background: var(--bg-card);
   border: 1.5px solid var(--border-card);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .flashcard-face.face-back {
@@ -448,47 +483,58 @@
 }
 
 .flashcard-main-text {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 800;
   text-align: center;
   line-height: 1.4;
   margin: auto 0;
+  word-break: break-word;
 }
 
 .flashcard-vocab-word {
-  font-size: var(--text-3xl);
+  font-size: var(--text-2xl);
   font-weight: 800;
   text-align: center;
   color: var(--text-primary);
+  word-break: break-word;
 }
 
 .flashcard-vocab-ipa {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-family: var(--font-family-system);
   color: var(--text-secondary);
   margin-top: 4px;
 }
 
 .flashcard-vocab-meaning {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 800;
   text-align: center;
   color: var(--color-emerald-mint);
+  word-break: break-word;
 }
 
 .flashcard-example-sentence {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   text-align: center;
   color: var(--text-primary);
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
   font-style: italic;
+  word-break: break-word;
 }
 
 .flashcard-actions-bar {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: center;
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
+  width: 100%;
+  max-width: 540px;
+  justify-content: center;
+}
+
+.flashcard-actions-bar .btn {
+  min-height: 46px; /* Touch target */
 }
 
 /* --------------------------------------------------------------------------
@@ -504,7 +550,7 @@
   border-radius: var(--radius-pill);
   color: var(--color-sunset-orange);
   font-weight: 800;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   letter-spacing: 0.04em;
 }
 
@@ -513,6 +559,91 @@
   border-color: var(--color-coral-red);
   color: var(--color-coral-red);
   animation: pulse 1s infinite;
+}
+
+/* --------------------------------------------------------------------------
+   8. Mobile Breakpoints for Study Views
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .study-body-split {
+    flex-direction: column;
+  }
+
+  .reading-pane {
+    width: 100%;
+    max-width: 100%;
+    max-height: 38vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .question-nav-pane {
+    position: fixed;
+    top: auto;
+    bottom: 60px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    max-width: 340px;
+    max-height: 50vh;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border-strong);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .study-main-area {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .study-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .study-header #btn-quit-practice,
+  .study-header #btn-quit-exam,
+  .study-header #btn-quit-flashcard {
+    font-size: var(--text-xs);
+    padding: 0.3rem 0.5rem;
+  }
+
+  .study-footer {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .shortcuts-hint {
+    display: none; /* Hide keyboard shortcut labels on mobile */
+  }
+
+  .study-footer > div:last-child {
+    width: 100%;
+  }
+
+  .study-footer #btn-practice-next,
+  .study-footer #btn-exam-next,
+  .study-footer #btn-exam-submit {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .flashcard-3d-box {
+    height: 300px;
+  }
+
+  .flashcard-actions-bar {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .flashcard-actions-bar > div {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .flashcard-actions-bar .btn {
+    flex: 1;
+  }
 }
 
 @keyframes pulse {
