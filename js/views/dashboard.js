@@ -1,5 +1,5 @@
 /**
- * QuizMaster Web - Dashboard View Component
+ * QuizMaster Web - Dashboard View Component (Multi-Platform Responsive)
  */
 import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
@@ -9,7 +9,7 @@ export function renderDashboard(project, appState) {
   if (!project) {
     return `
       <main class="app-main">
-        <div style="margin: auto; text-align: center; color: var(--text-secondary);">
+        <div style="margin: auto; text-align: center; color: var(--text-secondary); padding: 40px 20px;">
           <div style="font-size: 54px; margin-bottom: 12px;">📂</div>
           <div style="font-size: var(--text-lg); font-weight: 700;">${i18n.t("noProjectsYet")}</div>
           <p style="margin-top: 6px;">${i18n.t("createFirstProjectPrompt")}</p>
@@ -27,8 +27,8 @@ export function renderDashboard(project, appState) {
     <main class="app-main">
       <!-- Top Dashboard Bar -->
       <header class="top-header-bar">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button class="btn btn-secondary btn-icon-only mobile-menu-btn" id="btn-toggle-mobile-sidebar">
+        <div class="top-header-left">
+          <button class="btn btn-secondary btn-icon-only mobile-menu-btn" id="btn-toggle-mobile-sidebar" title="Mở danh sách dự án">
             ☰
           </button>
           <div class="top-header-title">
@@ -39,20 +39,20 @@ export function renderDashboard(project, appState) {
 
         <div class="top-header-actions">
           <!-- Shuffle Button -->
-          <button class="btn btn-pill ${isShuffle ? 'active' : 'btn-secondary'}" id="btn-toggle-shuffle" title="Bật/tắt xáo trộn vị trí câu hỏi và các phương án A/B/C/D">
+          <button class="btn btn-pill ${isShuffle ? 'active' : 'btn-secondary'}" id="btn-toggle-shuffle" title="Bật/tắt xáo trộn câu hỏi và phương án A/B/C/D">
             <span>${isShuffle ? '🔀' : '🔁'}</span>
-            <span>${i18n.t("toggleShuffle")}</span>
+            <span class="btn-text-hide-mobile">${i18n.t("toggleShuffle")}</span>
           </button>
 
           <!-- Multi-select Mode Button -->
-          <button class="btn btn-pill ${isMulti ? 'btn-primary btn-purple' : 'btn-secondary'}" id="btn-toggle-multi-select">
+          <button class="btn btn-pill ${isMulti ? 'btn-primary btn-purple' : 'btn-secondary'}" id="btn-toggle-multi-select" title="Chọn nhiều bộ đề">
             <span>${isMulti ? '✓' : '☑'}</span>
-            <span>${isMulti ? i18n.t("exitMultiSelect") : i18n.t("multiSelectQuizzes")}</span>
+            <span class="btn-text-hide-mobile">${isMulti ? i18n.t("exitMultiSelect") : i18n.t("multiSelectQuizzes")}</span>
           </button>
 
           <!-- Import Document Button -->
           <button class="btn btn-primary" id="btn-open-import">
-            <span>＋</span> ${i18n.t("importDoc")}
+            <span>＋</span> <span>${i18n.t("importDoc")}</span>
           </button>
         </div>
       </header>
@@ -60,20 +60,20 @@ export function renderDashboard(project, appState) {
       <!-- Multi-select Toolbar -->
       ${isMulti && selectedCount > 0 ? `
         <div class="multi-select-bar">
-          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-ocean-blue);">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-ocean-blue); font-size: var(--text-sm);">
             <span>✓</span>
-            <span>Đã chọn ${selectedCount} bộ đề thi</span>
+            <span>Đã chọn ${selectedCount} bộ đề</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <div class="segmented-control">
               <button class="segment-btn active" id="btn-multi-practice">▶ Luyện tập (${selectedCount})</button>
               <button class="segment-btn" id="btn-multi-exam">⏱️ Thi thử</button>
-              <button class="segment-btn" id="btn-multi-flashcard">🎴 Thẻ ghi nhớ</button>
+              <button class="segment-btn" id="btn-multi-flashcard">🎴 Thẻ nhớ</button>
             </div>
 
             <button class="btn btn-secondary" id="btn-multi-move">
-              📁 Chuyển dự án...
+              📁 Chuyển...
             </button>
             <button class="btn btn-secondary" id="btn-multi-delete" style="color: var(--color-coral-red);">
               🗑️ Xóa (${selectedCount})
@@ -85,10 +85,10 @@ export function renderDashboard(project, appState) {
       <!-- Dashboard Content & Quiz Grid -->
       <div class="dashboard-content">
         ${project.quizzes.length === 0 ? `
-          <div style="text-align: center; padding: 80px 20px; color: var(--text-secondary);">
-            <div style="font-size: 54px; margin-bottom: 16px;">📚</div>
-            <div style="font-size: var(--text-xl); font-weight: 700; color: var(--text-primary);">${i18n.t("noQuizzesInProject")}</div>
-            <p style="margin: 8px 0 20px;">Tải lên tài liệu PDF, Word .docx hoặc bài giảng để Gemini AI tự động tạo đề thi.</p>
+          <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary); max-width: 500px; margin: 0 auto;">
+            <div style="font-size: 50px; margin-bottom: 12px;">📚</div>
+            <div style="font-size: var(--text-lg); font-weight: 700; color: var(--text-primary);">${i18n.t("noQuizzesInProject")}</div>
+            <p style="margin: 8px 0 16px; font-size: var(--text-sm);">Tải lên tài liệu PDF, Word .docx hoặc bài giảng để Gemini AI tự động tạo đề thi.</p>
             <button class="btn btn-primary" id="btn-empty-import">
               <span>＋</span> ${i18n.t("importDoc")}
             </button>
@@ -120,7 +120,7 @@ function renderQuizCard(quiz, project, appState) {
     <div class="glass-card quiz-card ${isFullyCompleted ? 'card-completed-rainbow' : ''}" data-quiz-id="${quiz.id}">
       <div class="quiz-card-header">
         ${appState.isMultiSelectMode ? `
-          <input type="checkbox" class="quiz-select-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--color-ocean-blue); cursor: pointer;">
+          <input type="checkbox" class="quiz-select-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--color-ocean-blue); cursor: pointer;">
         ` : ''}
 
         <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">
@@ -153,7 +153,7 @@ function renderQuizCard(quiz, project, appState) {
 
       <div style="margin-top: 4px;">
         <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: 4px;">
-          <span>${practicedCount > 0 ? `Đã luyện tập (${practicedCount}/${quiz.questions.length} câu)` : 'Chưa bắt đầu ôn tập'}</span>
+          <span>${practicedCount > 0 ? `Đã làm (${practicedCount}/${quiz.questions.length} câu)` : 'Chưa ôn tập'}</span>
           ${practicedCount > 0 ? `<span style="font-weight: 700; color: var(--color-emerald-mint);">${progressPercent}%</span>` : ''}
         </div>
         <div class="progress-bar-container">

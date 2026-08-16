@@ -32,32 +32,31 @@ export function renderPracticeView(project, quiz, practiceState) {
     <div class="study-view-shell" id="practice-view-shell">
       <!-- Top Header -->
       <div class="study-header">
-        <button class="btn btn-ghost" id="btn-quit-practice">
-          <span>←</span> ${i18n.t("quitQuiz")}
+        <button class="btn btn-ghost" id="btn-quit-practice" title="${i18n.t("quitQuiz")}">
+          <span>←</span> <span class="btn-text-hide-mobile">${i18n.t("quitQuiz")}</span>
         </button>
 
-        <div style="text-align: center;">
-          <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary); max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div class="study-header-center">
+          <div class="study-header-title">
             ${escapeHtml(quiz.title)}
           </div>
-          <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-ocean-blue); margin-top: 2px;">
+          <div class="study-header-counter">
             ${i18n.t("progressFormat", currentIdx + 1, totalQ)}
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button class="btn btn-pill ${storage.settings.isShuffleEnabled ? 'active' : 'btn-secondary'}" id="btn-practice-shuffle">
+        <div class="study-header-actions">
+          <button class="btn btn-pill ${storage.settings.isShuffleEnabled ? 'active' : 'btn-secondary'}" id="btn-practice-shuffle" title="${i18n.t("toggleShuffle")}">
             <span>${storage.settings.isShuffleEnabled ? '🔀' : '🔁'}</span>
-            <span>${i18n.t("toggleShuffle")}</span>
           </button>
-          <button class="btn btn-pill ${practiceState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane">
-            <span>☰</span> ${i18n.t("questionNavPane")}
+          <button class="btn btn-pill ${practiceState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane" title="${i18n.t("questionNavPane")}">
+            <span>☰</span> <span class="btn-text-hide-mobile">${i18n.t("questionNavPane")}</span>
           </button>
         </div>
       </div>
 
       <!-- Linear Progress Bar -->
-      <div class="progress-bar-container" style="border-radius: 0; height: 4px;">
+      <div class="progress-bar-container" style="border-radius: 0; height: 3px;">
         <div class="progress-bar-fill" style="width: ${progressRatio}%; --progress-color: var(--color-ocean-blue);"></div>
       </div>
 
@@ -69,15 +68,15 @@ export function renderPracticeView(project, quiz, practiceState) {
         <!-- Main Question & Options Area (Center) -->
         <div class="study-main-area">
           <div class="question-box">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
               <span class="badge badge-blue">${i18n.t("questionHeader")} ${currentIdx + 1}</span>
-              <button class="btn btn-pill btn-secondary" id="btn-ask-gemini" style="color: var(--color-deep-purple); border-color: rgba(122, 92, 204, 0.3); font-size: var(--text-xs);">
-                ✨ Hỏi Gemini AI về câu này
+              <button class="btn btn-pill btn-secondary" id="btn-ask-gemini" style="color: var(--color-deep-purple); border-color: rgba(122, 92, 204, 0.3); font-size: var(--text-xs); padding: 0.25rem 0.5rem;">
+                ✨ Hỏi AI
               </button>
             </div>
 
             ${currentQ.skill || currentQ.subTopic ? `
-              <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
                 ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">📖 ${currentQ.skill}</span>` : ''}
                 ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">🏷️ ${currentQ.subTopic}</span>` : ''}
               </div>
@@ -105,8 +104,8 @@ export function renderPracticeView(project, quiz, practiceState) {
                 <button class="option-btn ${optClass}" data-opt-id="${opt.id}" data-opt-idx="${optIdx}" ${isAnswered ? 'disabled' : ''}>
                   <div class="option-label-circle">${opt.label}</div>
                   <div class="option-btn-text">${formatMarkdownHTML(opt.text)}</div>
-                  ${isAnswered && isCorrectOpt ? `<span style="font-size: 20px; color: var(--color-emerald-mint);">✓</span>` : ''}
-                  ${isAnswered && isSelected && !isCorrectOpt ? `<span style="font-size: 20px; color: var(--color-coral-red);">✕</span>` : ''}
+                  ${isAnswered && isCorrectOpt ? `<span style="font-size: 18px; color: var(--color-emerald-mint);">✓</span>` : ''}
+                  ${isAnswered && isSelected && !isCorrectOpt ? `<span style="font-size: 18px; color: var(--color-coral-red);">✕</span>` : ''}
                 </button>
               `;
             }).join('')}
@@ -128,11 +127,14 @@ export function renderPracticeView(project, quiz, practiceState) {
           ` : ''}
         </div>
 
-        <!-- Question Navigator Sidebar (Right) -->
+        <!-- Question Navigator Sidebar (Right on desktop / Bottom Sheet on mobile) -->
         ${practiceState.showNavPane ? `
           <aside class="question-nav-pane">
-            <div style="font-size: var(--text-xs); font-weight: 800; color: var(--text-secondary); letter-spacing: 0.05em;">
-              ${i18n.t("questionNavPane")}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <div style="font-size: var(--text-xs); font-weight: 800; color: var(--text-secondary); letter-spacing: 0.05em;">
+                ${i18n.t("questionNavPane")}
+              </div>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-nav-pane" style="width: 24px; height: 24px; font-size: 12px;">✕</button>
             </div>
             <div class="nav-grid">
               ${qList.map((q, idx) => {
@@ -160,17 +162,13 @@ export function renderPracticeView(project, quiz, practiceState) {
       <!-- Footer Bar -->
       <footer class="study-footer">
         <div class="shortcuts-hint">
-          <span>Phím tắt:</span>
+          <span>Phím:</span>
           <span class="kbd-tag">A</span> <span class="kbd-tag">B</span> <span class="kbd-tag">C</span> <span class="kbd-tag">D</span>
-          <span>hoặc</span>
-          <span class="kbd-tag">1</span> <span class="kbd-tag">2</span> <span class="kbd-tag">3</span> <span class="kbd-tag">4</span>
           <span>•</span>
           <span class="kbd-tag">Enter</span> <span>${i18n.t("nextQuestion")}</span>
-          <span>•</span>
-          <span class="kbd-tag">Esc</span> <span>${i18n.t("quitQuiz")}</span>
         </div>
 
-        <div>
+        <div style="flex: 1; display: flex; justify-content: flex-end;">
           ${isAnswered ? `
             <button class="btn btn-primary ${currentIdx + 1 < totalQ ? 'btn-blue' : 'btn-green'}" id="btn-practice-next">
               ${currentIdx + 1 < totalQ ? i18n.t("nextQuestion") + ' ➔' : i18n.t("finishPractice") + ' ✓'}
@@ -206,6 +204,14 @@ export function bindPracticeEvents(project, quiz, practiceState, handlers) {
     };
   }
 
+  const closeNavBtn = document.getElementById("btn-close-nav-pane");
+  if (closeNavBtn) {
+    closeNavBtn.onclick = () => {
+      practiceState.showNavPane = false;
+      handlers.onUpdateView();
+    };
+  }
+
   // Option buttons
   document.querySelectorAll(".option-btn:not(:disabled)").forEach(btn => {
     btn.onclick = () => {
@@ -234,6 +240,7 @@ export function bindPracticeEvents(project, quiz, practiceState, handlers) {
   document.querySelectorAll(".nav-item-btn").forEach(btn => {
     btn.onclick = () => {
       const idx = parseInt(btn.dataset.navIdx, 10);
+      practiceState.showNavPane = false; // Close nav on mobile after selecting
       handlers.onJumpQuestion(idx);
     };
   });
