@@ -317,25 +317,34 @@ html, body {
 /* Tablets & Mobile Screens (<= 860px) */
 @media (max-width: 860px) {
   .mobile-menu-btn {
-    display: inline-flex;
+    display: inline-flex !important;
   }
   
+  .sidebar-backdrop {
+    z-index: 600;
+  }
+
   .app-sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
-    width: 290px;
-    max-width: 84vw;
+    width: 300px;
+    max-width: 86vw;
     height: 100%;
     height: 100dvh;
     transform: translateX(-100%);
     box-shadow: none;
+    z-index: 700;
   }
 
   .app-sidebar.sidebar-open {
-    transform: translateX(0);
-    box-shadow: var(--shadow-lg);
+    transform: translateX(0) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+
+  #btn-close-sidebar {
+    display: inline-flex !important;
   }
 
   .quiz-grid {

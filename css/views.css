@@ -661,11 +661,19 @@
   }
 
   .study-footer {
-    padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
   }
 
   .shortcuts-hint {
-    display: none;
+    display: flex;
+    justify-content: center;
+    font-size: 11px;
+    gap: 4px;
+    width: 100%;
+    color: var(--text-secondary);
   }
 
   .study-footer > div:last-child {
@@ -676,7 +684,7 @@
   .study-footer #btn-exam-next,
   .study-footer #btn-exam-submit {
     width: 100%;
-    min-height: 48px;
+    min-height: 46px;
     font-size: var(--text-base);
   }
 

@@ -8,9 +8,10 @@ import { calculateProjectStats } from "../models/types.js";
 export function renderSidebar(selectedProjectId, appState) {
   const currentHour = new Date().getHours();
   const greeting = getTimeGreeting(currentHour);
+  const isOpen = !!appState.isMobileSidebarOpen;
 
   return `
-    <aside class="app-sidebar" id="app-sidebar">
+    <aside class="app-sidebar ${isOpen ? 'sidebar-open' : ''}" id="app-sidebar">
       <div class="sidebar-header">
         <div class="brand-row">
           <img src="assets/AppIcon.png" alt="QuizMaster Icon" class="brand-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%231f7ae8\\' width=\\'100\\' height=\\'100\\' rx=\\'22\\'/><text fill=\\'white\\' font-size=\\'45\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' x=\\'50\\' y=\\'64\\' text-anchor=\\'middle\\'>QM</text></svg>'">
@@ -20,6 +21,9 @@ export function renderSidebar(selectedProjectId, appState) {
           </div>
           <button class="btn btn-ghost btn-icon-only" id="btn-open-settings" title="${i18n.t("settings")}">
             ⚙️
+          </button>
+          <button class="btn btn-ghost btn-icon-only mobile-menu-btn" id="btn-close-sidebar" title="Đóng thanh bên" style="display: none;">
+            ✕
           </button>
         </div>
 
@@ -70,7 +74,7 @@ export function renderSidebar(selectedProjectId, appState) {
   `;
 }
 
-export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings) {
+export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings, onCloseSidebar) {
   document.querySelectorAll(".project-item").forEach(item => {
     item.onclick = () => {
       const pid = item.dataset.projectId;
@@ -83,6 +87,11 @@ export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpe
 
   const settingsBtn = document.getElementById("btn-open-settings");
   if (settingsBtn) settingsBtn.onclick = () => onOpenSettings();
+
+  const closeSidebarBtn = document.getElementById("btn-close-sidebar");
+  if (closeSidebarBtn) closeSidebarBtn.onclick = () => {
+    if (onCloseSidebar) onCloseSidebar();
+  };
 }
 
 function getTimeGreeting(hour) {

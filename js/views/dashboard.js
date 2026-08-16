@@ -54,6 +54,11 @@ export function renderDashboard(project, appState) {
           <button class="btn btn-primary" id="btn-open-import">
             <span>＋</span> <span>${i18n.t("importDoc")}</span>
           </button>
+
+          <!-- Settings Button (Direct on Header) -->
+          <button class="btn btn-ghost btn-icon-only" id="btn-top-settings" title="${i18n.t("settings")}">
+            ⚙️
+          </button>
         </div>
       </header>
 
@@ -182,6 +187,10 @@ export function bindDashboardEvents(project, appState, handlers) {
   // Mobile sidebar toggle
   const mobileBtn = document.getElementById("btn-toggle-mobile-sidebar");
   if (mobileBtn) mobileBtn.onclick = () => handlers.onToggleMobileSidebar();
+
+  // Settings in header
+  const topSettingsBtn = document.getElementById("btn-top-settings");
+  if (topSettingsBtn) topSettingsBtn.onclick = () => handlers.onOpenSettings();
 
   // Shuffle toggle
   const shuffleBtn = document.getElementById("btn-toggle-shuffle");

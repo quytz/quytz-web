@@ -846,7 +846,11 @@ class QuizMasterApp {
         this.render();
       },
       () => this.openNewProjectModal(),
-      () => this.openSettingsModal()
+      () => this.openSettingsModal(),
+      () => {
+        this.appState.isMobileSidebarOpen = false;
+        this.render();
+      }
     );
 
     // Bind Dashboard Events
@@ -856,6 +860,7 @@ class QuizMasterApp {
           this.appState.isMobileSidebarOpen = !this.appState.isMobileSidebarOpen;
           this.render();
         },
+        onOpenSettings: () => this.openSettingsModal(),
         onToggleShuffle: () => {
           storage.settings.isShuffleEnabled = !storage.settings.isShuffleEnabled;
           storage.saveSettings();
