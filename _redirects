@@ -1,0 +1,4 @@
+# Cloudflare Pages Static Single-Page App (SPA) Rewrites
+# Pure static client-side routing without triggering Cloudflare Workers/Functions
+
+/*    /index.html   200

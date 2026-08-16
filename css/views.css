@@ -1,0 +1,526 @@
+/* ==========================================================================
+   QuizMaster Web - Study Views, Modals, 3D Flashcard & Reading Pane
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Dashboard Quiz Card
+   -------------------------------------------------------------------------- */
+.quiz-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 230px;
+}
+
+.quiz-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.quiz-card-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quiz-card-title {
+  font-size: var(--text-md);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text-primary);
+  min-height: 2.6rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.quiz-card-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.study-modes-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.study-modes-row .btn {
+  flex: 1;
+  font-size: var(--text-sm);
+  padding: 0.45rem 0.65rem;
+}
+
+/* --------------------------------------------------------------------------
+   2. Fullscreen Study View Shell (Practice, Exam, Flashcard)
+   -------------------------------------------------------------------------- */
+.study-view-shell {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-app);
+  background-image: var(--ambient-gradient);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.study-header {
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.study-body-split {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.study-main-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.study-footer {
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.shortcuts-hint {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kbd-tag {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-family-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   3. Practice & Exam Question Box & Options
+   -------------------------------------------------------------------------- */
+.question-box {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.question-text {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-top: var(--space-3);
+  word-break: break-word;
+}
+
+.options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--color-ocean-blue);
+  background: var(--bg-card-hover);
+}
+
+.option-label-circle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.option-btn-text {
+  flex: 1;
+  font-size: var(--text-base);
+  line-height: 1.4;
+}
+
+/* Option States */
+.option-btn.selected {
+  border-color: var(--color-ocean-blue);
+  background: rgba(31, 122, 232, 0.12);
+}
+
+.option-btn.selected .option-label-circle {
+  background: var(--color-ocean-blue);
+  color: #ffffff;
+}
+
+.option-btn.exam-selected {
+  border-color: var(--color-sunset-orange);
+  background: rgba(224, 117, 51, 0.12);
+}
+
+.option-btn.exam-selected .option-label-circle {
+  background: var(--color-sunset-orange);
+  color: #ffffff;
+}
+
+.option-btn.is-correct {
+  border-color: var(--color-emerald-mint) !important;
+  background: rgba(46, 158, 102, 0.15) !important;
+  color: var(--color-emerald-mint);
+}
+
+.option-btn.is-correct .option-label-circle {
+  background: var(--color-emerald-mint);
+  color: #ffffff;
+}
+
+.option-btn.is-wrong {
+  border-color: var(--color-coral-red) !important;
+  background: rgba(214, 71, 82, 0.15) !important;
+  color: var(--color-coral-red);
+}
+
+.option-btn.is-wrong .option-label-circle {
+  background: var(--color-coral-red);
+  color: #ffffff;
+}
+
+/* Explanation Banner */
+.explanation-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.explanation-card.correct {
+  background: rgba(46, 158, 102, 0.12);
+  border-color: var(--color-emerald-mint);
+}
+
+.explanation-card.wrong {
+  background: rgba(214, 71, 82, 0.12);
+  border-color: var(--color-coral-red);
+}
+
+.explanation-header {
+  font-size: var(--text-md);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.explanation-card.correct .explanation-header { color: var(--color-emerald-mint); }
+.explanation-card.wrong .explanation-header { color: var(--color-coral-red); }
+
+.explanation-content {
+  margin-top: var(--space-2);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   4. Right Question Navigator Sidebar Pane
+   -------------------------------------------------------------------------- */
+.question-nav-pane {
+  width: 220px;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--space-4);
+  gap: var(--space-3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.nav-item-btn {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.nav-item-btn:hover {
+  filter: brightness(1.1);
+}
+
+.nav-item-btn.current {
+  border-color: var(--color-ocean-blue);
+  box-shadow: 0 0 0 2px rgba(31, 122, 232, 0.3);
+}
+
+.nav-item-btn.answered-correct {
+  background: var(--color-emerald-mint);
+  color: #ffffff;
+}
+
+.nav-item-btn.answered-wrong {
+  background: var(--color-coral-red);
+  color: #ffffff;
+}
+
+.nav-item-btn.answered-exam {
+  background: var(--color-sunset-orange);
+  color: #ffffff;
+}
+
+.nav-item-btn.locked {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   5. Reading Passage Pane (Side-by-side)
+   -------------------------------------------------------------------------- */
+.reading-pane {
+  width: 420px;
+  min-width: 300px;
+  max-width: 500px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width var(--transition-normal);
+}
+
+.reading-pane-header {
+  padding: 0.65rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.reading-customizer-drawer {
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reading-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+  line-height: var(--reading-line-height, 1.6);
+  font-size: var(--reading-font-size, var(--text-base));
+  font-family: var(--reading-font-family, var(--font-family-serif));
+  color: var(--reading-text-color, var(--text-primary));
+  background: var(--reading-bg-color, transparent);
+  transition: all var(--transition-fast);
+}
+
+/* Reading Box Themes */
+.reading-theme-sepia {
+  --reading-bg-color: #f5eedc;
+  --reading-text-color: #42331f;
+}
+
+.reading-theme-paper {
+  --reading-bg-color: #fdfdf8;
+  --reading-text-color: #1f1f24;
+}
+
+.reading-theme-slate {
+  --reading-bg-color: #242933;
+  --reading-text-color: #ebf0f7;
+}
+
+/* --------------------------------------------------------------------------
+   6. 3D Flashcard Component (Smooth Spacebar Flip)
+   -------------------------------------------------------------------------- */
+.flashcard-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  perspective: 1200px;
+}
+
+.flashcard-3d-box {
+  width: 580px;
+  max-width: 90vw;
+  height: 360px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform var(--transition-flip);
+  cursor: pointer;
+  user-select: none;
+}
+
+.flashcard-3d-box.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flashcard-face.face-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard-main-text {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.4;
+  margin: auto 0;
+}
+
+.flashcard-vocab-word {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.flashcard-vocab-ipa {
+  font-size: var(--text-lg);
+  font-family: var(--font-family-system);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.flashcard-vocab-meaning {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  text-align: center;
+  color: var(--color-emerald-mint);
+}
+
+.flashcard-example-sentence {
+  font-size: var(--text-md);
+  text-align: center;
+  color: var(--text-primary);
+  margin-top: var(--space-3);
+  font-style: italic;
+}
+
+.flashcard-actions-bar {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  margin-top: var(--space-5);
+}
+
+/* --------------------------------------------------------------------------
+   7. Timer Widget (Exam Mode)
+   -------------------------------------------------------------------------- */
+.timer-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.38rem 0.75rem;
+  background: rgba(224, 117, 51, 0.12);
+  border: 1px solid rgba(224, 117, 51, 0.3);
+  border-radius: var(--radius-pill);
+  color: var(--color-sunset-orange);
+  font-weight: 800;
+  font-size: var(--text-base);
+  letter-spacing: 0.04em;
+}
+
+.timer-widget.warning {
+  background: rgba(214, 71, 82, 0.15);
+  border-color: var(--color-coral-red);
+  color: var(--color-coral-red);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

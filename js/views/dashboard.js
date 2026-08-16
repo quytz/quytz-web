@@ -1,0 +1,249 @@
+/**
+ * QuizMaster Web - Dashboard View Component
+ */
+import { i18n } from "../localization/i18n.js";
+import { storage } from "../services/storage.js";
+import { calculateProjectStats } from "../models/types.js";
+
+export function renderDashboard(project, appState) {
+  if (!project) {
+    return `
+      <main class="app-main">
+        <div style="margin: auto; text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 54px; margin-bottom: 12px;">📂</div>
+          <div style="font-size: var(--text-lg); font-weight: 700;">${i18n.t("noProjectsYet")}</div>
+          <p style="margin-top: 6px;">${i18n.t("createFirstProjectPrompt")}</p>
+        </div>
+      </main>
+    `;
+  }
+
+  const stats = calculateProjectStats(project);
+  const isMulti = appState.isMultiSelectMode;
+  const selectedCount = appState.selectedQuizIds ? appState.selectedQuizIds.size : 0;
+  const isShuffle = storage.settings.isShuffleEnabled;
+
+  return `
+    <main class="app-main">
+      <!-- Top Dashboard Bar -->
+      <header class="top-header-bar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="btn btn-secondary btn-icon-only mobile-menu-btn" id="btn-toggle-mobile-sidebar">
+            ☰
+          </button>
+          <div class="top-header-title">
+            <h1>${escapeHtml(project.name)}</h1>
+            <p>${project.quizzes.length} ${i18n.t("quizzesCount")} • ${stats.totalQuestions} ${i18n.t("questionsCount")}</p>
+          </div>
+        </div>
+
+        <div class="top-header-actions">
+          <!-- Shuffle Button -->
+          <button class="btn btn-pill ${isShuffle ? 'active' : 'btn-secondary'}" id="btn-toggle-shuffle" title="Bật/tắt xáo trộn vị trí câu hỏi và các phương án A/B/C/D">
+            <span>${isShuffle ? '🔀' : '🔁'}</span>
+            <span>${i18n.t("toggleShuffle")}</span>
+          </button>
+
+          <!-- Multi-select Mode Button -->
+          <button class="btn btn-pill ${isMulti ? 'btn-primary btn-purple' : 'btn-secondary'}" id="btn-toggle-multi-select">
+            <span>${isMulti ? '✓' : '☑'}</span>
+            <span>${isMulti ? i18n.t("exitMultiSelect") : i18n.t("multiSelectQuizzes")}</span>
+          </button>
+
+          <!-- Import Document Button -->
+          <button class="btn btn-primary" id="btn-open-import">
+            <span>＋</span> ${i18n.t("importDoc")}
+          </button>
+        </div>
+      </header>
+
+      <!-- Multi-select Toolbar -->
+      ${isMulti && selectedCount > 0 ? `
+        <div class="multi-select-bar">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-ocean-blue);">
+            <span>✓</span>
+            <span>Đã chọn ${selectedCount} bộ đề thi</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="segmented-control">
+              <button class="segment-btn active" id="btn-multi-practice">▶ Luyện tập (${selectedCount})</button>
+              <button class="segment-btn" id="btn-multi-exam">⏱️ Thi thử</button>
+              <button class="segment-btn" id="btn-multi-flashcard">🎴 Thẻ ghi nhớ</button>
+            </div>
+
+            <button class="btn btn-secondary" id="btn-multi-move">
+              📁 Chuyển dự án...
+            </button>
+            <button class="btn btn-secondary" id="btn-multi-delete" style="color: var(--color-coral-red);">
+              🗑️ Xóa (${selectedCount})
+            </button>
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Dashboard Content & Quiz Grid -->
+      <div class="dashboard-content">
+        ${project.quizzes.length === 0 ? `
+          <div style="text-align: center; padding: 80px 20px; color: var(--text-secondary);">
+            <div style="font-size: 54px; margin-bottom: 16px;">📚</div>
+            <div style="font-size: var(--text-xl); font-weight: 700; color: var(--text-primary);">${i18n.t("noQuizzesInProject")}</div>
+            <p style="margin: 8px 0 20px;">Tải lên tài liệu PDF, Word .docx hoặc bài giảng để Gemini AI tự động tạo đề thi.</p>
+            <button class="btn btn-primary" id="btn-empty-import">
+              <span>＋</span> ${i18n.t("importDoc")}
+            </button>
+          </div>
+        ` : `
+          <div class="quiz-grid">
+            ${project.quizzes.map(quiz => renderQuizCard(quiz, project, appState)).join('')}
+          </div>
+        `}
+      </div>
+    </main>
+  `;
+}
+
+function renderQuizCard(quiz, project, appState) {
+  const prog = project.progressMap[quiz.id];
+  const isFullyCompleted = prog && (prog.isCompleted || (Object.keys(prog.userAnswers || {}).length >= quiz.questions.length && quiz.questions.length > 0));
+  const isLL = quiz.quizType === "languageLearning" || project.projectType === "languageLearning";
+  const isSelectedInMulti = appState.selectedQuizIds && appState.selectedQuizIds.has(quiz.id);
+
+  let progressPercent = 0;
+  let practicedCount = 0;
+  if (prog && prog.userAnswers) {
+    practicedCount = Object.keys(prog.userAnswers).length;
+    progressPercent = quiz.questions.length > 0 ? Math.round((practicedCount / quiz.questions.length) * 100) : 0;
+  }
+
+  return `
+    <div class="glass-card quiz-card ${isFullyCompleted ? 'card-completed-rainbow' : ''}" data-quiz-id="${quiz.id}">
+      <div class="quiz-card-header">
+        ${appState.isMultiSelectMode ? `
+          <input type="checkbox" class="quiz-select-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--color-ocean-blue); cursor: pointer;">
+        ` : ''}
+
+        <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">
+          ${quiz.questions.length} ${i18n.t("questionsCount")}
+        </span>
+
+        ${quiz.targetCEFR ? `
+          <span class="badge badge-purple">CEFR ${quiz.targetCEFR}</span>
+        ` : ''}
+
+        ${isFullyCompleted ? `
+          <span class="badge badge-green">Hoàn thành 100%</span>
+        ` : ''}
+
+        <div class="quiz-card-actions">
+          ${!isLL ? `
+            <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">
+              ✏️
+            </button>
+          ` : ''}
+          <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn khác">
+            ⋮
+          </button>
+        </div>
+      </div>
+
+      <div class="quiz-card-title" title="${escapeHtml(quiz.title)}">
+        ${isLL ? '💬 ' : ''}${escapeHtml(quiz.title)}
+      </div>
+
+      <div style="margin-top: 4px;">
+        <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: 4px;">
+          <span>${practicedCount > 0 ? `Đã luyện tập (${practicedCount}/${quiz.questions.length} câu)` : 'Chưa bắt đầu ôn tập'}</span>
+          ${practicedCount > 0 ? `<span style="font-weight: 700; color: var(--color-emerald-mint);">${progressPercent}%</span>` : ''}
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: ${progressPercent}%; --progress-color: ${isFullyCompleted ? 'var(--color-emerald-mint)' : (isLL ? 'var(--color-deep-purple)' : 'var(--color-ocean-blue)')};"></div>
+        </div>
+      </div>
+
+      <div class="quiz-card-footer">
+        <div class="study-modes-row">
+          <button class="btn btn-primary btn-study-practice" data-quiz-id="${quiz.id}">
+            ✏️ ${i18n.t("practiceMode")}
+          </button>
+          <button class="btn btn-primary btn-orange btn-study-exam" data-quiz-id="${quiz.id}">
+            ⏱️ ${i18n.t("examMode")}
+          </button>
+        </div>
+        <button class="btn btn-primary btn-purple btn-study-flashcard" data-quiz-id="${quiz.id}" style="width: 100%;">
+          🎴 ${isLL ? `Thẻ từ vựng CEFR (${quiz.vocabularies ? quiz.vocabularies.length : 0})` : i18n.t("flashcardMode")}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+export function bindDashboardEvents(project, appState, handlers) {
+  // Mobile sidebar toggle
+  const mobileBtn = document.getElementById("btn-toggle-mobile-sidebar");
+  if (mobileBtn) mobileBtn.onclick = () => handlers.onToggleMobileSidebar();
+
+  // Shuffle toggle
+  const shuffleBtn = document.getElementById("btn-toggle-shuffle");
+  if (shuffleBtn) shuffleBtn.onclick = () => handlers.onToggleShuffle();
+
+  // Multi-select toggle
+  const multiBtn = document.getElementById("btn-toggle-multi-select");
+  if (multiBtn) multiBtn.onclick = () => handlers.onToggleMultiSelect();
+
+  // Import button
+  const importBtn = document.getElementById("btn-open-import");
+  if (importBtn) importBtn.onclick = () => handlers.onOpenImport();
+
+  const emptyImportBtn = document.getElementById("btn-empty-import");
+  if (emptyImportBtn) emptyImportBtn.onclick = () => handlers.onOpenImport();
+
+  // Multi checkboxes
+  document.querySelectorAll(".quiz-select-checkbox").forEach(chk => {
+    chk.onchange = (e) => {
+      handlers.onSelectQuiz(chk.dataset.quizId, e.target.checked);
+    };
+  });
+
+  // Multi actions
+  const multiPractice = document.getElementById("btn-multi-practice");
+  if (multiPractice) multiPractice.onclick = () => handlers.onMultiStudy("practice");
+
+  const multiExam = document.getElementById("btn-multi-exam");
+  if (multiExam) multiExam.onclick = () => handlers.onMultiStudy("exam");
+
+  const multiFlashcard = document.getElementById("btn-multi-flashcard");
+  if (multiFlashcard) multiFlashcard.onclick = () => handlers.onMultiStudy("flashcard");
+
+  const multiMove = document.getElementById("btn-multi-move");
+  if (multiMove) multiMove.onclick = () => handlers.onMultiMove();
+
+  const multiDelete = document.getElementById("btn-multi-delete");
+  if (multiDelete) multiDelete.onclick = () => handlers.onMultiDelete();
+
+  // Study mode clicks
+  document.querySelectorAll(".btn-study-practice").forEach(btn => {
+    btn.onclick = () => handlers.onStartPractice(btn.dataset.quizId);
+  });
+
+  document.querySelectorAll(".btn-study-exam").forEach(btn => {
+    btn.onclick = () => handlers.onStartExam(btn.dataset.quizId);
+  });
+
+  document.querySelectorAll(".btn-study-flashcard").forEach(btn => {
+    btn.onclick = () => handlers.onStartFlashcard(btn.dataset.quizId);
+  });
+
+  document.querySelectorAll(".btn-card-edit").forEach(btn => {
+    btn.onclick = () => handlers.onEditQuiz(btn.dataset.quizId);
+  });
+
+  document.querySelectorAll(".btn-card-menu").forEach(btn => {
+    btn.onclick = (e) => handlers.onOpenQuizMenu(btn.dataset.quizId, e);
+  });
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
