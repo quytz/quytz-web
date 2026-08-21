@@ -1,20 +1,11 @@
-# Cloudflare Pages Static Cache & Header Optimizations
-# Pure Static SPA with Zero Workers/Functions Quota Usage
+# Cloudflare Pages Static Cache & Security Headers
 
-# 1. Main HTML Application Shell (Instant updates without stale cache)
-/index.html
+/*
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
 
-/
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: SAMEORIGIN
-  Referrer-Policy: strict-origin-when-cross-origin
-
-# 2. Immutable Static Assets (Aggressively cached on Global Edge & Browser)
 /css/*
   Cache-Control: public, max-age=31536000, immutable
   Access-Control-Allow-Origin: *

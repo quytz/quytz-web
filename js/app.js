@@ -1,6 +1,6 @@
 /**
  * QuizMaster Web - Central Application Controller & Router
- * Version: v1.0.2
+ * Version: v1.0.3
  */
 import { APP_CONFIG } from "./config.js";
 import { i18n } from "./localization/i18n.js";
@@ -8,6 +8,7 @@ import { storage } from "./services/storage.js";
 import { geminiService } from "./services/gemini.js";
 import { documentParser } from "./services/document-parser.js";
 import { exporter } from "./services/exporter.js";
+import { telemetry } from "./services/telemetry.js";
 import { keyboard } from "./components/keyboard.js";
 import { createQuizProgress, shuffleQuestionOptions, createQuiz, createQuestion, createQuestionOption } from "./models/types.js";
 
@@ -109,6 +110,8 @@ class QuizMasterApp {
 
     let quiz = project.quizzes.find(q => q.id === quizId);
     if (!quiz) return;
+
+    telemetry.trackExamMode("practice");
 
     this.activeProject = project;
     this.activeQuiz = quiz;
@@ -215,6 +218,8 @@ class QuizMasterApp {
     let quiz = project.quizzes.find(q => q.id === quizId);
     if (!quiz) return;
 
+    telemetry.trackExamMode("exam");
+
     this.activeProject = project;
     this.activeQuiz = quiz;
 
@@ -317,6 +322,8 @@ class QuizMasterApp {
 
     const quiz = project.quizzes.find(q => q.id === quizId);
     if (!quiz) return;
+
+    telemetry.trackExamMode("flashcard");
 
     this.activeProject = project;
     this.activeQuiz = quiz;
@@ -634,6 +641,7 @@ class QuizMasterApp {
       });
 
       storage.addQuiz(project.id, newQuiz);
+      telemetry.trackAiFeature("questions_generated", questions.length);
       this.showToast("success", `Đã xử lý thành công ${questions.length} câu hỏi trắc nghiệm!`);
       this.closeModal();
     } catch (e) {
@@ -686,6 +694,7 @@ class QuizMasterApp {
       });
 
       storage.addQuiz(project.id, newQuiz);
+      telemetry.trackAiFeature("questions_generated", result.questions.length);
       this.showToast("success", `Đã quét thành công ${result.questions.length} câu hỏi & ${result.vocabularies.length} thẻ từ vựng CEFR!`);
       this.closeModal();
     } catch (e) {
@@ -698,6 +707,8 @@ class QuizMasterApp {
   async handlePremadeImport(file) {
     try {
       const quiz = await documentParser.extractQuizFromFile(file);
+      const ext = file.name.split(".").pop();
+      telemetry.trackDocumentImport(ext);
       const project = this.getSelectedProject();
       storage.addQuiz(project.id, quiz);
       this.showToast("success", `Đã nhập thành công bộ đề: ${quiz.title}`);
@@ -720,6 +731,7 @@ class QuizMasterApp {
         language: storage.settings.language
       });
 
+      telemetry.trackAiFeature("explanations_asked", 1);
       this.modalState.aiResponseText = answer;
       this.modalState.isQuerying = false;
 
@@ -943,6 +955,8 @@ class QuizMasterApp {
         },
         onFileSelected: async (file) => {
           this.modalState.selectedFileName = file.name;
+          const ext = file.name.split(".").pop();
+          telemetry.trackDocumentImport(ext);
           this.modalState.selectedFileContent = await documentParser.extractTextFromFile(file);
           this.render();
         },
@@ -1180,6 +1194,7 @@ class QuizMasterApp {
 
       document.getElementById("btn-act-export-zip").onclick = () => {
         closeSheet();
+        telemetry.trackExport("zip");
         exporter.exportQuizToZipBundle(quiz).then(file => {
           this.showToast("success", `Đã xuất gói Zip: ${file}`);
         });
@@ -1187,6 +1202,7 @@ class QuizMasterApp {
 
       document.getElementById("btn-act-export-docx").onclick = () => {
         closeSheet();
+        telemetry.trackExport("docx");
         exporter.exportQuizToWordDocxZip(quiz).then(file => {
           this.showToast("success", `Đã xuất gói Word Docx: ${file}`);
         });
@@ -1194,6 +1210,7 @@ class QuizMasterApp {
 
       document.getElementById("btn-act-export-json").onclick = () => {
         closeSheet();
+        telemetry.trackExport("json");
         const file = exporter.exportQuizJSON(quiz);
         this.showToast("success", `Đã xuất tệp JSON: ${file}`);
       };

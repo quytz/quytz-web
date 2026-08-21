@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>QuizMaster - Developer Telemetry & Analytics Dashboard</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/AppIcon.png">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/views.css">
+
+  <style>
+    body {
+      background: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-family-system);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .admin-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .admin-title img {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .admin-title h1 {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .admin-title p {
+      margin: 2px 0 0 0;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .admin-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .metric-card .icon-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: var(--space-3);
+    }
+
+    .metric-card .value {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: var(--space-1);
+    }
+
+    .metric-card .label {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .panel-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-section h3 {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      margin: 0 0 var(--space-4) 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+      margin-top: var(--space-2);
+      flex: 1;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-pill);
+      transition: width var(--transition-normal);
+    }
+
+    .location-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-subtle);
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--text-xs);
+      font-weight: 700;
+    }
+
+    .status-badge.online {
+      background: rgba(46, 158, 102, 0.15);
+      color: var(--color-emerald-mint);
+    }
+
+    .status-badge.warning {
+      background: rgba(224, 117, 51, 0.15);
+      color: var(--color-sunset-orange);
+    }
+
+    .status-badge.error {
+      background: rgba(214, 71, 82, 0.15);
+      color: var(--color-coral-red);
+    }
+
+    .notice-box {
+      background: rgba(31, 122, 232, 0.08);
+      border: 1px solid rgba(31, 122, 232, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-5);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
+
+    .code-block {
+      background: var(--bg-window);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      font-family: var(--font-family-mono);
+      font-size: var(--text-xs);
+      overflow-x: auto;
+      max-height: 260px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .input-row {
+      display: flex;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .input-row input {
+      flex: 1;
+      min-width: 220px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-window);
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+    }
+    /* Passcode Lock Overlay */
+    .lock-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: var(--space-4);
+    }
+
+    .lock-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .lock-card img {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-3);
+    }
+
+    .lock-card input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-window);
+      color: var(--text-primary);
+      font-size: var(--text-lg);
+      text-align: center;
+      letter-spacing: 4px;
+      margin: var(--space-4) 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Passcode Lock Overlay -->
+  <div id="lock-screen" class="lock-overlay" style="display: none;">
+    <div class="lock-card">
+      <img src="assets/AppIcon.png" alt="QuizMaster Logo">
+      <h2 id="lock-title" style="margin: 0 0 6px 0; font-size: var(--text-xl); font-weight: 800;">Khóa Bảng Điều Khiển</h2>
+      <p id="lock-subtitle" style="margin: 0; font-size: var(--text-xs); color: var(--text-secondary);">Nhập mã PIN để truy cập dữ liệu quản trị</p>
+      
+      <form id="form-passcode">
+        <input type="password" id="input-pin" placeholder="••••" autocomplete="current-password" autofocus maxlength="20" />
+        <div id="pin-error" style="color: var(--color-coral-red); font-size: var(--text-xs); min-height: 18px; margin-bottom: 8px;"></div>
+        <button type="submit" id="btn-unlock" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700;">
+          Mở Khóa
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-container" id="admin-main-content" style="filter: blur(8px); pointer-events: none;">
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="admin-title">
+        <img src="assets/AppIcon.png" alt="QuizMaster Logo">
+        <div>
+          <h1>Metrics Dashboard</h1>
+          <p>Dữ liệu phân tích người dùng ẩn danh (Cloudflare Worker Live)</p>
+        </div>
+      </div>
+      <div class="admin-actions">
+        <span id="sync-status" class="status-badge online">● Đang tải...</span>
+        <button id="btn-refresh" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          Làm mới
+        </button>
+        <button id="btn-lock-dashboard" class="btn btn-secondary" title="Khóa bảng điều khiển">
+          🔒 Khóa
+        </button>
+        <a href="index.html" class="btn btn-secondary">
+          Quay lại App
+        </a>
+      </div>
+    </header>
+
+    <!-- Top Key Metrics Cards -->
+    <div class="grid-cards">
+      <!-- Visitors -->
+      <div class="metric-card">
+        <div class="icon-badge" style="background: rgba(31, 122, 232, 0.15); color: var(--color-ocean-blue);">👥</div>
+        <div class="value" id="val-visitors">0</div>
+        <div class="label">Tổng Lượt Truy Cập (Visitors)</div>
+      </div>
+
+      <!-- Imported Docs -->
+      <div class="metric-card">
+        <div class="icon-badge" style="background: rgba(46, 158, 102, 0.15); color: var(--color-emerald-mint);">📄</div>
+        <div class="value" id="val-documents">0</div>
+        <div class="label">Tài Liệu Đã Nhập (Imports)</div>
+      </div>
+
+      <!-- Exam Sessions -->
+      <div class="metric-card">
+        <div class="icon-badge" style="background: rgba(224, 117, 51, 0.15); color: var(--color-sunset-orange);">⏱️</div>
+        <div class="value" id="val-exam-modes">0</div>
+        <div class="label">Lượt Luyện Tập & Thi Thử</div>
+      </div>
+
+      <!-- AI Operations -->
+      <div class="metric-card">
+        <div class="icon-badge" style="background: rgba(122, 92, 204, 0.15); color: var(--color-deep-purple);">✨</div>
+        <div class="value" id="val-ai-queries">0</div>
+        <div class="label">Tương Tác Gemini AI</div>
+      </div>
+    </div>
+
+    <!-- Detailed Breakdowns Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-4);">
+      
+      <!-- Locations & Geographics -->
+      <div class="panel-section">
+        <h3>
+          <span>🌍 Địa Điểm & Khu Vực (Locations)</span>
+          <span id="count-locations" style="font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500;">0 khu vực</span>
+        </h3>
+        <div id="locations-list">
+          <p style="color: var(--text-secondary); font-size: var(--text-sm);">Chưa có dữ liệu vị trí...</p>
+        </div>
+      </div>
+
+      <!-- Exam Modes Breakdown -->
+      <div class="panel-section">
+        <h3>
+          <span>🎯 Chế Độ Học & Thi (Exam Modes)</span>
+        </h3>
+        <div id="exam-modes-list">
+          <div class="breakdown-row">
+            <div>
+              <strong>Luyện tập tức thì (Practice)</strong>
+              <div class="progress-bar-bg"><div id="bar-practice" class="progress-bar-fill" style="width: 0%; background: var(--color-ocean-blue);"></div></div>
+            </div>
+            <span id="val-practice" style="font-weight: 700;">0</span>
+          </div>
+          <div class="breakdown-row">
+            <div>
+              <strong>Thi thử bấm giờ (Exam)</strong>
+              <div class="progress-bar-bg"><div id="bar-exam" class="progress-bar-fill" style="width: 0%; background: var(--color-coral-red);"></div></div>
+            </div>
+            <span id="val-exam" style="font-weight: 700;">0</span>
+          </div>
+          <div class="breakdown-row">
+            <div>
+              <strong>Thẻ ghi nhớ 3D (Flashcard)</strong>
+              <div class="progress-bar-bg"><div id="bar-flashcard" class="progress-bar-fill" style="width: 0%; background: var(--color-deep-purple);"></div></div>
+            </div>
+            <span id="val-flashcard" style="font-weight: 700;">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Types Breakdown -->
+      <div class="panel-section">
+        <h3>
+          <span>📁 Định Dạng Tài Liệu (Import Types)</span>
+        </h3>
+        <div id="doc-types-list">
+          <div class="breakdown-row">
+            <span>Tệp PDF (.pdf)</span>
+            <strong id="val-doc-pdf">0</strong>
+          </div>
+          <div class="breakdown-row">
+            <span>Tệp Word Docx (.docx)</span>
+            <strong id="val-doc-docx">0</strong>
+          </div>
+          <div class="breakdown-row">
+            <span>Văn bản thuần (.txt)</span>
+            <strong id="val-doc-txt">0</strong>
+          </div>
+          <div class="breakdown-row">
+            <span>Gói QuizMaster JSON (.json)</span>
+            <strong id="val-doc-json">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI & Exports Breakdown -->
+      <div class="panel-section">
+        <h3>
+          <span>⚡ Tính Năng AI & Xuất Tệp</span>
+        </h3>
+        <div class="breakdown-row">
+          <span>Câu hỏi trắc nghiệm tạo bởi AI</span>
+          <strong id="val-ai-questions" style="color: var(--color-emerald-mint);">0</strong>
+        </div>
+        <div class="breakdown-row">
+          <span>Giải thích chi tiết (Ask Gemini)</span>
+          <strong id="val-ai-explains" style="color: var(--color-deep-purple);">0</strong>
+        </div>
+        <div class="breakdown-row">
+          <span>Tổng số lượt xuất tệp (Exports)</span>
+          <strong id="val-exports-total" style="color: var(--color-sunset-orange);">0</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Developer Testing & Gist Storage Configuration -->
+    <div class="panel-section" style="margin-top: var(--space-4);">
+      <h3>
+        <span>⚙️ Thiết Lập Private Gist Storage (0 Git Commits)</span>
+        <span id="last-updated-text" style="font-size: var(--text-xs); color: var(--text-secondary);">Cập nhật: --</span>
+      </h3>
+
+      <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-3); line-height: 1.6;">
+        Dữ liệu được lưu trữ tự động trong một <strong>Private GitHub Gist</strong> riêng biệt. Không tạo commit nào vào repository mã nguồn.
+      </div>
+      
+      <div class="input-row">
+        <input type="password" id="input-gh-token" placeholder="GitHub Personal Access Token (ghp_... có quyền gist)" />
+        <input type="text" id="input-gist-id" placeholder="Gist ID (tùy chọn, để trống sẽ tự động tạo)" />
+        <button id="btn-auto-create-gist" class="btn btn-primary" style="background: linear-gradient(135deg, #1f7ae8, #2e9e66);">
+          ✨ Tạo & Kết Nối Gist
+        </button>
+        <button id="btn-save-config" class="btn btn-secondary">Lưu</button>
+        <button id="btn-clear-config" class="btn btn-secondary">Xóa</button>
+      </div>
+
+      <div id="config-feedback" style="font-size: var(--text-xs); margin-top: 8px; font-weight: 600;"></div>
+
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4);">
+        <button id="btn-simulate-event" class="btn btn-primary">
+          🚀 Gửi Sự Kiện Thử Nghiệm (+1 Visitor & +1 Practice)
+        </button>
+        <button id="btn-run-diagnostics" class="btn btn-secondary">
+          🔍 Kiểm Tra Kết Nối Cloudflare (/api/telemetry)
+        </button>
+        <a id="link-view-gist" href="#" target="_blank" class="btn btn-secondary" style="display: none;">
+          🔗 Mở Private Gist trên GitHub
+        </a>
+      </div>
+
+      <div id="diagnostics-result" style="display: none; margin-top: var(--space-4); background: var(--bg-window); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <h4 style="margin: 0 0 8px 0; font-size: var(--text-sm);">Kết Quả Kiểm Tra Endpoint:</h4>
+        <pre id="diagnostics-log" style="font-family: var(--font-family-mono); font-size: var(--text-xs); margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
+      </div>
+
+      <div style="margin-top: var(--space-4);">
+        <details>
+          <summary style="cursor: pointer; font-weight: 600; font-size: var(--text-sm); color: var(--color-ocean-blue);">
+            Xem Dữ Liệu JSON Thô (Gist Payload)
+          </summary>
+          <pre id="raw-json-viewer" class="code-block" style="margin-top: var(--space-3);">Đang tải dữ liệu...</pre>
+        </details>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { APP_CONFIG } from "./js/config.js";
+
+    // --- SECURITY & ACCESS LAYER ---
+    const lockScreen = document.getElementById("lock-screen");
+    const mainContent = document.getElementById("admin-main-content");
+    const formPasscode = document.getElementById("form-passcode");
+    const inputPin = document.getElementById("input-pin");
+    const pinError = document.getElementById("pin-error");
+    const btnLock = document.getElementById("btn-lock-dashboard");
+
+    const _AUTH_HASH = "65d3662abadec632cdea02114ccaae44e5899b029a88a87ee0d1f6b45b43749f";
+    const _SALT = "QM_SEC_AUTH_V1";
+
+    async function hashInput(str) {
+      const buffer = new TextEncoder().encode(str + ":" + _SALT);
+      const hashBuf = await crypto.subtle.digest("SHA-256", buffer);
+      return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function checkAuth() {
+      const isAuth = sessionStorage.getItem("qm_admin_auth") === "true";
+
+      if (isAuth) {
+        lockScreen.style.display = "none";
+        mainContent.style.filter = "none";
+        mainContent.style.pointerEvents = "auto";
+        fetchTelemetryData();
+      } else {
+        lockScreen.style.display = "flex";
+        mainContent.style.filter = "blur(12px)";
+        mainContent.style.pointerEvents = "none";
+        setTimeout(() => inputPin.focus(), 100);
+      }
+    }
+
+    formPasscode.onsubmit = async (e) => {
+      e.preventDefault();
+      const entered = inputPin.value.trim();
+      if (!entered) return;
+
+      const enteredHash = await hashInput(entered);
+
+      if (enteredHash === _AUTH_HASH) {
+        sessionStorage.setItem("qm_admin_auth", "true");
+        inputPin.value = "";
+        pinError.textContent = "";
+        checkAuth();
+      } else {
+        pinError.textContent = "✕ Mã PIN không chính xác. Quyền truy cập bị từ chối.";
+        inputPin.value = "";
+        inputPin.focus();
+      }
+    };
+
+    btnLock.onclick = () => {
+      sessionStorage.removeItem("qm_admin_auth");
+      checkAuth();
+    };
+
+    const elements = {
+      status: document.getElementById("sync-status"),
+      btnRefresh: document.getElementById("btn-refresh"),
+      btnSimulate: document.getElementById("btn-simulate-event"),
+      btnAutoCreateGist: document.getElementById("btn-auto-create-gist"),
+      btnSaveConfig: document.getElementById("btn-save-config"),
+      btnClearConfig: document.getElementById("btn-clear-config"),
+      inputGhToken: document.getElementById("input-gh-token"),
+      inputGistId: document.getElementById("input-gist-id"),
+      configFeedback: document.getElementById("config-feedback"),
+      linkViewGist: document.getElementById("link-view-gist"),
+      
+      valVisitors: document.getElementById("val-visitors"),
+      valDocuments: document.getElementById("val-documents"),
+      valExamModes: document.getElementById("val-exam-modes"),
+      valAiQueries: document.getElementById("val-ai-queries"),
+      
+      // Locations
+      locationsList: document.getElementById("locations-list"),
+      countLocations: document.getElementById("count-locations"),
+
+      // Modes
+      valPractice: document.getElementById("val-practice"),
+      valExam: document.getElementById("val-exam"),
+      valFlashcard: document.getElementById("val-flashcard"),
+      barPractice: document.getElementById("bar-practice"),
+      barExam: document.getElementById("bar-exam"),
+      barFlashcard: document.getElementById("bar-flashcard"),
+
+      // Docs
+      valDocPdf: document.getElementById("val-doc-pdf"),
+      valDocDocx: document.getElementById("val-doc-docx"),
+      valDocTxt: document.getElementById("val-doc-txt"),
+      valDocJson: document.getElementById("val-doc-json"),
+
+      // AI & Export
+      valAiQuestions: document.getElementById("val-ai-questions"),
+      valAiExplains: document.getElementById("val-ai-explains"),
+      valExportsTotal: document.getElementById("val-exports-total"),
+      lastUpdatedText: document.getElementById("last-updated-text"),
+      rawJsonViewer: document.getElementById("raw-json-viewer")
+    };
+
+    function getDefaultStats() {
+      return {
+        total_visitors: 0,
+        last_updated: new Date().toISOString(),
+        locations: {},
+        imported_documents: { total: 0, pdf: 0, docx: 0, txt: 0, json: 0 },
+        exam_modes: { practice: 0, exam: 0, flashcard: 0 },
+        ai_features: { total_queries: 0, questions_generated: 0, explanations_asked: 0 },
+        exports: { total: 0, json: 0, gift: 0, anki: 0, pdf: 0 }
+      };
+    }
+
+    // Load saved settings
+    const savedToken = localStorage.getItem("qm_telemetry_token") || "";
+    const savedGistId = localStorage.getItem("qm_telemetry_gist_id") || "";
+    elements.inputGhToken.value = savedToken;
+    elements.inputGistId.value = savedGistId;
+
+    if (savedGistId) {
+      elements.linkViewGist.href = `https://gist.github.com/${savedGistId}`;
+      elements.linkViewGist.style.display = "inline-flex";
+    }
+
+    elements.btnSaveConfig.onclick = () => {
+      const token = elements.inputGhToken.value.trim();
+      const gistId = elements.inputGistId.value.trim();
+      localStorage.setItem("qm_telemetry_token", token);
+      localStorage.setItem("qm_telemetry_gist_id", gistId);
+      elements.configFeedback.textContent = "✓ Đã lưu cấu hình vào LocalStorage!";
+      elements.configFeedback.style.color = "var(--color-emerald-mint)";
+      fetchTelemetryData();
+    };
+
+    elements.btnClearConfig.onclick = () => {
+      localStorage.removeItem("qm_telemetry_token");
+      localStorage.removeItem("qm_telemetry_gist_id");
+      elements.inputGhToken.value = "";
+      elements.inputGistId.value = "";
+      elements.linkViewGist.style.display = "none";
+      elements.configFeedback.textContent = "Đã xóa cấu hình.";
+      elements.configFeedback.style.color = "var(--text-secondary)";
+      fetchTelemetryData();
+    };
+
+    // Auto-create private Gist
+    elements.btnAutoCreateGist.onclick = async () => {
+      const token = elements.inputGhToken.value.trim();
+      if (!token) {
+        elements.configFeedback.textContent = "Vui lòng nhập GitHub Token (quyền 'gist') trước khi tạo.";
+        elements.configFeedback.style.color = "var(--color-coral-red)";
+        return;
+      }
+
+      elements.btnAutoCreateGist.disabled = true;
+      elements.btnAutoCreateGist.textContent = "⏳ Đang tạo Private Gist...";
+      const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
+
+      try {
+        const res = await fetch("https://api.github.com/gists", {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            description: "QuizMaster Web Telemetry Database (Private & Anonymous)",
+            public: false,
+            files: {
+              "telemetry.json": {
+                content: JSON.stringify(getDefaultStats(), null, 2)
+              }
+            }
+          })
+        });
+
+        if (res.ok) {
+          const gist = await res.json();
+          elements.inputGistId.value = gist.id;
+          localStorage.setItem("qm_telemetry_token", token);
+          localStorage.setItem("qm_telemetry_gist_id", gist.id);
+          
+          elements.linkViewGist.href = gist.html_url;
+          elements.linkViewGist.style.display = "inline-flex";
+
+          elements.configFeedback.textContent = `✓ Đã tạo thành công Private Gist (${gist.id})!`;
+          elements.configFeedback.style.color = "var(--color-emerald-mint)";
+          alert("✓ Đã tạo Private Gist thành công! Mọi thống kê sẽ tự động lưu vào Gist này.");
+          await fetchTelemetryData();
+        } else {
+          const err = await res.json();
+          elements.configFeedback.textContent = `✕ Lỗi tạo Gist: ${err.message || res.statusText}`;
+          elements.configFeedback.style.color = "var(--color-coral-red)";
+        }
+      } catch (e) {
+        elements.configFeedback.textContent = `✕ Lỗi mạng: ${e.message}`;
+        elements.configFeedback.style.color = "var(--color-coral-red)";
+      }
+
+      elements.btnAutoCreateGist.disabled = false;
+      elements.btnAutoCreateGist.textContent = "✨ Tạo & Kết Nối Gist";
+    };
+
+    // Simulate Telemetry Event
+    elements.btnSimulate.onclick = async () => {
+      elements.btnSimulate.disabled = true;
+      elements.btnSimulate.textContent = "⏳ Đang ghi nhận sự kiện...";
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            visitors: 1,
+            exam_modes: { practice: 1 },
+            locations: { "Vietnam": 1 }
+          })
+        });
+
+        const resData = await res.json();
+        if (resData.success) {
+          alert("✓ Đã gửi sự kiện thử nghiệm thành công vào Telemetry Worker!");
+        } else if (resData.error || resData.warning) {
+          alert(`⚠️ Worker báo: ${resData.error || resData.warning}`);
+        }
+      } catch (e) {
+        alert(`✕ Lỗi kết nối Worker: ${e.message}`);
+      }
+
+      elements.btnSimulate.disabled = false;
+      elements.btnSimulate.textContent = "🚀 Gửi Sự Kiện Thử Nghiệm (+1 Visitor & +1 Practice)";
+      await fetchTelemetryData();
+    };
+
+    // Diagnostics Tool
+    const btnDiag = document.getElementById("btn-run-diagnostics");
+    const diagBox = document.getElementById("diagnostics-result");
+    const diagLog = document.getElementById("diagnostics-log");
+
+    btnDiag.onclick = async () => {
+      btnDiag.disabled = true;
+      btnDiag.textContent = "⏳ Đang kiểm tra...";
+      diagBox.style.display = "block";
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+      diagLog.textContent = `Bắt đầu kiểm tra endpoint ${endpoint}...\n`;
+
+      try {
+        // Test GET
+        diagLog.textContent += `\n[1] Kiểm tra GET ${endpoint}:\n`;
+        const getRes = await fetch(`${endpoint}?_t=${Date.now()}`);
+        diagLog.textContent += `  Status: HTTP ${getRes.status} (${getRes.statusText})\n`;
+        const getText = await getRes.text();
+        diagLog.textContent += `  Response: ${getText.substring(0, 300)}\n`;
+
+        // Test POST
+        diagLog.textContent += `\n[2] Kiểm tra POST ${endpoint} (Gửi test payload):\n`;
+        const postRes = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visitors: 1 })
+        });
+        diagLog.textContent += `  Status: HTTP ${postRes.status} (${postRes.statusText})\n`;
+        const postText = await postRes.text();
+        diagLog.textContent += `  Response: ${postText.substring(0, 300)}\n`;
+
+        if (getText.includes("Chưa cấu hình GITHUB_TOKEN")) {
+          diagLog.textContent += "\n⚠️ KẾT QUẢ: Worker đang hoạt động, nhưng bạn chưa thêm biến GITHUB_TOKEN vào Worker Settings > Variables and secrets.";
+        } else if (postRes.ok) {
+          diagLog.textContent += "\n✅ KẾT QUẢ: Telemetry Worker hoạt động 100% hoàn hảo! Đã kết nối và cập nhật Gist thành công.";
+        }
+      } catch (e) {
+        diagLog.textContent += `\n❌ Lỗi Exception: ${e.message}\n`;
+      }
+
+      btnDiag.disabled = false;
+      btnDiag.textContent = "🔍 Kiểm Tra Kết Nối Cloudflare (/api/telemetry)";
+    };
+
+    async function fetchTelemetryData() {
+      elements.status.className = "status-badge";
+      elements.status.style.background = "rgba(31, 122, 232, 0.15)";
+      elements.status.style.color = "var(--color-ocean-blue)";
+      elements.status.textContent = "● Đang tải...";
+
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+      // 1. Try Cloudflare Worker endpoint
+      try {
+        const res = await fetch(`${endpoint}?_t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isConfigured) {
+            elements.status.className = "status-badge online";
+            elements.status.textContent = `● Đã kết nối (Cloudflare Worker Live)`;
+            if (data.gistId) {
+              elements.linkViewGist.href = `https://gist.github.com/${data.gistId}`;
+              elements.linkViewGist.style.display = "inline-flex";
+            }
+            renderDashboard(data.stats || {});
+            return;
+          } else if (data.error) {
+            elements.status.className = "status-badge warning";
+            elements.status.textContent = "⚠️ Cần gán GITHUB_TOKEN vào Worker";
+            elements.rawJsonViewer.textContent = data.error;
+            renderDashboard(data.stats || getDefaultStats());
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Worker fetch failed", e);
+      }
+
+      // 2. Direct Gist Fallback
+      const token = elements.inputGhToken.value.trim();
+      const gistId = elements.inputGistId.value.trim();
+      if (token && gistId) {
+        try {
+          const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
+          const res = await fetch(`https://api.github.com/gists/${gistId}?_t=${Date.now()}`, {
+            headers: { "Authorization": authHeader, "Accept": "application/vnd.github.v3+json" }
+          });
+          if (res.ok) {
+            const gistData = await res.json();
+            const fileContent = gistData.files && gistData.files["telemetry.json"] ? gistData.files["telemetry.json"].content : null;
+            const stats = fileContent ? JSON.parse(fileContent) : getDefaultStats();
+            elements.status.className = "status-badge online";
+            elements.status.textContent = `● Đã kết nối (Direct Gist: ${gistId.substring(0, 8)}...)`;
+            renderDashboard(stats);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      elements.status.className = "status-badge error";
+      elements.status.textContent = "✕ Chưa kết nối Endpoint";
+      elements.rawJsonViewer.textContent = `Không thể kết nối ${endpoint}.`;
+      renderDashboard(getDefaultStats());
+    }
+
+    function renderDashboard(stats) {
+      // Visitors
+      elements.valVisitors.textContent = (stats.total_visitors || 0).toLocaleString();
+
+      // Documents
+      const docs = stats.imported_documents || {};
+      elements.valDocuments.textContent = (docs.total || 0).toLocaleString();
+      elements.valDocPdf.textContent = (docs.pdf || 0).toLocaleString();
+      elements.valDocDocx.textContent = (docs.docx || 0).toLocaleString();
+      elements.valDocTxt.textContent = (docs.txt || 0).toLocaleString();
+      elements.valDocJson.textContent = (docs.json || 0).toLocaleString();
+
+      // Exam Modes
+      const modes = stats.exam_modes || {};
+      const totalModes = (modes.practice || 0) + (modes.exam || 0) + (modes.flashcard || 0);
+      elements.valExamModes.textContent = totalModes.toLocaleString();
+      elements.valPractice.textContent = (modes.practice || 0).toLocaleString();
+      elements.valExam.textContent = (modes.exam || 0).toLocaleString();
+      elements.valFlashcard.textContent = (modes.flashcard || 0).toLocaleString();
+
+      const pctPractice = totalModes ? Math.round(((modes.practice || 0) / totalModes) * 100) : 0;
+      const pctExam = totalModes ? Math.round(((modes.exam || 0) / totalModes) * 100) : 0;
+      const pctFlashcard = totalModes ? Math.round(((modes.flashcard || 0) / totalModes) * 100) : 0;
+
+      elements.barPractice.style.width = `${pctPractice}%`;
+      elements.barExam.style.width = `${pctExam}%`;
+      elements.barFlashcard.style.width = `${pctFlashcard}%`;
+
+      // AI & Exports
+      const ai = stats.ai_features || {};
+      elements.valAiQueries.textContent = (ai.total_queries || 0).toLocaleString();
+      elements.valAiQuestions.textContent = (ai.questions_generated || 0).toLocaleString();
+      elements.valAiExplains.textContent = (ai.explanations_asked || 0).toLocaleString();
+
+      const exports = stats.exports || {};
+      elements.valExportsTotal.textContent = (exports.total || 0).toLocaleString();
+
+      // Locations
+      const locs = stats.locations || {};
+      const locEntries = Object.entries(locs).sort((a, b) => b[1] - a[1]);
+      elements.countLocations.textContent = `${locEntries.length} khu vực`;
+
+      if (locEntries.length === 0) {
+        elements.locationsList.innerHTML = `<p style="color: var(--text-secondary); font-size: var(--text-sm);">Chưa có dữ liệu vị trí...</p>`;
+      } else {
+        const totalLocVisits = locEntries.reduce((sum, [, val]) => sum + val, 0) || 1;
+        elements.locationsList.innerHTML = locEntries.map(([loc, count]) => {
+          const pct = Math.round((count / totalLocVisits) * 100);
+          return `
+            <div class="breakdown-row">
+              <div style="flex: 1; margin-right: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span class="location-pill">📍 ${escapeHtml(loc)}</span>
+                  <span style="font-size: var(--text-xs); color: var(--text-secondary);">${pct}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" style="width: ${pct}%; background: var(--color-cyan-teal);"></div>
+                </div>
+              </div>
+              <span style="font-weight: 700; min-width: 40px; text-align: right;">${count.toLocaleString()}</span>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // Last updated
+      if (stats.last_updated) {
+        try {
+          const d = new Date(stats.last_updated);
+          elements.lastUpdatedText.textContent = `Cập nhật: ${d.toLocaleString("vi-VN")}`;
+        } catch {
+          elements.lastUpdatedText.textContent = `Cập nhật: ${stats.last_updated}`;
+        }
+      }
+
+      // Raw JSON
+      elements.rawJsonViewer.textContent = JSON.stringify(stats, null, 2);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    elements.btnRefresh.onclick = () => fetchTelemetryData();
+
+    // Initial Auth Check
+    checkAuth();
+  </script>
+</body>
+</html>
