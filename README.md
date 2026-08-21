@@ -56,7 +56,7 @@ Vì QuizMaster Web là một ứng dụng tĩnh (Static Single-Page App), bạn 
 1. Đăng nhập vào [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Workers & Pages**.
 2. Chọn **Create application** > **Pages** > **Connect to Git** (hoặc kéo thả thư mục `quiz-web` trực tiếp).
 3. Bấm **Deploy**.
-4. 💡 **Tối ưu Quota**: Toàn bộ ứng dụng được cấu hình tĩnh 100% với `_headers` và `_redirects`. Các tệp tĩnh được phân phối qua CDN toàn cầu mà **hoàn toàn không tiêu tốn hạn ngạch 100,000 lượt gọi Workers/Functions Free hàng ngày** của Cloudflare!
+4. 💡 **Tối ưu Quota**: Toàn bộ ứng dụng được cấu hình tĩnh 100% với `_headers` và trang điều hướng tĩnh `404.html` (không cần tệp `_redirects`). Các tệp tĩnh được phân phối qua CDN toàn cầu mà **hoàn toàn không tiêu tốn hạn ngạch 100,000 lượt gọi Workers/Functions Free hàng ngày** của Cloudflare!
 
 ---
 

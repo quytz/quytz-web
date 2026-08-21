@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>QuizMaster - Ứng dụng Ôn tập & Tạo Đề thi Trắc nghiệm với Gemini AI</title>
+  
+  <!-- Mobile & PWA Optimization -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#1f7ae8">
+
+  <!-- Meta & SEO -->
+  <meta name="description" content="Tự động quét tài liệu PDF, Word .docx thành câu hỏi trắc nghiệm, luyện tập tức thì, thi thử chống gian lận và thẻ ghi nhớ 3D bằng Google Gemini AI hoàn toàn trên trình duyệt.">
+  <meta name="author" content="Anh Vinh (@tozn607)">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="QuizMaster - AI Quiz Generator & Study App">
+  <meta property="og:description" content="Self-study & multiple-choice exam generator using Google Gemini AI, 100% client-side.">
+  <meta property="og:image" content="assets/AppIcon.png">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/AppIcon.png">
+  <link rel="apple-touch-icon" href="assets/AppIcon.png">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/views.css">
+
+  <!-- Client-Side Libraries for Document Extraction (JSZip & PDF.js) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (typeof pdfjsLib !== "undefined") {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+  </script>
+</head>
+<body>
+  <!-- Main Application Container -->
+  <div id="app-root">
+    <!-- Rendered dynamically by js/app.js -->
+    <div style="display: flex; height: 100vh; width: 100vw; align-items: center; justify-content: center; font-family: -apple-system, sans-serif;">
+      <div style="text-align: center;">
+        <img src="assets/AppIcon.png" alt="QuizMaster" style="width: 64px; height: 64px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="font-size: 18px; font-weight: 800; color: #1f7ae8;">QuizMaster</div>
+        <div style="font-size: 12px; color: #646a79; margin-top: 4px;">Đang khởi động ứng dụng ôn tập...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Bootstrap -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
