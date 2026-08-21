@@ -138,6 +138,24 @@ function renderGeneralGeminiTab(project, modalState) {
         </div>
       </div>
 
+      <!-- AI Question Generation Language -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+          Ngôn ngữ nội dung tạo câu hỏi AI:
+        </label>
+        <div class="segmented-control" style="width: 100%;">
+          <button class="segment-btn ${(modalState.aiLanguage || 'vi') === 'vi' ? 'active' : ''}" data-import-lang="vi" style="flex: 1;">
+            Tiếng Việt
+          </button>
+          <button class="segment-btn ${(modalState.aiLanguage || 'vi') === 'en' ? 'active' : ''}" data-import-lang="en" style="flex: 1;">
+            English
+          </button>
+        </div>
+        <div style="font-size: 11px; color: var(--color-ocean-blue); margin-top: 6px; line-height: 1.4;">
+          ${i18n.t("geminiLangNote")}
+        </div>
+      </div>
+
       <!-- Depth Mode (When auto-generate is ON) -->
       ${modalState.isCreateMultipleChoice ? `
         <div class="glass-card">
@@ -330,6 +348,14 @@ export function bindImportModalEvents(modalState, handlers) {
   document.querySelectorAll("[data-depth]").forEach(btn => {
     btn.onclick = () => {
       modalState.depthMode = btn.dataset.depth;
+      handlers.onUpdateView();
+    };
+  });
+
+  // Language Buttons
+  document.querySelectorAll("[data-import-lang]").forEach(btn => {
+    btn.onclick = () => {
+      modalState.aiLanguage = btn.dataset.importLang;
       handlers.onUpdateView();
     };
   });

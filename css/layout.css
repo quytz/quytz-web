@@ -133,9 +133,13 @@ body {
 }
 
 .project-item.active {
-  background: var(--bg-card);
-  border-color: var(--border-card);
-  box-shadow: var(--shadow-sm);
+  position: relative;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, rgba(31, 122, 232, 0.16) 0%, rgba(13, 148, 136, 0.16) 100%) padding-box,
+              linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+              linear-gradient(135deg, #1f7ae8 0%, #0d9488 100%) border-box;
+  box-shadow: 0 4px 14px rgba(31, 122, 232, 0.25);
+  font-weight: 700;
 }
 
 .project-icon-box {
@@ -367,12 +371,30 @@ body {
 }
 
 /* Small Mobile Screens (<= 680px) & High Scaling */
+.app-easter-egg-footer {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  user-select: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  line-height: 1.4;
+}
+
+.app-easter-egg-footer:hover {
+  color: var(--color-ocean-blue);
+  background: rgba(31, 122, 232, 0.08);
+}
+
 @media (max-width: 680px) {
   .top-header-bar {
     padding: 0.65rem 0.85rem;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
   }
 
   .top-header-left {
@@ -393,24 +415,29 @@ body {
     flex-wrap: wrap;
   }
 
+  .top-header-actions .btn-primary,
+  .top-header-actions #btn-open-import {
+    width: 100%;
+    flex: 1 1 100%;
+    order: 1;
+    font-size: var(--text-sm);
+    padding: 0.55rem 0.75rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .top-header-actions .btn-pill {
-    flex: 1 1 120px;
+    flex: 1 1 calc(50% - 4px);
+    order: 2;
     font-size: var(--text-xs);
     padding: 0.45rem 0.65rem;
     min-height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .top-header-actions .btn-primary {
-    flex: 2 1 160px;
-    font-size: var(--text-xs);
-    padding: 0.45rem 0.75rem;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    white-space: nowrap;
   }
 
   /* Full labels always visible on mobile row 2 */

@@ -77,8 +77,8 @@ export function renderPracticeView(project, quiz, practiceState) {
 
             ${currentQ.skill || currentQ.subTopic ? `
               <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
-                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">${currentQ.skill}</span>` : ''}
-                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">${currentQ.subTopic}</span>` : ''}
+                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple);">${currentQ.skill}</span>` : ''}
+                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal);">${currentQ.subTopic}</span>` : ''}
               </div>
             ` : ''}
 

@@ -23,30 +23,30 @@ export function renderFlashcardView(project, quiz, cardState) {
     <div class="study-view-shell" id="flashcard-view-shell">
       <!-- Top Header -->
       <div class="study-header">
-        <button class="btn btn-ghost" id="btn-quit-flashcard">
-          <span>←</span> ${i18n.t("quitQuiz")}
+        <button class="btn btn-ghost" id="btn-quit-flashcard" title="${i18n.t("quitQuiz")}">
+          <span>←</span> <span class="btn-text-hide-mobile">${i18n.t("quitQuiz")}</span>
         </button>
 
-        <div style="text-align: center;">
-          <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary); max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div class="study-header-center">
+          <div class="study-header-title">
             ${escapeHtml(quiz.title)} • <span style="color: var(--color-deep-purple);">${isLL ? 'Thẻ từ vựng CEFR' : i18n.t("flashcardMode")}</span>
           </div>
-          <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); margin-top: 2px;">
-            Vòng học thứ ${cardState.studyRound} • Còn lại ${remainingCount} thẻ
+          <div class="study-header-counter">
+            Vòng ${cardState.studyRound} • Còn lại ${remainingCount} thẻ
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="study-header-actions">
           ${isLL ? `
-            <select class="form-select" id="select-cefr-filter" style="width: 140px; padding: 4px 8px; font-size: var(--text-xs);">
+            <select class="form-select" id="select-cefr-filter">
               ${Object.values(CEFR_LEVELS).map(lvl => `
                 <option value="${lvl.id}" ${cardState.cefrFilter === lvl.id ? 'selected' : ''}>${lvl.badge}</option>
               `).join('')}
             </select>
           ` : ''}
 
-          <button class="btn btn-pill ${cardState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane">
-            <span>☰</span> Danh sách thẻ
+          <button class="btn btn-pill ${cardState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane" title="Danh sách thẻ">
+            <span>☰</span> <span>Danh sách thẻ</span>
           </button>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function renderFlashcardView(project, quiz, cardState) {
               <div class="flashcard-face face-front">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">
-                    ${isLL ? (currentItem.wordType || 'TỪ VỰNG').toUpperCase() : i18n.t("questionSide")}
+                    ${isLL ? (currentItem.wordType || 'Từ vựng') : i18n.t("questionSide")}
                   </span>
                   ${isLL && currentItem.cefrLevel ? `
                     <span class="badge badge-teal">CEFR ${currentItem.cefrLevel}</span>
@@ -87,7 +87,7 @@ export function renderFlashcardView(project, quiz, cardState) {
               <div class="flashcard-face face-back">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="badge badge-green">
-                    ${isLL ? 'NGHĨA & VÍ DỤ' : i18n.t("answerSide")}
+                    ${isLL ? 'Nghĩa & ví dụ' : i18n.t("answerSide")}
                   </span>
                   ${isLL && currentItem.cefrLevel ? `
                     <span class="badge badge-teal">CEFR ${currentItem.cefrLevel}</span>
@@ -132,12 +132,12 @@ export function renderFlashcardView(project, quiz, cardState) {
                 <span>←</span> ${i18n.t("prevCard")}
               </button>
 
-              <button class="btn btn-primary btn-red" id="btn-card-wrong">
-                Chưa thuộc (2)
-              </button>
-
               <button class="btn btn-primary btn-green" id="btn-card-correct">
                 Đã thuộc bài (1)
+              </button>
+
+              <button class="btn btn-primary btn-red" id="btn-card-wrong">
+                Chưa thuộc (2)
               </button>
             </div>
           ` : ''}
@@ -251,7 +251,11 @@ export function bindFlashcardEvents(project, quiz, cardState, handlers) {
   // 3D Card Tap Flip
   const cardBox = document.getElementById("flashcard-3d-box");
   if (cardBox) {
-    cardBox.onclick = () => handlers.onFlip();
+    cardBox.onclick = () => {
+      cardBox.classList.toggle("flipped");
+      cardState.isFlipped = cardBox.classList.contains("flipped");
+      if (handlers.onFlip) handlers.onFlip(cardState.isFlipped);
+    };
   }
 
   // Prev / Wrong / Correct
@@ -301,9 +305,13 @@ export function bindFlashcardEvents(project, quiz, cardState, handlers) {
       return;
     }
 
-    if (e.key === " ") {
-      handlers.onFlip();
+    if (e.key === " " || e.code === "Space") {
       e.preventDefault();
+      if (cardBox) {
+        cardBox.classList.toggle("flipped");
+        cardState.isFlipped = cardBox.classList.contains("flipped");
+        if (handlers.onFlip) handlers.onFlip(cardState.isFlipped);
+      }
       return;
     }
 

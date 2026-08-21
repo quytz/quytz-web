@@ -78,8 +78,8 @@ export function renderExamView(project, quiz, examState) {
 
             ${currentQ.skill || currentQ.subTopic ? `
               <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
-                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">${currentQ.skill}</span>` : ''}
-                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">${currentQ.subTopic}</span>` : ''}
+                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple);">${currentQ.skill}</span>` : ''}
+                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal);">${currentQ.subTopic}</span>` : ''}
               </div>
             ` : ''}
 
@@ -135,16 +135,20 @@ export function renderExamView(project, quiz, examState) {
 
       <!-- Footer Bar -->
       <footer class="study-footer">
-        <div style="display: flex; gap: 8px;">
+        <div class="shortcuts-hint">
+          <span>Phím:</span>
+          <span class="kbd-tag">A</span> <span class="kbd-tag">B</span> <span class="kbd-tag">C</span> <span class="kbd-tag">D</span>
+          <span>•</span>
+          <span class="kbd-tag">←</span> <span class="kbd-tag">→</span> <span>Chuyển câu</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex: 1; flex-wrap: wrap;">
           <button class="btn btn-secondary" id="btn-exam-prev" ${currentIdx === 0 ? 'disabled' : ''}>
             <span>←</span> <span class="btn-text-hide-mobile">${i18n.t("prevQuestion")}</span>
           </button>
           <button class="btn btn-secondary" id="btn-exam-next" ${currentIdx + 1 >= totalQ ? 'disabled' : ''}>
             <span class="btn-text-hide-mobile">${i18n.t("nextQuestion")}</span> <span>→</span>
           </button>
-        </div>
-
-        <div>
           <button class="btn btn-primary btn-orange" id="btn-exam-submit">
             ${i18n.t("submitExamBtn")} (${answeredCount}/${totalQ})
           </button>

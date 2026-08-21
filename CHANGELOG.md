@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.1.0] - 2026-08-22
+
+### Added
+- **Completed Card Rainbow Gradient & Signature Blue Theme**: Completed quiz cards feature a vibrant 5-color rainbow border with frosted glass backdrop, while active projects, pill buttons, and segmented tabs use the app icon's signature ocean blue gradient.
+- **Project 3-Dot Options Action Sheet**: Added a 3-dot (`⋯`) button on each sidebar project allowing users to rename projects, reset all quiz progress, or delete projects with confirmation.
+- **Time-Accurate & Interactive Greetings**: Expanded the greeting database with dozens of motivational, witty, and cheesy lines. Tapping the greeting badge dynamically selects from the time-accurate pool (morning, noon, afternoon, evening, night).
+- **Author Message Easter Egg**: Double-clicking/tapping the author name in Settings displays an author message popup.
+- **National Anthem Easter Egg**: Subtle footer text `QuizMaster v1.1.0 © 2026 | Made in Vietnam` triggers a national anthem popup upon double-tapping/clicking.
+- **Exam Mode Shortcuts Strip**: Added bottom keyboard shortcuts guide strip (`A B C D • ← → Chuyển câu`) to Exam Mode.
+- **Mandatory 2s Splash Screen**: Smooth 2-second startup animation ensuring assets are cleanly loaded.
+
+### Fixed & Improved
+- **Redo Wrong Answers Live Mastery Update**: Fixed the "Làm lại câu sai" mode to isolate wrong questions and immediately synchronize newly corrected answers with parent quiz progress and review modal.
+- **Reading Passage Drawer Controls**: Fixed font size buttons (`A-`, `A+`) with reactive 3px step scaling, removed "Bo tròn", and added the "Hệ thống" system typography option.
+- **Mobile & High-Scaling Header Adaptability**:
+  - **Dashboard**: "Nhập Tài liệu" and toolbar buttons adapt cleanly to multi-row layout without squeezed text.
+  - **Practice & Exam Modes**: Responsive 2-row header separating quiz title and controls.
+  - **Flashcard Mode**: Responsive top bar keeping the "Danh sách thẻ" button and CEFR filter visible.
+- **Flashcard 3D Flip Animation & Button Ordering**: Restored hardware-accelerated 3D flip animation and ordered the green "Đã thuộc bài" button before the red "Chưa thuộc" button.
+- **Quiz Editor Mobile Rework**: Redesigned quiz editor with horizontal scrolling question chips and a full-width touch form.
+- **Standardized Typography**: Clean Sentence and Title Case across all modal headers, badges, and labels.
+- **Direct Quiz Card Edit Button**: Restored the direct pencil edit button (`✏️`) on quiz card headers.
+
+---
+
 ## [v1.0.2] - 2026-08-21
 
 ### Added

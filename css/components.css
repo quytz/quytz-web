@@ -29,8 +29,12 @@
 .glass-card.card-completed-rainbow {
   position: relative;
   border: 2px solid transparent;
-  background: linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
-              linear-gradient(135deg, rgba(239,68,68,0.5), rgba(245,158,11,0.5), rgba(16,185,129,0.5), rgba(59,130,246,0.5), rgba(139,92,246,0.5)) border-box;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.12) 25%, rgba(16, 185, 129, 0.12) 50%, rgba(59, 130, 246, 0.12) 75%, rgba(139, 92, 246, 0.12) 100%) padding-box,
+              linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+              linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #10b981 50%, #3b82f6 75%, #8b5cf6 100%) border-box;
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Inline & Block Code Formatting */
@@ -181,9 +185,14 @@
 }
 
 .btn-pill.active {
-  background: var(--color-ocean-blue);
-  color: #ffffff;
-  box-shadow: var(--shadow-glow-blue);
+  position: relative;
+  border: 1.5px solid transparent !important;
+  background: linear-gradient(135deg, rgba(31, 122, 232, 0.16) 0%, rgba(13, 148, 136, 0.16) 100%) padding-box,
+              linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+              linear-gradient(135deg, #1f7ae8 0%, #0d9488 100%) border-box !important;
+  color: var(--color-ocean-blue) !important;
+  box-shadow: 0 2px 10px rgba(31, 122, 232, 0.25);
+  font-weight: 700;
 }
 
 .btn-ghost {
@@ -258,12 +267,28 @@
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: rgba(31, 122, 232, 0.09);
-  border: 1px solid rgba(31, 122, 232, 0.22);
-  border-radius: var(--radius-md);
-  color: var(--color-ocean-blue);
+  border: 1px solid rgba(31, 122, 232, 0.2);
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1.35;
+  color: var(--text-primary);
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.greeting-badge:hover {
+  background: rgba(31, 122, 232, 0.16);
+}
+
+.greeting-badge:active {
+  transform: scale(0.96);
+}
+
+.greeting-badge-icon {
+  font-size: 1.15rem;
 }
 
 /* Segmented Control / Tab Switcher */
@@ -303,9 +328,13 @@
 }
 
 .segment-btn.active {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  position: relative;
+  border: 1.5px solid transparent !important;
+  background: linear-gradient(135deg, rgba(31, 122, 232, 0.16) 0%, rgba(13, 148, 136, 0.16) 100%) padding-box,
+              linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+              linear-gradient(135deg, #1f7ae8 0%, #0d9488 100%) border-box !important;
+  color: var(--color-ocean-blue) !important;
+  box-shadow: 0 2px 8px rgba(31, 122, 232, 0.2);
   font-weight: 700;
 }
 

@@ -87,24 +87,6 @@ export function renderSettingsModal(settingsState) {
                 </button>
               </div>
             </div>
-
-            <!-- Language Picker -->
-            <div>
-              <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
-                ${i18n.t("languageLabel")}
-              </label>
-              <div class="segmented-control" style="width: 100%; display: flex; flex-wrap: wrap;">
-                <button class="segment-btn ${settingsState.language === 'vi' ? 'active' : ''}" data-setting-lang="vi" style="flex: 1 1 auto; min-width: 110px;">
-                  Tiếng Việt
-                </button>
-                <button class="segment-btn ${settingsState.language === 'en' ? 'active' : ''}" data-setting-lang="en" style="flex: 1 1 auto; min-width: 110px;">
-                  English
-                </button>
-              </div>
-              <div style="font-size: 11px; color: var(--color-ocean-blue); margin-top: 4px;">
-                ${i18n.t("geminiLangNote")}
-              </div>
-            </div>
           </div>
 
           <!-- Backup & Restore Database Section -->
@@ -131,7 +113,7 @@ export function renderSettingsModal(settingsState) {
                 <div style="font-size: var(--text-base); font-weight: 800;">
                   QuizMaster Web <span class="badge badge-blue">${APP_CONFIG.version}</span>
                 </div>
-                <div style="font-size: var(--text-xs); color: var(--color-ocean-blue); font-weight: 600; margin-top: 2px;">
+                <div id="author-easter-egg-trigger" style="font-size: var(--text-xs); color: var(--color-ocean-blue); font-weight: 600; margin-top: 2px; cursor: pointer; user-select: none;" title="Chạm 2 lần để xem lời nhắn từ tác giả">
                   ${i18n.t("authorInfo")}
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
@@ -187,14 +169,6 @@ export function bindSettingsEvents(settingsState, handlers) {
     };
   });
 
-  // Language chips
-  document.querySelectorAll("[data-setting-lang]").forEach(btn => {
-    btn.onclick = () => {
-      settingsState.language = btn.dataset.settingLang;
-      handlers.onUpdateView();
-    };
-  });
-
   // Export / Import Backup
   const exportDbBtn = document.getElementById("btn-export-database");
   if (exportDbBtn) exportDbBtn.onclick = () => handlers.onExportDatabase();
@@ -212,6 +186,23 @@ export function bindSettingsEvents(settingsState, handlers) {
   // Re-open wizard
   const wizardBtn = document.getElementById("btn-reopen-wizard");
   if (wizardBtn) wizardBtn.onclick = () => handlers.onReopenWizard();
+
+  // Author double click easter egg
+  const authorTrigger = document.getElementById("author-easter-egg-trigger");
+  if (authorTrigger && handlers.onOpenAuthorEasterEgg) {
+    authorTrigger.ondblclick = () => handlers.onOpenAuthorEasterEgg();
+
+    let lastTap = 0;
+    authorTrigger.ontouchend = (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 450 && tapLength > 0) {
+        e.preventDefault();
+        handlers.onOpenAuthorEasterEgg();
+      }
+      lastTap = currentTime;
+    };
+  }
 }
 
 function escapeHtml(text) {

@@ -92,3 +92,74 @@ export function bindEndingModalEvents(onRedoWrong, onReviewAnswers, onBackDashbo
   const backBtn = document.getElementById("btn-ending-dashboard");
   if (backBtn) backBtn.onclick = () => onBackDashboard();
 }
+
+export function renderNationalAnthemModal() {
+  return `
+    <div class="modal-overlay open" id="national-anthem-modal-overlay" style="z-index: 1200;">
+      <div class="modal-container" style="max-width: 540px; width: 100%; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; text-align: center;">
+        <div class="modal-header" style="justify-content: center; position: relative;">
+          <div style="font-size: 22px; margin-right: 6px;">🇻🇳</div>
+          <h2 style="font-size: var(--text-lg); font-weight: 800; color: var(--color-coral-red);">
+            TIẾN QUÂN CA
+          </h2>
+          <button class="btn btn-ghost btn-icon-only" id="btn-close-anthem" style="position: absolute; right: 12px; top: 10px;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 20px; overflow-y: auto;">
+          <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); margin-bottom: 16px;">
+            Quốc ca Nước Cộng hòa Xã hội Chủ nghĩa Việt Nam<br>
+            <span style="color: var(--color-ocean-blue);">Tác giả: Nhạc sĩ Văn Cao</span>
+          </div>
+
+          <div class="glass-card" style="padding: 18px; line-height: 1.8; font-size: var(--text-sm); color: var(--text-primary); text-align: center; background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%); border-color: rgba(239, 68, 68, 0.3);">
+            <div style="font-weight: 700; margin-bottom: 12px; color: var(--color-coral-red);">— LỜI 1 —</div>
+            <p style="margin: 0 0 12px; font-style: italic;">
+              Đoàn quân Việt Nam đi chung lòng cứu quốc,<br>
+              Bước chân dồn vang trên đường gập ghềnh xa.<br>
+              Cờ in máu chiến thắng mang hồn nước,<br>
+              Súng ngoài xa chen khúc quân hành ca.<br>
+              Đường vinh quang xây xác quân thù,<br>
+              Thắng gian lao cùng nhau lập chiến khu.<br>
+              Vì nhân dân chiến đấu không ngừng,<br>
+              Tiến mau ra sa trường,<br>
+              Tiến lên, cùng tiến lên.<br>
+              Nước non Việt Nam ta vững bền.
+            </p>
+
+            <div style="font-weight: 700; margin: 16px 0 12px; color: var(--color-coral-red);">— LỜI 2 —</div>
+            <p style="margin: 0; font-style: italic;">
+              Đoàn quân Việt Nam đi sao vàng phấp phới,<br>
+              Dắt giống nòi quê hương qua nơi lầm than.<br>
+              Cùng chung sức phấn đấu xây đời mới,<br>
+              Đứng đều lên gông xích ta đập tan.<br>
+              Từ bao lâu xưa chuốt căm hờn,<br>
+              Vốn hy sinh đời ta tươi thắm hơn.<br>
+              Vì nhân dân chiến đấu không ngừng,<br>
+              Tiến mau ra sa trường,<br>
+              Tiến lên, cùng tiến lên.<br>
+              Nước non Việt Nam ta vững bền!
+            </p>
+          </div>
+
+          <div style="margin-top: 14px; font-size: 11px; color: var(--text-muted);">
+            ⭐ Tự hào Tổ quốc Việt Nam • QuizMaster Web Edition 🇻🇳
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center;">
+          <button class="btn btn-primary btn-rainbow" id="btn-done-anthem" style="min-width: 140px;">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function bindNationalAnthemEvents(onClose) {
+  const closeBtn = document.getElementById("btn-close-anthem");
+  if (closeBtn) closeBtn.onclick = () => onClose();
+
+  const doneBtn = document.getElementById("btn-done-anthem");
+  if (doneBtn) doneBtn.onclick = () => onClose();
+}

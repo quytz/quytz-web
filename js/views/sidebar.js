@@ -3,11 +3,102 @@
  */
 import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
+import { APP_CONFIG } from "../config.js";
 import { calculateProjectStats } from "../models/types.js";
+
+export const MORNING_GREETINGS = [
+  { emoji: "🌅", text: "Chào buổi sáng! Làm tách cà phê rồi vào cày đề nào ☕" },
+  { emoji: "🧠", text: "Sáng sớm tinh mơ, bộ não đang ở đỉnh cao phong độ! 🧠" },
+  { emoji: "🚀", text: "Dậy sớm để thành công... hoặc để giải nốt bộ đề này! 🚀" },
+  { emoji: "🍳", text: "Trứng rán cần mỡ, bắp cần bơ, thi không lo thì cày đề ngay giờ! 🍳" },
+  { emoji: "☀️", text: "Nắng mai rực rỡ, đề thi khó mấy cũng phải chào thua bạn! ☀️" },
+  { emoji: "🌾", text: "Sáng sớm mát lành, làm một đề cho tỉnh táo cả ngày! 🌾" },
+  { emoji: "🏃", text: "Chạy bộ rèn sức khỏe, chạy đề rèn tư duy! 🏃" },
+  { emoji: "🌻", text: "Hướng dương hướng về mặt trời, còn bạn hướng về điểm 10! 🌻" }
+];
+
+export const NOON_GREETINGS = [
+  { emoji: "🍱", text: "Chào giữa trưa! Vừa nghỉ trưa vừa nạp thêm vài câu trắc nghiệm 🍱" },
+  { emoji: "☀️", text: "Nắng đã lên cao, điểm số cũng phải lên theo! ☀️" },
+  { emoji: "🚀", text: "Nghỉ trưa ôn bài, chiều thi bao đậu! 🚀" },
+  { emoji: "🍜", text: "Ăn no căng bụng rồi, giải vài câu cho tiêu hóa kiến thức nào! 🍜" },
+  { emoji: "🍉", text: "Miếng dưa hấu mát ngọt, bộ đề trắc nghiệm ngọt ngào điểm 10! 🍉" },
+  { emoji: "☕", text: "Nạp chút năng lượng giữa trưa để chiều nay bứt phá! ☕" }
+];
+
+export const AFTERNOON_GREETINGS = [
+  { emoji: "🧋", text: "Chào buổi chiều! Làm ly trà sữa cho tỉnh táo rồi ôn tập tiếp 🧋" },
+  { emoji: "⚡", text: "Chiều rồi, làm vài câu trắc nghiệm xả stress nào! ⚡" },
+  { emoji: "📚", text: "Năng lượng buổi chiều cực sung, cày nốt bài giảng nào! 📚" },
+  { emoji: "🌈", text: "Trời xanh mây trắng nắng vàng, làm xong bộ đề lòng nhẹ thênh thang! 🌈" },
+  { emoji: "🌸", text: "Hôm nay em bận yêu đời, hẹn ngày mai nhé... à mà thôi ôn bài đã! 🌸" },
+  { emoji: "🎯", text: "Chiều tà buông xuống, mục tiêu ôn thi sắp về đích rồi! 🎯" },
+  { emoji: "🧁", text: "Thưởng cho mình cái bánh nhỏ rồi quẩy nốt phần trắc nghiệm! 🧁" }
+];
+
+export const EVENING_GREETINGS = [
+  { emoji: "🌙", text: "Chào buổi tối! Đèn sách ban đêm luôn mang lại điểm cao 🌙" },
+  { emoji: "🦉", text: "Cú đêm học bài! Quyết tâm không thua đứa bạn cùng lớp 🦉" },
+  { emoji: "🚀", text: "Tối mát mẻ, làm vài đề luyện tập rồi thư giãn nào 🚀" },
+  { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày QuizMaster! 💖" },
+  { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng QuizMaster tuổi trẻ thăng hoa ✨" },
+  { emoji: "🍵", text: "Tối thanh bình, nhâm nhi tách trà ôn lại kiến thức vàng! 🍵" },
+  { emoji: "🎵", text: "Bật chút nhạc lofi nhẹ nhàng và chinh phục bài học tối nay! 🎵" }
+];
+
+export const NIGHT_GREETINGS = [
+  { emoji: "🌌", text: "Nửa đêm rồi! Học muộn thế này là thi chắc chắn 10 điểm! 🌌" },
+  { emoji: "😴", text: "Ngủ sớm đi bạn ơi... thôi làm nốt câu này rồi ngủ! 😴" },
+  { emoji: "🕯️", text: "Học đêm yên tĩnh, kiến thức ngấm cực sâu! 🕯️" },
+  { emoji: "🌟", text: "Cả thế giới đi ngủ, riêng thủ khoa tương lai vẫn đang miệt mài! 🌟" },
+  { emoji: "⭐", text: "Sao khuya lấp lánh, soi sáng con đường tri thức của bạn! ⭐" },
+  { emoji: "🛌", text: "Nhớ giữ gìn sức khỏe nhé, làm nốt câu này rồi đi ngủ sớm nha! 🛌" }
+];
+
+export const TIMELESS_GREETINGS = [
+  { emoji: "📡", text: "Alo alo! Vũ trụ gửi tín hiệu bạn sắp đạt 100% điểm bài thi này đấy 📡" },
+  { emoji: "💡", text: "Bạn có chiếc đầu rất xịn, đừng để nó rảnh rỗi, giải đề thôi! 💡" },
+  { emoji: "🎓", text: "Học hành vất vả, kết quả ngọt ngào, điểm 10 vẫy chào! 🎓" },
+  { emoji: "😜", text: "Chạm vào tôi làm chi? Đi làm bài trắc nghiệm ngay đi! 😜" },
+  { emoji: "🛸", text: "Luyện 1 đề hôm nay, mai sau thành tài năng vũ trụ! 🛸" },
+  { emoji: "⚽", text: "Người ta mê bóng đá, tôi mê bóng dáng bạn đang cày bài tập! ⚽" },
+  { emoji: "🌟", text: "Học giỏi không phải do may mắn, mà do chăm bấm QuizMaster mỗi ngày! 🌟" },
+  { emoji: "💎", text: "Kiến thức là kho báu, và QuizMaster là chiếc chìa khóa vạn năng! 💎" },
+  { emoji: "🏆", text: "Cố thêm một chút mỗi ngày, thành công lớn sẽ tự gõ cửa! 🏆" },
+  { emoji: "🧩", text: "Mỗi câu hỏi là một mảnh ghép, ghép đủ là thành cao thủ! 🧩" }
+];
+
+export function getTimePool(hour = new Date().getHours()) {
+  let specificPool;
+  if (hour >= 5 && hour < 11) {
+    specificPool = MORNING_GREETINGS;
+  } else if (hour >= 11 && hour < 14) {
+    specificPool = NOON_GREETINGS;
+  } else if (hour >= 14 && hour < 18) {
+    specificPool = AFTERNOON_GREETINGS;
+  } else if (hour >= 18 && hour < 23) {
+    specificPool = EVENING_GREETINGS;
+  } else {
+    specificPool = NIGHT_GREETINGS;
+  }
+  return [...specificPool, ...TIMELESS_GREETINGS];
+}
+
+let lastGreetingIndex = -1;
+
+export function getRandomGreeting(hour = new Date().getHours()) {
+  const pool = getTimePool(hour);
+  let newIdx;
+  do {
+    newIdx = Math.floor(Math.random() * pool.length);
+  } while (newIdx === lastGreetingIndex && pool.length > 1);
+  lastGreetingIndex = newIdx;
+  return pool[newIdx];
+}
 
 export function renderSidebar(selectedProjectId, appState) {
   const currentHour = new Date().getHours();
-  const greeting = getTimeGreeting(currentHour);
+  const greeting = getRandomGreeting(currentHour);
   const isOpen = !!appState.isMobileSidebarOpen;
 
   return `
@@ -27,9 +118,9 @@ export function renderSidebar(selectedProjectId, appState) {
           </button>
         </div>
 
-        <div class="greeting-badge">
-          <span>${greeting.emoji}</span>
-          <span>${greeting.text}</span>
+        <div class="greeting-badge" id="greeting-badge" style="cursor: pointer; user-select: none;" title="Nhấn để đổi câu chào hóm hỉnh khác!">
+          <span id="greeting-emoji">${greeting.emoji}</span>
+          <span id="greeting-text">${greeting.text}</span>
         </div>
       </div>
 
@@ -60,6 +151,7 @@ export function renderSidebar(selectedProjectId, appState) {
                   ${stats.masteryPercentage}%
                 </span>
               ` : ''}
+              <button class="btn btn-ghost btn-icon-only btn-project-menu" data-project-id="${project.id}" title="Tùy chọn dự án" style="width: 1.85rem; height: 1.85rem; flex-shrink: 0; margin-left: 2px;">⋯</button>
             </div>
           `;
         }).join('')}
@@ -69,16 +161,30 @@ export function renderSidebar(selectedProjectId, appState) {
         <button class="btn btn-primary" id="btn-add-project" style="width: 100%;">
           <span>＋</span> ${i18n.t("addProject")}
         </button>
+
+        <!-- Easter Egg Footer -->
+        <div class="app-easter-egg-footer" id="app-easter-egg-footer" title="Chạm 2 lần để xem điều bất ngờ!">
+          QuizMaster ${APP_CONFIG.version} © 2026 | Made in Vietnam
+        </div>
       </div>
     </aside>
   `;
 }
 
-export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings, onCloseSidebar) {
+export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings, onCloseSidebar, onOpenEasterEgg, onOpenProjectMenu) {
   document.querySelectorAll(".project-item").forEach(item => {
-    item.onclick = () => {
+    item.onclick = (e) => {
+      // If click was on the project menu button, don't trigger selection
+      if (e.target.closest(".btn-project-menu")) return;
       const pid = item.dataset.projectId;
       onProjectSelect(pid);
+    };
+  });
+
+  document.querySelectorAll(".btn-project-menu").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (onOpenProjectMenu) onOpenProjectMenu(btn.dataset.projectId);
     };
   });
 
@@ -92,44 +198,83 @@ export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpe
   if (closeSidebarBtn) closeSidebarBtn.onclick = () => {
     if (onCloseSidebar) onCloseSidebar();
   };
+
+  // Greeting pill tap to change
+  const greetingBadge = document.getElementById("greeting-badge");
+  if (greetingBadge) {
+    greetingBadge.onclick = () => {
+      const next = getRandomGreeting();
+      const emojiEl = document.getElementById("greeting-emoji");
+      const textEl = document.getElementById("greeting-text");
+      if (emojiEl) emojiEl.textContent = next.emoji;
+      if (textEl) textEl.textContent = next.text;
+      greetingBadge.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        greetingBadge.style.transform = "scale(1)";
+      }, 120);
+    };
+  }
+
+  // Easter egg double tap / dblclick
+  const footerEl = document.getElementById("app-easter-egg-footer");
+  if (footerEl && onOpenEasterEgg) {
+    footerEl.ondblclick = () => onOpenEasterEgg();
+
+    // Mobile double tap detection
+    let lastTap = 0;
+    footerEl.ontouchend = (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 450 && tapLength > 0) {
+        e.preventDefault();
+        onOpenEasterEgg();
+      }
+      lastTap = currentTime;
+    };
+  }
 }
 
 function getTimeGreeting(hour) {
   if (hour >= 5 && hour < 11) {
     const opts = [
-      "Chào buổi sáng! Làm tách cà phê rồi vào cày đề nào ☕",
-      "Sáng sớm tinh mơ, bộ não đang ở đỉnh cao phong độ! 🧠",
-      "Dậy sớm để thành công... hoặc để giải nốt bộ đề này! 🚀"
+      { emoji: "🌅", text: "Chào buổi sáng! Làm tách cà phê rồi vào cày đề nào ☕" },
+      { emoji: "🧠", text: "Sáng sớm tinh mơ, bộ não đang ở đỉnh cao phong độ! 🧠" },
+      { emoji: "🍳", text: "Trứng rán cần mỡ, bắp cần bơ, thi không lo thì cày đề ngay giờ! 🍳" },
+      { emoji: "🚀", text: "Dậy sớm để thành công... hoặc để giải nốt bộ đề này! 🚀" }
     ];
-    return { emoji: "🌅", text: opts[hour % opts.length] };
+    return opts[hour % opts.length];
   } else if (hour >= 11 && hour < 14) {
     const opts = [
-      "Chào giữa trưa! Vừa nghỉ trưa vừa nạp thêm vài câu trắc nghiệm 🍱",
-      "Nắng đã lên cao, điểm số cũng phải lên theo! ☀️",
-      "Nghỉ trưa ôn bài, chiều thi bao đậu! 🚀"
+      { emoji: "🍱", text: "Chào giữa trưa! Vừa nghỉ trưa vừa nạp thêm vài câu trắc nghiệm 🍱" },
+      { emoji: "☀️", text: "Nắng đã lên cao, điểm số cũng phải lên theo! ☀️" },
+      { emoji: "🍜", text: "Ăn no căng bụng rồi, giải vài câu cho tiêu hóa kiến thức nào! 🍜" },
+      { emoji: "🚀", text: "Nghỉ trưa ôn bài, chiều thi bao đậu! 🚀" }
     ];
-    return { emoji: "☀️", text: opts[hour % opts.length] };
+    return opts[hour % opts.length];
   } else if (hour >= 14 && hour < 18) {
     const opts = [
-      "Chào buổi chiều! Làm ly trà sữa cho tỉnh táo rồi ôn tập tiếp 🧋",
-      "Chiều rồi, làm vài câu trắc nghiệm xả stress nào! ⚡",
-      "Năng lượng buổi chiều cực sung, cày nốt bài giảng nào! 📚"
+      { emoji: "🧋", text: "Chào buổi chiều! Làm ly trà sữa cho tỉnh táo rồi ôn tập tiếp 🧋" },
+      { emoji: "⚡", text: "Chiều rồi, làm vài câu trắc nghiệm xả stress nào! ⚡" },
+      { emoji: "🌈", text: "Trời xanh mây trắng nắng vàng, làm xong bộ đề lòng nhẹ thênh thang! 🌈" },
+      { emoji: "📚", text: "Năng lượng buổi chiều cực sung, cày nốt bài giảng nào! 📚" }
     ];
-    return { emoji: "🌤️", text: opts[hour % opts.length] };
+    return opts[hour % opts.length];
   } else if (hour >= 18 && hour < 23) {
     const opts = [
-      "Chào buổi tối! Đèn sách ban đêm luôn mang lại điểm cao 🌙",
-      "Cú đêm học bài! Quyết tâm không thua đứa bạn cùng lớp 🦉",
-      "Tối mát mẻ, làm vài đề luyện tập rồi thư giãn nào 🚀"
+      { emoji: "🌙", text: "Chào buổi tối! Đèn sách ban đêm luôn mang lại điểm cao 🌙" },
+      { emoji: "🦉", text: "Cú đêm học bài! Quyết tâm không thua đứa bạn cùng lớp 🦉" },
+      { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày QuizMaster! 💖" },
+      { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng QuizMaster tuổi trẻ thăng hoa ✨" }
     ];
-    return { emoji: "🌙", text: opts[hour % opts.length] };
+    return opts[hour % opts.length];
   } else {
     const opts = [
-      "Nửa đêm rồi! Học muộn thế này là thi chắc chắn 10 điểm! 🌌",
-      "Ngủ sớm đi bạn ơi... thôi làm nốt câu này rồi ngủ! 😴",
-      "Học đêm yên tĩnh, kiến thức ngấm cực sâu! 🕯️"
+      { emoji: "🌌", text: "Nửa đêm rồi! Học muộn thế này là thi chắc chắn 10 điểm! 🌌" },
+      { emoji: "😴", text: "Ngủ sớm đi bạn ơi... thôi làm nốt câu này rồi ngủ! 😴" },
+      { emoji: "🌟", text: "Cả thế giới đi ngủ, riêng thủ khoa tương lai vẫn đang miệt mài! 🌟" },
+      { emoji: "🕯️", text: "Học đêm yên tĩnh, kiến thức ngấm cực sâu! 🕯️" }
     ];
-    return { emoji: "🌌", text: opts[hour % opts.length] };
+    return opts[hour % opts.length];
   }
 }
 
@@ -137,3 +282,4 @@ function escapeHtml(text) {
   if (!text) return "";
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+

@@ -2,7 +2,7 @@
  * QuizMaster Web - Configuration & Constants
  */
 export const APP_CONFIG = {
-  version: "v1.0.3",
+  version: "v1.1.0",
   buildNumber: "4-web",
   author: "@tozn607",
   authorName: "Anh Vinh",

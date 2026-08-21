@@ -220,21 +220,6 @@ function renderStep3(wizardState) {
             </button>
           </div>
         </div>
-
-        <!-- Language Picker -->
-        <div>
-          <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
-            ${i18n.t("languageLabel")}
-          </label>
-          <div class="segmented-control" style="width: 100%;">
-            <button class="segment-btn ${wizardState.language === 'vi' ? 'active' : ''}" data-wizard-lang="vi" style="flex: 1;">
-              Tiếng Việt
-            </button>
-            <button class="segment-btn ${wizardState.language === 'en' ? 'active' : ''}" data-wizard-lang="en" style="flex: 1;">
-              English
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Quick Shortcuts Guide -->
@@ -320,17 +305,10 @@ export function bindSetupWizardEvents(wizardState, handlers) {
   const testBtn = document.getElementById("btn-wizard-test-key");
   if (testBtn) testBtn.onclick = () => handlers.onTestKey();
 
-  // Step 3 Themes & Langs
+  // Step 3 Theme chips
   document.querySelectorAll("[data-wizard-theme]").forEach(btn => {
     btn.onclick = () => {
       wizardState.theme = btn.dataset.wizardTheme;
-      handlers.onUpdateView();
-    };
-  });
-
-  document.querySelectorAll("[data-wizard-lang]").forEach(btn => {
-    btn.onclick = () => {
-      wizardState.language = btn.dataset.wizardLang;
       handlers.onUpdateView();
     };
   });
@@ -340,4 +318,3 @@ function escapeHtml(text) {
   if (!text) return "";
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
-

@@ -6,12 +6,18 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
   if (!passageText || !passageText.trim()) return "";
 
   const themeClass = state.theme ? `reading-theme-${state.theme}` : "";
-  const fontFamilyStyle = state.fontFamily === "serif"
-    ? "var(--font-family-serif)"
-    : (state.fontFamily === "rounded" ? "var(--font-family-rounded)" : (state.fontFamily === "mono" ? "var(--font-family-mono)" : "var(--font-family-system)"));
+  let fontFamilyStyle = "Georgia, 'Times New Roman', serif";
+  if (state.fontFamily === "sans") {
+    fontFamilyStyle = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  } else if (state.fontFamily === "mono") {
+    fontFamilyStyle = "ui-monospace, SFMono-Regular, Menlo, Monaco, monospace";
+  } else if (state.fontFamily === "system") {
+    fontFamilyStyle = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+  }
   
-  const fontSizeStyle = `calc(14px * var(--font-scale) + ${state.fontSizeDelta || 0}px)`;
-  const lineSpacingStyle = `${state.lineSpacing || 1.6}`;
+  const fontSizeDelta = Number(state.fontSizeDelta) || 0;
+  const fontSizeStyle = `calc(1.05rem + ${fontSizeDelta * 3}px)`;
+  const lineSpacingStyle = `${state.lineSpacing || 1.65}`;
   const isBold = state.isBold ? "font-weight: 600;" : "font-weight: 400;";
 
   return `
@@ -19,7 +25,7 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
       <div class="reading-pane-header">
         <div style="display: flex; align-items: center; gap: 6px;">
           <span style="color: var(--color-deep-purple); font-size: 16px;">📖</span>
-          <span style="font-size: var(--text-xs); font-weight: 800; color: var(--color-deep-purple); letter-spacing: 0.05em;">ĐOẠN VĂN ĐỌC HIỂU</span>
+          <span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple);">Đoạn văn đọc hiểu</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <button class="btn btn-secondary btn-icon-only" id="btn-font-dec" title="Giảm cỡ chữ" style="font-size: 11px; font-weight: 800;">A-</button>
@@ -45,10 +51,10 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary); width: 60px;">Kiểu chữ:</span>
             <div class="segmented-control" style="flex: 1;">
-              <button class="segment-btn ${state.fontFamily === 'serif' ? 'active' : ''}" data-font="serif">Có chân</button>
-              <button class="segment-btn ${state.fontFamily === 'system' ? 'active' : ''}" data-font="system">Mặc định</button>
-              <button class="segment-btn ${state.fontFamily === 'rounded' ? 'active' : ''}" data-font="rounded">Bo tròn</button>
+              <button class="segment-btn ${!state.fontFamily || state.fontFamily === 'serif' ? 'active' : ''}" data-font="serif">Có chân</button>
+              <button class="segment-btn ${state.fontFamily === 'sans' ? 'active' : ''}" data-font="sans">Không chân</button>
               <button class="segment-btn ${state.fontFamily === 'mono' ? 'active' : ''}" data-font="mono">Đơn cách</button>
+              <button class="segment-btn ${state.fontFamily === 'system' ? 'active' : ''}" data-font="system">Hệ thống</button>
             </div>
           </div>
 
@@ -61,7 +67,7 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
         </div>
       ` : ''}
 
-      <div class="reading-content-scroll" style="font-family: ${fontFamilyStyle}; font-size: ${fontSizeStyle}; line-height: ${lineSpacingStyle}; ${isBold}">
+      <div class="reading-content-scroll" style="font-family: ${fontFamilyStyle} !important; font-size: ${fontSizeStyle} !important; line-height: ${lineSpacingStyle} !important; ${isBold}">
         ${formatMarkdownHTML(passageText)}
       </div>
     </div>
@@ -71,41 +77,44 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
 export function bindReadingPaneEvents(state, updateStateCallback) {
   const decBtn = document.getElementById("btn-font-dec");
   if (decBtn) {
-    decBtn.onclick = () => {
-      if ((state.fontSizeDelta || 0) > -4) {
-        state.fontSizeDelta = (state.fontSizeDelta || 0) - 1;
-        updateStateCallback(state);
-      }
+    decBtn.onclick = (e) => {
+      e.stopPropagation();
+      state.fontSizeDelta = (Number(state.fontSizeDelta) || 0) - 1;
+      if (state.fontSizeDelta < -4) state.fontSizeDelta = -4;
+      updateStateCallback(state);
     };
   }
 
   const incBtn = document.getElementById("btn-font-inc");
   if (incBtn) {
-    incBtn.onclick = () => {
-      if ((state.fontSizeDelta || 0) < 12) {
-        state.fontSizeDelta = (state.fontSizeDelta || 0) + 1;
-        updateStateCallback(state);
-      }
+    incBtn.onclick = (e) => {
+      e.stopPropagation();
+      state.fontSizeDelta = (Number(state.fontSizeDelta) || 0) + 1;
+      if (state.fontSizeDelta > 8) state.fontSizeDelta = 8;
+      updateStateCallback(state);
     };
   }
 
   const toggleDrawer = document.getElementById("btn-toggle-reading-drawer");
   if (toggleDrawer) {
-    toggleDrawer.onclick = () => {
+    toggleDrawer.onclick = (e) => {
+      e.stopPropagation();
       state.showDrawer = !state.showDrawer;
       updateStateCallback(state);
     };
   }
 
   document.querySelectorAll(".reading-customizer-drawer button[data-theme]").forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       state.theme = btn.dataset.theme;
       updateStateCallback(state);
     };
   });
 
   document.querySelectorAll(".reading-customizer-drawer button[data-font]").forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       state.fontFamily = btn.dataset.font;
       updateStateCallback(state);
     };
@@ -121,7 +130,8 @@ export function bindReadingPaneEvents(state, updateStateCallback) {
 
   const resetBtn = document.getElementById("btn-reading-reset");
   if (resetBtn) {
-    resetBtn.onclick = () => {
+    resetBtn.onclick = (e) => {
+      e.stopPropagation();
       state.fontSizeDelta = 0;
       state.theme = "standard";
       state.fontFamily = "serif";

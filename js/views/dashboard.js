@@ -121,7 +121,10 @@ function renderQuizCard(quiz, project, appState) {
           <input type="checkbox" class="quiz-select-checkbox custom-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''}>
         ` : ''}
         <div class="quiz-card-title">${escapeHtml(quiz.title)}</div>
-        <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn">⋯</button>
+        <div class="quiz-card-actions">
+          <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">✏️</button>
+          <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn">⋯</button>
+        </div>
       </div>
 
       <div class="quiz-card-meta">

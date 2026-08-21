@@ -1,6 +1,6 @@
 /**
  * QuizMaster Web - Central Application Controller & Router
- * Version: v1.0.3
+ * Version: v1.1.0
  */
 import { APP_CONFIG } from "./config.js";
 import { i18n } from "./localization/i18n.js";
@@ -24,7 +24,7 @@ import { renderImportModal, bindImportModalEvents } from "./views/import-modal.j
 import { renderAskGeminiModal, bindAskGeminiEvents } from "./views/ask-gemini.js";
 import { renderSettingsModal, bindSettingsEvents } from "./views/settings.js";
 import { renderSetupWizardModal, bindSetupWizardEvents } from "./views/setup-wizard.js";
-import { renderEndingModal, bindEndingModalEvents } from "./views/ending-dialog.js";
+import { renderEndingModal, bindEndingModalEvents, renderNationalAnthemModal, bindNationalAnthemEvents } from "./views/ending-dialog.js";
 
 class QuizMasterApp {
   constructor() {
@@ -57,12 +57,15 @@ class QuizMasterApp {
     i18n.setLanguage(storage.settings.language || "vi");
     storage.applyThemeAndScale();
 
-    // Check if First-Time Setup Wizard is needed
-    if (!storage.settings.hasCompletedFirstTimeSetup) {
-      this.openSetupWizard();
-    }
+    // Always show splash screen for 2 seconds when website is opened
+    setTimeout(() => {
+      // Check if First-Time Setup Wizard is needed
+      if (!storage.settings.hasCompletedFirstTimeSetup) {
+        this.openSetupWizard();
+      }
 
-    this.render();
+      this.render();
+    }, 2000);
   }
 
   // Toast System
@@ -104,47 +107,72 @@ class QuizMasterApp {
   }
 
   // --- PRACTICE MODE ---
-  startPractice(quizId) {
+  startPractice(quizId, options = {}) {
     const project = this.getSelectedProject();
     if (!project) return;
 
     let quiz = project.quizzes.find(q => q.id === quizId);
-    if (!quiz) return;
+    if (!quiz && !this.activeQuiz) return;
+    if (!quiz) quiz = this.activeQuiz;
 
     telemetry.trackExamMode("practice");
 
     this.activeProject = project;
     this.activeQuiz = quiz;
 
-    // Load or initialize progress
-    let prog = project.progressMap[quizId];
-    if (!prog) {
-      prog = createQuizProgress({ quizId: quiz.id });
-      storage.saveProgress(project.id, prog);
-    }
+    const isRedo = !!options.isRedo;
+    const questionsToUse = options.questionsOverride || quiz.questions;
 
-    let activeQuestions = [...quiz.questions];
+    let activeQuestions = [...questionsToUse];
     if (storage.settings.isShuffleEnabled) {
       activeQuestions = activeQuestions.map(q => shuffleQuestionOptions(q));
       activeQuestions.sort(() => Math.random() - 0.5);
     }
 
-    this.practiceState = {
-      activeQuestions,
-      currentIndex: Math.min(prog.currentIndex || 0, Math.max(0, activeQuestions.length - 1)),
-      userAnswers: { ...(prog.userAnswers || {}) },
-      userSelectedOptionIds: { ...(prog.userSelectedOptionIds || {}) },
-      wrongQuestionIds: new Set(prog.wrongQuestionIds || []),
-      showNavPane: false,
-      readingState: {
-        fontSizeDelta: 0,
-        lineSpacing: 1.6,
-        fontFamily: "serif",
-        theme: "standard",
-        isBold: false,
-        showDrawer: false
+    if (isRedo) {
+      this.practiceState = {
+        isRedo: true,
+        activeQuestions,
+        currentIndex: 0,
+        userAnswers: {},
+        userSelectedOptionIds: {},
+        wrongQuestionIds: new Set(),
+        showNavPane: false,
+        readingState: {
+          fontSizeDelta: 0,
+          lineSpacing: 1.6,
+          fontFamily: "serif",
+          theme: "standard",
+          isBold: false,
+          showDrawer: false
+        }
+      };
+    } else {
+      // Load or initialize progress
+      let prog = project.progressMap[quizId];
+      if (!prog) {
+        prog = createQuizProgress({ quizId: quiz.id });
+        storage.saveProgress(project.id, prog);
       }
-    };
+
+      this.practiceState = {
+        isRedo: false,
+        activeQuestions,
+        currentIndex: Math.min(prog.currentIndex || 0, Math.max(0, activeQuestions.length - 1)),
+        userAnswers: { ...(prog.userAnswers || {}) },
+        userSelectedOptionIds: { ...(prog.userSelectedOptionIds || {}) },
+        wrongQuestionIds: new Set(prog.wrongQuestionIds || []),
+        showNavPane: false,
+        readingState: {
+          fontSizeDelta: 0,
+          lineSpacing: 1.6,
+          fontFamily: "serif",
+          theme: "standard",
+          isBold: false,
+          showDrawer: false
+        }
+      };
+    }
 
     this.currentView = "practice";
     this.render();
@@ -158,8 +186,32 @@ class QuizMasterApp {
     this.practiceState.userAnswers[q.id] = optIdx;
 
     const correctOpt = q.options[q.correctAnswerIndex] || q.options[0];
-    if (optId !== correctOpt.id) {
+    const isCorrect = (optId === correctOpt.id);
+
+    if (isCorrect) {
+      this.practiceState.wrongQuestionIds.delete(q.id);
+    } else {
       this.practiceState.wrongQuestionIds.add(q.id);
+    }
+
+    // If in redo mode, update the main project quiz progress so the newly corrected answers reflect in review & stats
+    if (this.practiceState.isRedo && this.activeProject && this.activeQuiz) {
+      let mainProg = this.activeProject.progressMap[this.activeQuiz.id];
+      if (mainProg) {
+        if (!mainProg.userSelectedOptionIds) mainProg.userSelectedOptionIds = {};
+        if (!mainProg.userAnswers) mainProg.userAnswers = {};
+        mainProg.userSelectedOptionIds[q.id] = optId;
+        mainProg.userAnswers[q.id] = optIdx;
+
+        let wrongIds = new Set(mainProg.wrongQuestionIds || []);
+        if (isCorrect) {
+          wrongIds.delete(q.id);
+        } else {
+          wrongIds.add(q.id);
+        }
+        mainProg.wrongQuestionIds = Array.from(wrongIds);
+        storage.saveProgress(this.activeProject.id, mainProg);
+      }
     }
 
     // Save Progress Checkpoint
@@ -175,12 +227,29 @@ class QuizMasterApp {
     } else {
       // Completed!
       this.saveCurrentPracticeProgress(true);
-      this.openEndingModal();
+      if (this.practiceState.isRedo) {
+        const redoProgress = {
+          currentIndex: this.practiceState.currentIndex,
+          userAnswers: this.practiceState.userAnswers,
+          userSelectedOptionIds: this.practiceState.userSelectedOptionIds,
+          wrongQuestionIds: Array.from(this.practiceState.wrongQuestionIds),
+          isCompleted: true
+        };
+        const redoQuizObj = {
+          ...this.activeQuiz,
+          title: `${this.activeQuiz.title} (Làm lại câu sai)`,
+          questions: this.practiceState.activeQuestions
+        };
+        this.openEndingModal(redoProgress, redoQuizObj);
+      } else {
+        this.openEndingModal();
+      }
     }
   }
 
   saveCurrentPracticeProgress(isCompleted = false) {
     if (!this.activeProject || !this.activeQuiz || !this.practiceState) return;
+    if (this.practiceState.isRedo) return;
 
     const prog = createQuizProgress({
       quizId: this.activeQuiz.id,
@@ -493,6 +562,7 @@ class QuizMasterApp {
       selectedFileContent: "",
       quizTitle: "",
       isCreateMultipleChoice: false, // UNTICKED BY DEFAULT
+      aiLanguage: storage.settings.language || "vi",
       depthMode: "normal",
       targetCEFR: "ALL",
       isScanning: false
@@ -542,19 +612,36 @@ class QuizMasterApp {
     this.render();
   }
 
-  openReviewModal(filter = "all") {
+  openReviewModal(filter = "all", customProgress = null, customQuiz = null) {
     this.activeModal = "review";
+    const targetQuiz = customQuiz || this.activeQuiz;
+    const targetProg = customProgress || (this.activeProject?.progressMap && targetQuiz ? this.activeProject.progressMap[targetQuiz.id] : null) || {};
     this.modalState = {
-      filterMode: filter
+      filterMode: filter,
+      quiz: targetQuiz,
+      progress: targetProg
     };
     this.render();
   }
 
-  openEndingModal(customProgress = null) {
+  openEndingModal(customProgress = null, customQuiz = null) {
     this.activeModal = "ending";
     this.modalState = {
-      progress: customProgress || this.activeProject.progressMap[this.activeQuiz.id] || {}
+      progress: customProgress || this.activeProject?.progressMap[this.activeQuiz?.id] || {},
+      quiz: customQuiz || this.activeQuiz
     };
+    this.render();
+  }
+
+  openNationalAnthemModal() {
+    this.activeModal = "nationalAnthem";
+    this.modalState = {};
+    this.render();
+  }
+
+  openAuthorEasterEggModal() {
+    this.activeModal = "authorEasterEgg";
+    this.modalState = {};
     this.render();
   }
 
@@ -579,6 +666,32 @@ class QuizMasterApp {
     this.activeModal = "quizActionMenu";
     this.modalState = {
       quiz
+    };
+    this.render();
+  }
+
+  openProjectActionSheet(projectId) {
+    const project = storage.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    this.activeModal = "projectActionMenu";
+    this.modalState = {
+      project
+    };
+    this.render();
+  }
+
+  openExamTimerModal(quizId) {
+    const project = this.getSelectedProject();
+    if (!project) return;
+    const quiz = project.quizzes.find(q => q.id === quizId);
+    if (!quiz) return;
+
+    this.activeModal = "examTimer";
+    this.modalState = {
+      quiz,
+      timerDurationMinutes: 15,
+      isUnlimited: false
     };
     this.render();
   }
@@ -622,13 +735,17 @@ class QuizMasterApp {
     this.render();
 
     try {
+      const selectedAiLang = this.modalState.aiLanguage || storage.settings.language || "vi";
       const questions = await geminiService.generateQuiz({
         documentText: this.modalState.selectedFileContent,
         isCreateMultipleChoice: this.modalState.isCreateMultipleChoice,
         apiKey: storage.settings.apiKey,
-        language: storage.settings.language,
+        language: selectedAiLang,
         depthMode: this.modalState.depthMode
       });
+
+      storage.settings.language = selectedAiLang;
+      storage.saveSettings();
 
       if (!questions || questions.length === 0) {
         throw new Error("Không tìm thấy hoặc không tạo được câu hỏi nào từ tài liệu.");
@@ -806,9 +923,8 @@ class QuizMasterApp {
       root.innerHTML = renderFlashcardView(this.activeProject, this.activeQuiz, this.flashcardState);
       bindFlashcardEvents(this.activeProject, this.activeQuiz, this.flashcardState, {
         onQuit: () => this.navigateToDashboard(),
-        onFlip: () => {
-          this.flashcardState.isFlipped = !this.flashcardState.isFlipped;
-          this.render();
+        onFlip: (isFlipped) => {
+          this.flashcardState.isFlipped = isFlipped;
         },
         onMark: (mastered) => this.markFlashcard(mastered),
         onPrev: () => this.prevFlashcard(),
@@ -880,7 +996,9 @@ class QuizMasterApp {
       () => {
         this.appState.isMobileSidebarOpen = false;
         this.render();
-      }
+      },
+      () => this.openNationalAnthemModal(),
+      (pid) => this.openProjectActionSheet(pid)
     );
 
     // Bind Dashboard Events
@@ -1010,6 +1128,9 @@ class QuizMasterApp {
         onReopenWizard: () => {
           this.openSetupWizard();
         },
+        onOpenAuthorEasterEgg: () => {
+          this.openAuthorEasterEggModal();
+        },
         onUpdateView: () => this.render()
       });
     } else if (this.activeModal === "setupWizard") {
@@ -1097,7 +1218,9 @@ class QuizMasterApp {
         }
       });
     } else if (this.activeModal === "review") {
-      modalHost.innerHTML = renderReviewModal(this.activeQuiz, this.activeProject.progressMap[this.activeQuiz.id] || {}, this.modalState.filterMode);
+      const targetQuiz = this.modalState.quiz || this.activeQuiz;
+      const targetProg = this.modalState.progress || (this.activeProject?.progressMap && targetQuiz ? this.activeProject.progressMap[targetQuiz.id] : {}) || {};
+      modalHost.innerHTML = renderReviewModal(targetQuiz, targetProg, this.modalState.filterMode);
       root.appendChild(modalHost);
       bindReviewEvents(
         (filter) => {
@@ -1107,23 +1230,25 @@ class QuizMasterApp {
         () => this.closeModal()
       );
     } else if (this.activeModal === "ending") {
+      const targetQuiz = this.modalState.quiz || this.activeQuiz;
+      const targetProgress = this.modalState.progress || {};
+      const onRedoAction = () => {
+        const wrongIds = new Set(targetProgress.wrongQuestionIds || []);
+        const wrongQuestions = targetQuiz.questions.filter(q => wrongIds.has(q.id));
+        if (wrongQuestions.length > 0) {
+          this.closeModal();
+          this.startPractice(targetQuiz.id, { questionsOverride: wrongQuestions, isRedo: true });
+        } else {
+          this.showToast("info", "Không có câu hỏi sai nào!");
+        }
+      };
+
       modalHost.innerHTML = renderEndingModal(
-        this.activeQuiz,
-        this.modalState.progress,
+        targetQuiz,
+        targetProgress,
+        onRedoAction,
         () => {
-          const wrongIds = new Set(this.modalState.progress.wrongQuestionIds || []);
-          const wrongQuestions = this.activeQuiz.questions.filter(q => wrongIds.has(q.id));
-          if (wrongQuestions.length > 0) {
-            const redoQuiz = { ...this.activeQuiz, questions: wrongQuestions };
-            this.activeQuiz = redoQuiz;
-            this.closeModal();
-            this.startPractice(redoQuiz.id);
-          } else {
-            this.showToast("info", "Không có câu hỏi sai nào!");
-          }
-        },
-        () => {
-          this.openReviewModal("all");
+          this.openReviewModal("all", this.activeProject?.progressMap[this.activeQuiz?.id] || targetProgress, this.activeQuiz);
         },
         () => {
           this.navigateToDashboard();
@@ -1131,19 +1256,41 @@ class QuizMasterApp {
       );
       root.appendChild(modalHost);
       bindEndingModalEvents(
-        () => {
-          const wrongIds = new Set(this.modalState.progress.wrongQuestionIds || []);
-          const wrongQuestions = this.activeQuiz.questions.filter(q => wrongIds.has(q.id));
-          if (wrongQuestions.length > 0) {
-            const redoQuiz = { ...this.activeQuiz, questions: wrongQuestions };
-            this.activeQuiz = redoQuiz;
-            this.closeModal();
-            this.startPractice(redoQuiz.id);
-          }
-        },
-        () => this.openReviewModal("all"),
+        onRedoAction,
+        () => this.openReviewModal("all", this.activeProject?.progressMap[this.activeQuiz?.id] || targetProgress, this.activeQuiz),
         () => this.navigateToDashboard()
       );
+    } else if (this.activeModal === "nationalAnthem") {
+      modalHost.innerHTML = renderNationalAnthemModal();
+      root.appendChild(modalHost);
+      bindNationalAnthemEvents(() => this.closeModal());
+    } else if (this.activeModal === "authorEasterEgg") {
+      modalHost.innerHTML = `
+        <div class="modal-overlay open" id="author-easter-egg-overlay">
+          <div class="modal-container" style="max-width: 480px; width: 100%;">
+            <div class="modal-header">
+              <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
+                Thông điệp từ tác giả
+              </div>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-author-modal">✕</button>
+            </div>
+            <div class="modal-body" style="line-height: 1.6; font-size: var(--text-sm); color: var(--text-primary);">
+              <p style="margin-bottom: 12px;"><em>"Chào bạn! Cảm ơn bạn đã sử dụng QuizMaster Web để phục vụ hành trình học tập và chinh phục tri thức."</em></p>
+              <p style="color: var(--text-secondary); background: var(--bg-secondary); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle);">
+                [PLACEHOLDER: Lời nhắn đặc biệt từ tác giả sẽ được cập nhật tại đây]
+              </p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" id="btn-close-author-modal-confirm" style="width: 100%;">Đóng</button>
+            </div>
+          </div>
+        </div>
+      `;
+      root.appendChild(modalHost);
+
+      const closeAuthorModal = () => this.closeModal();
+      document.getElementById("btn-close-author-modal").onclick = closeAuthorModal;
+      document.getElementById("btn-close-author-modal-confirm").onclick = closeAuthorModal;
     } else if (this.activeModal === "askGemini") {
       modalHost.innerHTML = renderAskGeminiModal(this.modalState.question, this.modalState);
       root.appendChild(modalHost);
@@ -1242,6 +1389,68 @@ class QuizMasterApp {
           this.render();
         }
       };
+    } else if (this.activeModal === "projectActionMenu") {
+      const project = this.modalState.project;
+      modalHost.innerHTML = `
+        <div class="modal-overlay open" id="action-sheet-overlay">
+          <div class="modal-container" style="max-width: 480px; width: 100%;">
+            <div class="modal-header">
+              <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
+                Tùy chọn: ${escapeHtml(project.name)}
+              </div>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-action-sheet">✕</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+              <button class="btn btn-secondary" id="btn-proj-rename" style="justify-content: flex-start;">
+                ✏️ Đổi tên dự án
+              </button>
+              <button class="btn btn-secondary" id="btn-proj-reset" style="justify-content: flex-start;">
+                🔄 Đặt lại tiến độ học của dự án
+              </button>
+              <button class="btn btn-secondary" id="btn-proj-delete" style="justify-content: flex-start; color: var(--color-coral-red);">
+                🗑️ Xóa dự án
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      root.appendChild(modalHost);
+
+      const closeSheet = () => this.closeModal();
+      document.getElementById("btn-close-action-sheet").onclick = closeSheet;
+
+      document.getElementById("btn-proj-rename").onclick = () => {
+        closeSheet();
+        const newName = prompt("Nhập tên mới cho dự án:", project.name);
+        if (newName && newName.trim()) {
+          project.name = newName.trim();
+          storage.updateProject(project);
+          this.showToast("success", "Đã đổi tên dự án!");
+          this.render();
+        }
+      };
+
+      document.getElementById("btn-proj-reset").onclick = () => {
+        closeSheet();
+        if (confirm(`Bạn có chắc chắn muốn đặt lại toàn bộ tiến độ học của dự án "${project.name}"?`)) {
+          project.progressMap = {};
+          storage.updateProject(project);
+          this.showToast("success", "Đã đặt lại tiến độ học của dự án!");
+          this.render();
+        }
+      };
+
+      document.getElementById("btn-proj-delete").onclick = () => {
+        closeSheet();
+        if (confirm(`Bạn có chắc chắn muốn xóa dự án "${project.name}"? Toàn bộ ${project.quizzes.length} bộ đề trong dự án sẽ bị xóa.`)) {
+          storage.deleteProject(project.id);
+          if (this.selectedProjectId === project.id) {
+            this.selectedProjectId = storage.projects[0]?.id || null;
+          }
+          this.showToast("success", "Đã xóa dự án!");
+          this.render();
+        }
+      };
     } else if (this.activeModal === "newProject") {
       modalHost.innerHTML = `
         <div class="modal-overlay open" id="new-project-overlay">
@@ -1255,14 +1464,14 @@ class QuizMasterApp {
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
               <div>
                 <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-                  TÊN DỰ ÁN MỚI:
+                  Tên dự án mới:
                 </label>
                 <input type="text" class="form-input" id="input-new-project-name" placeholder="${i18n.t("projectNamePlaceholder")}">
               </div>
 
               <div>
                 <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">
-                  LOẠI DỰ ÁN:
+                  Loại dự án:
                 </label>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                   <label class="glass-card" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px;">
