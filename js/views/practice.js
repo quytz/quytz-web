@@ -70,8 +70,8 @@ export function renderPracticeView(project, quiz, practiceState) {
           <div class="question-box">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
               <span class="badge badge-blue">${i18n.t("questionHeader")} ${currentIdx + 1}</span>
-              <button class="btn btn-pill btn-secondary" id="btn-ask-gemini" style="color: var(--color-deep-purple); border-color: rgba(122, 92, 204, 0.3); font-size: var(--text-xs); padding: 0.25rem 0.5rem;">
-                Hỏi AI
+              <button class="btn btn-pill btn-secondary" id="btn-ask-gemini" style="color: var(--color-deep-purple); border-color: rgba(122, 92, 204, 0.3); font-size: var(--text-xs); padding: 0.25rem 0.6rem;">
+                ✨ Hỏi AI
               </button>
             </div>
 

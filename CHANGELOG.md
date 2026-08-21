@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.0.2] - 2026-08-21
+
+### Added
+- **Rainbow Gradient CTA Button**: Applied a vibrant animated rainbow gradient (`.btn-rainbow`) to the primary "Nhập Tài liệu" (Import Document) action button for high visual contrast and modern polish.
+- **Two-Section API Key Q&A Dialog**: Split the setup wizard API Key Q&A popup into two distinct, card-formatted sections:
+  1. *"API Key là gì?"* explaining what a Google AI Studio API Key is and why it must not be shared.
+  2. *"Tại sao lại yêu cầu tự cấu hình API Key?"* explaining user privacy, free usage quotas, and open-source sustainability.
+
+### Fixed & Improved
+- **Clean Settings Navigation & Larger Gear Icon**: Consolidated settings access to a prominent, enlarged gear icon (`⚙️`) in the sidebar header and eliminated the redundant top-right settings button on the dashboard.
+- **Mobile & High-Scaling Header Adaptability**: Refactored the dashboard header bar to smoothly adapt into a clean 2-row layout on mobile devices and enlarged browser text settings, preventing the "Xáo trộn" and "Chọn nhiều" buttons from getting squeezed or hiding their labels.
+- **Practice Mode AI Tutor Button**: Restored the `✨` emoji to the "✨ Hỏi AI" (Ask AI) button in Practice Mode.
+
+---
+
 ## [v1.0.1] - 2026-08-21
 
 ### Added

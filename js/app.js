@@ -1,6 +1,6 @@
 /**
  * QuizMaster Web - Central Application Controller & Router
- * Version: v1.0.1
+ * Version: v1.0.2
  */
 import { APP_CONFIG } from "./config.js";
 import { i18n } from "./localization/i18n.js";

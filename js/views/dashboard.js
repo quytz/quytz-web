@@ -49,13 +49,8 @@ export function renderDashboard(project, appState) {
           </button>
 
           <!-- Import Document Button -->
-          <button class="btn btn-primary" id="btn-open-import">
+          <button class="btn btn-primary btn-rainbow" id="btn-open-import">
             <span>＋</span> <span>${i18n.t("importDoc")}</span>
-          </button>
-
-          <!-- Settings Button (Direct on Header) -->
-          <button class="btn btn-ghost btn-icon-only" id="btn-top-settings" title="${i18n.t("settings")}">
-            ⚙
           </button>
         </div>
       </header>
@@ -92,7 +87,7 @@ export function renderDashboard(project, appState) {
             <div style="font-size: 50px; margin-bottom: 12px;">📚</div>
             <div style="font-size: var(--text-lg); font-weight: 700; color: var(--text-primary);">${i18n.t("noQuizzesInProject")}</div>
             <p style="margin: 8px 0 16px; font-size: var(--text-sm);">Tải lên tài liệu PDF, Word .docx hoặc bài giảng để Gemini AI tự động tạo đề thi.</p>
-            <button class="btn btn-primary" id="btn-empty-import">
+            <button class="btn btn-primary btn-rainbow" id="btn-empty-import">
               <span>＋</span> ${i18n.t("importDoc")}
             </button>
           </div>
@@ -123,58 +118,27 @@ function renderQuizCard(quiz, project, appState) {
     <div class="glass-card quiz-card ${isFullyCompleted ? 'card-completed-rainbow' : ''}" data-quiz-id="${quiz.id}">
       <div class="quiz-card-header">
         ${appState.isMultiSelectMode ? `
-          <input type="checkbox" class="quiz-select-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--color-ocean-blue); cursor: pointer;">
+          <input type="checkbox" class="quiz-select-checkbox custom-checkbox" data-quiz-id="${quiz.id}" ${isSelectedInMulti ? 'checked' : ''}>
         ` : ''}
-
-        <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">
-          ${quiz.questions.length} ${i18n.t("questionsCount")}
-        </span>
-
-        ${quiz.targetCEFR ? `
-          <span class="badge badge-purple">CEFR ${quiz.targetCEFR}</span>
-        ` : ''}
-
-        ${isFullyCompleted ? `
-          <span class="badge badge-green">Hoàn thành 100%</span>
-        ` : ''}
-
-        <div class="quiz-card-actions">
-          ${!isLL ? `
-            <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">
-              ✎
-            </button>
-          ` : ''}
-          <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn khác">
-            ⋮
-          </button>
-        </div>
+        <div class="quiz-card-title">${escapeHtml(quiz.title)}</div>
+        <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn">⋯</button>
       </div>
 
-      <div class="quiz-card-title" title="${escapeHtml(quiz.title)}">
-        ${isLL ? '💬 ' : ''}${escapeHtml(quiz.title)}
+      <div class="quiz-card-meta">
+        <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">${quiz.questions.length} ${i18n.t("questionsCount")}</span>
+        ${isLL && quiz.vocabularies ? `<span class="badge badge-teal">${quiz.vocabularies.length} từ vựng</span>` : ''}
+        ${isFullyCompleted ? `<span class="badge badge-green">✓ Đã ôn xong</span>` : (practicedCount > 0 ? `<span class="badge badge-orange">Đang học ${progressPercent}%</span>` : '')}
       </div>
 
-      <div style="margin-top: 4px;">
-        <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: 4px;">
-          <span>${practicedCount > 0 ? `Đã làm (${practicedCount}/${quiz.questions.length} câu)` : 'Chưa ôn tập'}</span>
-          ${practicedCount > 0 ? `<span style="font-weight: 700; color: var(--color-emerald-mint);">${progressPercent}%</span>` : ''}
-        </div>
-        <div class="progress-bar-container">
-          <div class="progress-bar-fill" style="width: ${progressPercent}%; --progress-color: ${isFullyCompleted ? 'var(--color-emerald-mint)' : (isLL ? 'var(--color-deep-purple)' : 'var(--color-ocean-blue)')};"></div>
-        </div>
-      </div>
-
-      <div class="quiz-card-footer">
-        <div class="study-modes-row">
-          <button class="btn btn-primary btn-study-practice" data-quiz-id="${quiz.id}">
-            ${i18n.t("practiceMode")}
-          </button>
-          <button class="btn btn-primary btn-orange btn-study-exam" data-quiz-id="${quiz.id}">
-            ${i18n.t("examMode")}
-          </button>
-        </div>
-        <button class="btn btn-primary btn-purple btn-study-flashcard" data-quiz-id="${quiz.id}" style="width: 100%;">
-          ${isLL ? `Thẻ từ vựng CEFR (${quiz.vocabularies ? quiz.vocabularies.length : 0})` : i18n.t("flashcardMode")}
+      <div class="study-modes-row">
+        <button class="btn btn-secondary btn-study-practice" data-quiz-id="${quiz.id}">
+          ${i18n.t("practiceMode")}
+        </button>
+        <button class="btn btn-secondary btn-study-exam" data-quiz-id="${quiz.id}">
+          ${i18n.t("examMode")}
+        </button>
+        <button class="btn btn-secondary btn-study-flashcard" data-quiz-id="${quiz.id}">
+          ${i18n.t("flashcardMode")}
         </button>
       </div>
     </div>
@@ -185,10 +149,6 @@ export function bindDashboardEvents(project, appState, handlers) {
   // Mobile sidebar toggle
   const mobileBtn = document.getElementById("btn-toggle-mobile-sidebar");
   if (mobileBtn) mobileBtn.onclick = () => handlers.onToggleMobileSidebar();
-
-  // Settings in header
-  const topSettingsBtn = document.getElementById("btn-top-settings");
-  if (topSettingsBtn) topSettingsBtn.onclick = () => handlers.onOpenSettings();
 
   // Shuffle toggle
   const shuffleBtn = document.getElementById("btn-toggle-shuffle");

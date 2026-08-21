@@ -68,15 +68,36 @@ export function renderSetupWizardModal(wizardState) {
     <!-- Why API Key Popup Dialog -->
     ${wizardState.showWhyKeyPopup ? `
       <div class="modal-overlay open" id="why-key-popup-overlay" style="z-index: 1100;">
-        <div class="modal-container" style="max-width: 560px; width: 100%;">
+        <div class="modal-container" style="max-width: min(600px, 94vw); width: 100%; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column;">
           <div class="modal-header">
-            <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
-              ${i18n.t("whyApiKeyTitle")}
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">🔑</span>
+              <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
+                ${i18n.t("whyApiKeyPopupTitle")}
+              </div>
             </div>
             <button class="btn btn-ghost btn-icon-only" id="btn-close-why-key-popup">✕</button>
           </div>
-          <div class="modal-body" style="padding: 1.25rem; font-size: var(--text-sm); line-height: 1.65; color: var(--text-primary);">
-            ${i18n.t("whyApiKeyAnswer")}
+          <div class="modal-body" style="padding: 1.25rem; font-size: var(--text-sm); line-height: 1.65; color: var(--text-primary); display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+            <!-- Section 1: API Key là gì? -->
+            <div class="glass-card" style="padding: 1rem;">
+              <div style="font-size: var(--text-sm); font-weight: 800; color: var(--color-ocean-blue); margin-bottom: 6px;">
+                ${i18n.t("whatIsApiKeyTitle")}
+              </div>
+              <p style="font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                ${i18n.t("whatIsApiKeyAnswer")}
+              </p>
+            </div>
+
+            <!-- Section 2: Tại sao lại yêu cầu API Key? -->
+            <div class="glass-card" style="padding: 1rem;">
+              <div style="font-size: var(--text-sm); font-weight: 800; color: var(--color-deep-purple); margin-bottom: 6px;">
+                ${i18n.t("whyApiKeyTitle")}
+              </div>
+              <p style="font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                ${i18n.t("whyApiKeyAnswer")}
+              </p>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-primary" id="btn-done-why-key-popup">${i18n.t("close")}</button>
