@@ -20,7 +20,7 @@ export function renderSidebar(selectedProjectId, appState) {
             <div class="brand-subtitle">${i18n.t("projects")}</div>
           </div>
           <button class="btn btn-ghost btn-icon-only" id="btn-open-settings" title="${i18n.t("settings")}">
-            ⚙️
+            ⚙
           </button>
           <button class="btn btn-ghost btn-icon-only mobile-menu-btn" id="btn-close-sidebar" title="Đóng thanh bên" style="display: none;">
             ✕

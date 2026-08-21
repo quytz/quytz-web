@@ -47,10 +47,10 @@ export function renderPracticeView(project, quiz, practiceState) {
 
         <div class="study-header-actions">
           <button class="btn btn-pill ${storage.settings.isShuffleEnabled ? 'active' : 'btn-secondary'}" id="btn-practice-shuffle" title="${i18n.t("toggleShuffle")}">
-            <span>${storage.settings.isShuffleEnabled ? '🔀' : '🔁'}</span>
+            <span class="btn-text-hide-mobile">${i18n.t("toggleShuffle")}</span>
           </button>
           <button class="btn btn-pill ${practiceState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane" title="${i18n.t("questionNavPane")}">
-            <span>☰</span> <span class="btn-text-hide-mobile">${i18n.t("questionNavPane")}</span>
+            <span class="btn-text-hide-mobile">${i18n.t("questionNavPane")}</span>
           </button>
         </div>
       </div>
@@ -71,14 +71,14 @@ export function renderPracticeView(project, quiz, practiceState) {
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
               <span class="badge badge-blue">${i18n.t("questionHeader")} ${currentIdx + 1}</span>
               <button class="btn btn-pill btn-secondary" id="btn-ask-gemini" style="color: var(--color-deep-purple); border-color: rgba(122, 92, 204, 0.3); font-size: var(--text-xs); padding: 0.25rem 0.5rem;">
-                ✨ Hỏi AI
+                Hỏi AI
               </button>
             </div>
 
             ${currentQ.skill || currentQ.subTopic ? `
               <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
-                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">📖 ${currentQ.skill}</span>` : ''}
-                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">🏷️ ${currentQ.subTopic}</span>` : ''}
+                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">${currentQ.skill}</span>` : ''}
+                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">${currentQ.subTopic}</span>` : ''}
               </div>
             ` : ''}
 
@@ -171,7 +171,7 @@ export function renderPracticeView(project, quiz, practiceState) {
         <div style="flex: 1; display: flex; justify-content: flex-end;">
           ${isAnswered ? `
             <button class="btn btn-primary ${currentIdx + 1 < totalQ ? 'btn-blue' : 'btn-green'}" id="btn-practice-next">
-              ${currentIdx + 1 < totalQ ? i18n.t("nextQuestion") + ' ➔' : i18n.t("finishPractice") + ' ✓'}
+              ${currentIdx + 1 < totalQ ? i18n.t("nextQuestion") : i18n.t("finishPractice")}
             </button>
           ` : ''}
         </div>

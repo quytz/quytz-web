@@ -33,13 +33,13 @@ export function renderImportModal(project, modalState) {
         <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-card); display: flex; gap: 8px;">
           <div class="segmented-control" style="width: 100%;">
             <button class="segment-btn ${activeTab === 'gemini' ? 'active' : ''}" id="tab-btn-gemini" style="flex: 1;">
-              🤖 Quét Tài liệu Gemini AI
+              Quét Tài liệu Gemini AI
             </button>
             <button class="segment-btn ${activeTab === 'lang' ? 'active' : ''}" id="tab-btn-lang" style="flex: 1;">
-              📖 Quét Đề Ngoại ngữ & CEFR <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
+              Quét Đề Ngoại ngữ & CEFR <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
             </button>
             <button class="segment-btn ${activeTab === 'premade' ? 'active' : ''}" id="tab-btn-premade" style="flex: 1;">
-              📦 Nhập Đề có sẵn (.zip / .json)
+              Nhập Đề có sẵn (.zip / .json)
             </button>
           </div>
         </div>
@@ -69,12 +69,12 @@ export function renderImportModal(project, modalState) {
             <button class="btn btn-secondary" id="btn-cancel-import">${i18n.t("cancel")}</button>
             ${activeTab === 'gemini' && !isLLProject ? `
               <button class="btn btn-primary" id="btn-start-gemini-scan">
-                🚀 ${i18n.t("startGeminiScanBtn")}
+                ${i18n.t("startGeminiScanBtn")}
               </button>
             ` : ''}
             ${activeTab === 'lang' && isLLProject ? `
               <button class="btn btn-primary btn-purple" id="btn-start-lang-scan">
-                🚀 ${i18n.t("startLangScanBtn")}
+                ${i18n.t("startLangScanBtn")}
               </button>
             ` : ''}
           </div>
@@ -111,7 +111,7 @@ function renderGeneralGeminiTab(project, modalState) {
         <div style="display: flex; gap: 10px; align-items: center;">
           <input type="file" id="file-doc-input" accept=".docx,.pdf,.txt,.md" style="display: none;">
           <button class="btn btn-secondary" id="btn-browse-doc">
-            📁 ${i18n.t("selectFileBtn")}
+            ${i18n.t("selectFileBtn")}
           </button>
           <div style="font-size: var(--text-sm); color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="lbl-selected-filename">
             ${modalState.selectedFileName || i18n.t("noFileSelected")}
@@ -146,13 +146,13 @@ function renderGeneralGeminiTab(project, modalState) {
           </label>
           <div class="segmented-control" style="width: 100%;">
             <button class="segment-btn ${modalState.depthMode === 'core' ? 'active' : ''}" data-depth="core" style="flex: 1;">
-              🎯 Trọng tâm (Core)
+              Trọng tâm (Core)
             </button>
             <button class="segment-btn ${!modalState.depthMode || modalState.depthMode === 'normal' ? 'active' : ''}" data-depth="normal" style="flex: 1;">
-              ⚖️ Tiêu chuẩn (Normal)
+              Tiêu chuẩn (Normal)
             </button>
             <button class="segment-btn ${modalState.depthMode === 'thorough' ? 'active' : ''}" data-depth="thorough" style="flex: 1;">
-              🔬 Toàn diện (Thorough)
+              Toàn diện (Thorough)
             </button>
           </div>
         </div>
@@ -194,7 +194,6 @@ function renderLanguageExamTab(project, modalState) {
       </div>
 
       <div class="greeting-badge" style="background: rgba(122, 92, 204, 0.1); border-color: rgba(122, 92, 204, 0.3); color: var(--color-deep-purple);">
-        <span>📖</span>
         <span>${i18n.t("langLearningDesc")}</span>
       </div>
 
@@ -206,7 +205,7 @@ function renderLanguageExamTab(project, modalState) {
         <div style="display: flex; gap: 10px; align-items: center;">
           <input type="file" id="file-lang-input" accept=".docx,.pdf,.txt,.md" style="display: none;">
           <button class="btn btn-secondary" id="btn-browse-lang">
-            📁 ${i18n.t("selectFileBtn")}
+            ${i18n.t("selectFileBtn")}
           </button>
           <div style="font-size: var(--text-sm); color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="lbl-selected-lang-filename">
             ${modalState.selectedFileName || i18n.t("noFileSelected")}
@@ -251,7 +250,7 @@ function renderPremadeTab(project, modalState) {
 
         <input type="file" id="file-premade-input" accept=".zip,.json" style="display: none;">
         <button class="btn btn-primary" id="btn-browse-premade">
-          📁 ${i18n.t("selectQuizBtn")}
+          ${i18n.t("selectQuizBtn")}
         </button>
       </div>
     </div>

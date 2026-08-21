@@ -104,15 +104,16 @@ export function renderFlashcardView(project, quiz, cardState) {
                     ` : ''}
                   </div>
                 ` : `
-                  <div style="margin: auto 0; text-align: center;">
-                    <div style="font-size: var(--text-md); font-weight: 800; color: var(--color-emerald-mint); margin-bottom: 6px;">
+                  <div style="margin: auto 0; width: 100%;">
+                    <div style="font-size: var(--text-sm); font-weight: 800; color: var(--color-emerald-mint); margin-bottom: 8px;">
                       Đáp án đúng: ${currentItem.options[currentItem.correctAnswerIndex]?.label || 'A'}
                     </div>
-                    <div style="font-size: var(--text-xl); font-weight: 700;">
+                    <div class="flashcard-answer-text">
                       ${formatMarkdownHTML(currentItem.options[currentItem.correctAnswerIndex]?.text || '')}
                     </div>
                     ${currentItem.explanation ? `
-                      <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: 12px; max-width: 500px; margin-inline: auto;">
+                      <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-subtle); line-height: 1.55;">
+                        <strong style="color: var(--color-ocean-blue);">Giải thích:</strong>
                         ${formatMarkdownHTML(currentItem.explanation)}
                       </div>
                     ` : ''}
@@ -132,11 +133,11 @@ export function renderFlashcardView(project, quiz, cardState) {
               </button>
 
               <button class="btn btn-primary btn-red" id="btn-card-wrong">
-                <span>✕</span> Chưa thuộc (2)
+                Chưa thuộc (2)
               </button>
 
               <button class="btn btn-primary btn-green" id="btn-card-correct">
-                <span>✓</span> Đã thuộc bài (1)
+                Đã thuộc bài (1)
               </button>
             </div>
           ` : ''}
@@ -221,12 +222,12 @@ function renderCompletionScreen(project, quiz, cardState, isLL) {
           <div style="display: flex; flex-direction: column; gap: 12px;">
             ${!is100Percent ? `
               <button class="btn btn-primary btn-orange" id="btn-continue-round" style="width: 100%;">
-                Tiếp tục học Vòng ${cardState.studyRound + 1} (${wrongCount} thẻ chưa thuộc) ➔
+                Tiếp tục học Vòng ${cardState.studyRound + 1} (${wrongCount} thẻ chưa thuộc)
               </button>
             ` : ''}
 
             <button class="btn btn-primary" id="btn-study-again" style="width: 100%;">
-              🔄 ${i18n.t("studyAgain")}
+              ${i18n.t("studyAgain")}
             </button>
 
             <button class="btn btn-secondary" id="btn-finish-dashboard" style="width: 100%;">

@@ -61,7 +61,7 @@ export function renderQuizEditorModal(quiz, editorState) {
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="badge badge-blue">Chi tiết Câu hỏi ${currentIdx + 1}</span>
                   <button class="btn btn-secondary" id="btn-editor-delete-q" style="color: var(--color-coral-red); font-size: var(--text-xs);">
-                    🗑️ Xóa câu này
+                    Xóa câu này
                   </button>
                 </div>
 
@@ -104,7 +104,7 @@ export function renderQuizEditorModal(quiz, editorState) {
         <!-- Footer -->
         <div class="modal-footer">
           <button class="btn btn-secondary" id="btn-cancel-editor">Hủy</button>
-          <button class="btn btn-primary" id="btn-save-editor">Lưu Thay Đổi ✓</button>
+          <button class="btn btn-primary" id="btn-save-editor">Lưu Thay Đổi</button>
         </div>
       </div>
     </div>

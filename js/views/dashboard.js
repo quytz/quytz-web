@@ -40,13 +40,11 @@ export function renderDashboard(project, appState) {
         <div class="top-header-actions">
           <!-- Shuffle Button -->
           <button class="btn btn-pill ${isShuffle ? 'active' : 'btn-secondary'}" id="btn-toggle-shuffle" title="Bật/tắt xáo trộn câu hỏi và phương án A/B/C/D">
-            <span>${isShuffle ? '🔀' : '🔁'}</span>
             <span class="btn-text-hide-mobile">${i18n.t("toggleShuffle")}</span>
           </button>
 
           <!-- Multi-select Mode Button -->
           <button class="btn btn-pill ${isMulti ? 'btn-primary btn-purple' : 'btn-secondary'}" id="btn-toggle-multi-select" title="Chọn nhiều bộ đề">
-            <span>${isMulti ? '✓' : '☑'}</span>
             <span class="btn-text-hide-mobile">${isMulti ? i18n.t("exitMultiSelect") : i18n.t("multiSelectQuizzes")}</span>
           </button>
 
@@ -57,7 +55,7 @@ export function renderDashboard(project, appState) {
 
           <!-- Settings Button (Direct on Header) -->
           <button class="btn btn-ghost btn-icon-only" id="btn-top-settings" title="${i18n.t("settings")}">
-            ⚙️
+            ⚙
           </button>
         </div>
       </header>
@@ -72,16 +70,16 @@ export function renderDashboard(project, appState) {
 
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <div class="segmented-control">
-              <button class="segment-btn active" id="btn-multi-practice">▶ Luyện tập (${selectedCount})</button>
-              <button class="segment-btn" id="btn-multi-exam">⏱️ Thi thử</button>
-              <button class="segment-btn" id="btn-multi-flashcard">🎴 Thẻ nhớ</button>
+              <button class="segment-btn active" id="btn-multi-practice">Luyện tập (${selectedCount})</button>
+              <button class="segment-btn" id="btn-multi-exam">Thi thử</button>
+              <button class="segment-btn" id="btn-multi-flashcard">Thẻ ghi nhớ</button>
             </div>
 
             <button class="btn btn-secondary" id="btn-multi-move">
-              📁 Chuyển...
+              Chuyển...
             </button>
             <button class="btn btn-secondary" id="btn-multi-delete" style="color: var(--color-coral-red);">
-              🗑️ Xóa (${selectedCount})
+              Xóa (${selectedCount})
             </button>
           </div>
         </div>
@@ -143,7 +141,7 @@ function renderQuizCard(quiz, project, appState) {
         <div class="quiz-card-actions">
           ${!isLL ? `
             <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">
-              ✏️
+              ✎
             </button>
           ` : ''}
           <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn khác">
@@ -169,14 +167,14 @@ function renderQuizCard(quiz, project, appState) {
       <div class="quiz-card-footer">
         <div class="study-modes-row">
           <button class="btn btn-primary btn-study-practice" data-quiz-id="${quiz.id}">
-            ✏️ ${i18n.t("practiceMode")}
+            ${i18n.t("practiceMode")}
           </button>
           <button class="btn btn-primary btn-orange btn-study-exam" data-quiz-id="${quiz.id}">
-            ⏱️ ${i18n.t("examMode")}
+            ${i18n.t("examMode")}
           </button>
         </div>
         <button class="btn btn-primary btn-purple btn-study-flashcard" data-quiz-id="${quiz.id}" style="width: 100%;">
-          🎴 ${isLL ? `Thẻ từ vựng CEFR (${quiz.vocabularies ? quiz.vocabularies.length : 0})` : i18n.t("flashcardMode")}
+          ${isLL ? `Thẻ từ vựng CEFR (${quiz.vocabularies ? quiz.vocabularies.length : 0})` : i18n.t("flashcardMode")}
         </button>
       </div>
     </div>

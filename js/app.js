@@ -1,6 +1,6 @@
 /**
  * QuizMaster Web - Central Application Controller & Router
- * Version: v1.0.0
+ * Version: v1.0.1
  */
 import { APP_CONFIG } from "./config.js";
 import { i18n } from "./localization/i18n.js";
@@ -192,7 +192,23 @@ class QuizMasterApp {
   }
 
   // --- EXAM MODE ---
-  startExam(quizId, durationMinutes = null) {
+  openExamTimerModal(quizId) {
+    const project = this.getSelectedProject();
+    if (!project) return;
+    const quiz = project.quizzes.find(q => q.id === quizId);
+    if (!quiz) return;
+
+    this.activeModal = "examTimer";
+    this.modalState = {
+      quizId: quizId,
+      selectedDuration: 45,
+      customMinutes: 45,
+      isUnlimited: false
+    };
+    this.render();
+  }
+
+  startExam(quizId, durationMinutes = 45) {
     const project = this.getSelectedProject();
     if (!project) return;
 
@@ -208,8 +224,8 @@ class QuizMasterApp {
       activeQuestions.sort(() => Math.random() - 0.5);
     }
 
-    const duration = durationMinutes || quiz.durationMinutes || 45;
-    const totalSeconds = duration * 60;
+    const isUnlimited = durationMinutes === null || durationMinutes <= 0;
+    const totalSeconds = isUnlimited ? null : durationMinutes * 60;
 
     this.examState = {
       activeQuestions,
@@ -229,27 +245,29 @@ class QuizMasterApp {
     };
 
     if (this.examTimerInterval) clearInterval(this.examTimerInterval);
-    this.examTimerInterval = setInterval(() => {
-      if (this.examState && this.currentView === "exam") {
-        if (this.examState.timeRemainingSeconds > 0) {
-          this.examState.timeRemainingSeconds--;
-          const timerBox = document.getElementById("timer-display-box");
-          if (timerBox) {
-            const m = Math.floor(this.examState.timeRemainingSeconds / 60);
-            const s = this.examState.timeRemainingSeconds % 60;
-            timerBox.innerHTML = `<span>⏱️</span> <span>${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}</span>`;
-            if (this.examState.timeRemainingSeconds <= 300) {
-              timerBox.classList.add("warning");
+    if (!isUnlimited) {
+      this.examTimerInterval = setInterval(() => {
+        if (this.examState && this.currentView === "exam") {
+          if (this.examState.timeRemainingSeconds > 0) {
+            this.examState.timeRemainingSeconds--;
+            const timerBox = document.getElementById("timer-display-box");
+            if (timerBox) {
+              const m = Math.floor(this.examState.timeRemainingSeconds / 60);
+              const s = this.examState.timeRemainingSeconds % 60;
+              timerBox.innerHTML = `<span>${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}</span>`;
+              if (this.examState.timeRemainingSeconds <= 300) {
+                timerBox.classList.add("warning");
+              }
             }
+          } else {
+            // Time expired! Auto submit
+            clearInterval(this.examTimerInterval);
+            this.showToast("error", "Hết giờ làm bài! Bài thi đã được tự động nộp.");
+            this.submitExam();
           }
-        } else {
-          // Time expired! Auto submit
-          clearInterval(this.examTimerInterval);
-          this.showToast("error", "Hết giờ làm bài! Bài thi đã được tự động nộp.");
-          this.submitExam();
         }
-      }
-    }, 1000);
+      }, 1000);
+    }
 
     this.currentView = "exam";
     this.render();
@@ -450,7 +468,7 @@ class QuizMasterApp {
     if (mode === "practice") {
       this.startPractice(comboQuiz.id);
     } else if (mode === "exam") {
-      this.startExam(comboQuiz.id);
+      this.openExamTimerModal(comboQuiz.id);
     } else if (mode === "flashcard") {
       this.startFlashcard(comboQuiz.id);
     }
@@ -890,7 +908,7 @@ class QuizMasterApp {
         },
         onOpenImport: () => this.openImportModal(),
         onStartPractice: (qid) => this.startPractice(qid),
-        onStartExam: (qid) => this.startExam(qid),
+        onStartExam: (qid) => this.openExamTimerModal(qid),
         onStartFlashcard: (qid) => this.startFlashcard(qid),
         onEditQuiz: (qid) => this.openEditorModal(qid),
         onOpenQuizMenu: (qid) => this.openQuizActionSheet(qid)
@@ -1133,23 +1151,23 @@ class QuizMasterApp {
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
               <button class="btn btn-secondary" id="btn-act-export-zip" style="justify-content: flex-start;">
-                📥 Xuất gói Zip Bundle (.zip) - Hỗ trợ nhập lại
+                Xuất gói Zip Bundle (.zip) - Hỗ trợ nhập lại
               </button>
               <button class="btn btn-secondary" id="btn-act-export-docx" style="justify-content: flex-start;">
-                📄 Xuất tệp Word (.docx)
+                Xuất tệp Word (.docx)
               </button>
               <button class="btn btn-secondary" id="btn-act-export-json" style="justify-content: flex-start;">
-                📋 Xuất tệp JSON (.json)
+                Xuất tệp JSON (.json)
               </button>
               <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 4px 0;">
               <button class="btn btn-secondary" id="btn-act-rename" style="justify-content: flex-start;">
-                ✏️ Đổi tên bộ đề thi
+                Đổi tên bộ đề thi
               </button>
               <button class="btn btn-secondary" id="btn-act-reset" style="justify-content: flex-start;">
-                🔄 Đặt lại tiến độ học
+                Đặt lại tiến độ học
               </button>
               <button class="btn btn-secondary" id="btn-act-delete" style="justify-content: flex-start; color: var(--color-coral-red);">
-                🗑️ Xóa bộ đề thi
+                Xóa bộ đề thi
               </button>
             </div>
           </div>
@@ -1274,6 +1292,118 @@ class QuizMasterApp {
         } else {
           this.showToast("error", "Vui lòng nhập tên dự án.");
         }
+      };
+    } else if (this.activeModal === "examTimer") {
+      const isUnlimited = !!this.modalState.isUnlimited;
+      const curDuration = this.modalState.selectedDuration;
+      const customMins = this.modalState.customMinutes || 45;
+
+      modalHost.innerHTML = `
+        <div class="modal-overlay open" id="exam-timer-overlay">
+          <div class="modal-container" style="max-width: min(540px, 94vw); width: 100%; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+              <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
+                ${i18n.t("customTimerTitle")}
+              </div>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-exam-timer">✕</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1;">
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.5;">
+                ${i18n.t("mandatoryTimerSubtitle")}
+              </div>
+
+              <!-- Presets Grid -->
+              <div class="glass-card" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+                  CÁC TÙY CHỌN THỜI GIAN:
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                  <button class="btn ${!isUnlimited && curDuration === 15 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="15">
+                    15 Phút
+                  </button>
+                  <button class="btn ${!isUnlimited && curDuration === 25 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="25">
+                    Pomodoro (25p)
+                  </button>
+                  <button class="btn ${!isUnlimited && curDuration === 45 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="45">
+                    45 Phút (Chuẩn)
+                  </button>
+                  <button class="btn ${!isUnlimited && curDuration === 60 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="60">
+                    60 Phút
+                  </button>
+                  <button class="btn ${!isUnlimited && curDuration === 90 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="90">
+                    90 Phút
+                  </button>
+                  <button class="btn ${isUnlimited ? 'btn-primary btn-purple' : 'btn-secondary'}" data-timer-val="unlimited">
+                    Không giới hạn
+                  </button>
+                </div>
+              </div>
+
+              <!-- Custom Minutes Box -->
+              ${!isUnlimited ? `
+                <div class="glass-card" style="display: flex; flex-direction: column; gap: 8px;">
+                  <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+                    ${i18n.t("customTimerSubtitle")}
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <input type="number" min="1" max="300" class="form-input" id="input-custom-timer-mins" value="${customMins}" style="flex: 1 1 120px; max-width: 160px; font-weight: 700;">
+                    <span style="font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary);">phút</span>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <button class="btn btn-secondary" id="btn-cancel-exam-timer">${i18n.t("cancel")}</button>
+              <button class="btn btn-primary btn-orange" id="btn-start-exam-now">
+                ${i18n.t("examMode")} (${isUnlimited ? 'Không giới hạn' : `${this.modalState.selectedDuration} phút`})
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      root.appendChild(modalHost);
+
+      document.getElementById("btn-close-exam-timer").onclick = () => this.closeModal();
+      document.getElementById("btn-cancel-exam-timer").onclick = () => this.closeModal();
+
+      document.querySelectorAll("[data-timer-val]").forEach(btn => {
+        btn.onclick = () => {
+          const val = btn.dataset.timerVal;
+          if (val === "unlimited") {
+            this.modalState.isUnlimited = true;
+            this.modalState.selectedDuration = null;
+          } else {
+            const mins = parseInt(val, 10);
+            this.modalState.isUnlimited = false;
+            this.modalState.selectedDuration = mins;
+            this.modalState.customMinutes = mins;
+          }
+          this.render();
+        };
+      });
+
+      const customInput = document.getElementById("input-custom-timer-mins");
+      if (customInput) {
+        customInput.oninput = (e) => {
+          const val = parseInt(e.target.value, 10);
+          if (val > 0) {
+            this.modalState.customMinutes = val;
+            this.modalState.selectedDuration = val;
+            this.modalState.isUnlimited = false;
+            const startBtn = document.getElementById("btn-start-exam-now");
+            if (startBtn) {
+              startBtn.innerText = `${i18n.t("examMode")} (${val} phút)`;
+            }
+          }
+        };
+      }
+
+      document.getElementById("btn-start-exam-now").onclick = () => {
+        const qid = this.modalState.quizId;
+        const dur = this.modalState.isUnlimited ? null : this.modalState.selectedDuration;
+        this.closeModal();
+        this.startExam(qid, dur);
       };
     }
   }

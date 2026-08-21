@@ -11,11 +11,11 @@ export function renderSettingsModal(settingsState) {
 
   return `
     <div class="modal-overlay open" id="settings-modal-overlay">
-      <div class="modal-container" style="max-width: 640px; width: 100%; max-height: 88vh;">
+      <div class="modal-container" style="max-width: min(640px, 94vw); width: 100%; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column;">
         <!-- Header -->
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">⚙️</span>
+            <span style="font-size: 20px;">⚙</span>
             <h2 style="font-size: var(--text-lg); font-weight: 800; color: var(--text-primary);">
               ${i18n.t("settingsTitle")}
             </h2>
@@ -25,21 +25,21 @@ export function renderSettingsModal(settingsState) {
         </div>
 
         <!-- Body -->
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1;">
           <!-- API Key Section -->
           <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
               <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
                 ${i18n.t("apiKeyLabel")}
               </label>
               <a href="${APP_CONFIG.aiStudioUrl}" target="_blank" rel="noopener noreferrer" style="font-size: var(--text-xs); font-weight: 700; color: var(--color-ocean-blue); text-decoration: none;">
-                🔑 ${i18n.t("getApiKeyFromStudio")}
+                ${i18n.t("getApiKeyFromStudio")} ↗
               </a>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-              <input type="password" class="form-input" id="input-api-key" placeholder="${i18n.t("apiKeyHint")}" value="${escapeHtml(settingsState.apiKey || '')}">
-              <button class="btn btn-secondary" id="btn-test-api-key" ${isTestingKey ? 'disabled' : ''}>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <input type="password" class="form-input" id="input-api-key" placeholder="${i18n.t("apiKeyHint")}" value="${escapeHtml(settingsState.apiKey || '')}" style="flex: 1 1 220px; min-width: 0;">
+              <button class="btn btn-secondary" id="btn-test-api-key" ${isTestingKey ? 'disabled' : ''} style="flex: 0 1 auto; white-space: nowrap;">
                 ${isTestingKey ? i18n.t("testingKey") : i18n.t("testApiKey")}
               </button>
             </div>
@@ -53,10 +53,10 @@ export function renderSettingsModal(settingsState) {
 
           <!-- AI Model Fixed Info (Exclusively Gemini 3.5 Flash Lite) -->
           <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1 1 200px;">
                 <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">${i18n.t("modelLabel")}</div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px;">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; line-height: 1.4;">
                   Cố định sử dụng Google Gemini 3.5 Flash Lite độc quyền cho toàn bộ tác vụ.
                 </div>
               </div>
@@ -75,15 +75,15 @@ export function renderSettingsModal(settingsState) {
               <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
                 ${i18n.t("themeLabel")}
               </label>
-              <div class="segmented-control" style="width: 100%;">
-                <button class="segment-btn ${settingsState.theme === 'system' ? 'active' : ''}" data-setting-theme="system" style="flex: 1;">
-                  🌗 ${i18n.t("themeSystem")}
+              <div class="segmented-control" style="width: 100%; display: flex; flex-wrap: wrap;">
+                <button class="segment-btn ${settingsState.theme === 'system' ? 'active' : ''}" data-setting-theme="system" style="flex: 1 1 auto; min-width: 90px;">
+                  ${i18n.t("themeSystem")}
                 </button>
-                <button class="segment-btn ${settingsState.theme === 'light' ? 'active' : ''}" data-setting-theme="light" style="flex: 1;">
-                  ☀️ ${i18n.t("themeLight")}
+                <button class="segment-btn ${settingsState.theme === 'light' ? 'active' : ''}" data-setting-theme="light" style="flex: 1 1 auto; min-width: 90px;">
+                  ${i18n.t("themeLight")}
                 </button>
-                <button class="segment-btn ${settingsState.theme === 'dark' ? 'active' : ''}" data-setting-theme="dark" style="flex: 1;">
-                  🌙 ${i18n.t("themeDark")}
+                <button class="segment-btn ${settingsState.theme === 'dark' ? 'active' : ''}" data-setting-theme="dark" style="flex: 1 1 auto; min-width: 90px;">
+                  ${i18n.t("themeDark")}
                 </button>
               </div>
             </div>
@@ -93,12 +93,12 @@ export function renderSettingsModal(settingsState) {
               <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
                 ${i18n.t("languageLabel")}
               </label>
-              <div class="segmented-control" style="width: 100%;">
-                <button class="segment-btn ${settingsState.language === 'vi' ? 'active' : ''}" data-setting-lang="vi" style="flex: 1;">
-                  🇻🇳 Tiếng Việt
+              <div class="segmented-control" style="width: 100%; display: flex; flex-wrap: wrap;">
+                <button class="segment-btn ${settingsState.language === 'vi' ? 'active' : ''}" data-setting-lang="vi" style="flex: 1 1 auto; min-width: 110px;">
+                  Tiếng Việt
                 </button>
-                <button class="segment-btn ${settingsState.language === 'en' ? 'active' : ''}" data-setting-lang="en" style="flex: 1;">
-                  🇬🇧 English
+                <button class="segment-btn ${settingsState.language === 'en' ? 'active' : ''}" data-setting-lang="en" style="flex: 1 1 auto; min-width: 110px;">
+                  English
                 </button>
               </div>
               <div style="font-size: 11px; color: var(--color-ocean-blue); margin-top: 4px;">
@@ -112,37 +112,37 @@ export function renderSettingsModal(settingsState) {
             <div style="font-size: var(--text-sm); font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
               Sao lưu & Khôi phục Dữ liệu
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-secondary" id="btn-export-database" style="flex: 1;">
-                📥 Tải xuống tệp Sao lưu (JSON)
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" id="btn-export-database" style="flex: 1 1 200px; min-width: 0;">
+                Tải xuống tệp Sao lưu (JSON)
               </button>
               <input type="file" id="file-import-database" accept=".json" style="display: none;">
-              <button class="btn btn-secondary" id="btn-import-database" style="flex: 1;">
-                📤 Khôi phục từ tệp Sao lưu
+              <button class="btn btn-secondary" id="btn-import-database" style="flex: 1 1 200px; min-width: 0;">
+                Khôi phục từ tệp Sao lưu
               </button>
             </div>
           </div>
 
           <!-- Author Info Section -->
           <div class="glass-card">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="assets/AppIcon.png" alt="QuizMaster" style="width: 44px; height: 44px; border-radius: 8px;">
-              <div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <img src="assets/AppIcon.png" alt="QuizMaster" style="width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0;">
+              <div style="flex: 1 1 200px; min-width: 0;">
                 <div style="font-size: var(--text-base); font-weight: 800;">
                   QuizMaster Web <span class="badge badge-blue">${APP_CONFIG.version}</span>
                 </div>
                 <div style="font-size: var(--text-xs); color: var(--color-ocean-blue); font-weight: 600; margin-top: 2px;">
                   ${i18n.t("authorInfo")}
                 </div>
-                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
                   ${i18n.t("appDescInfo")}
                 </div>
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 8px;">
               <button class="btn btn-ghost" id="btn-reopen-wizard" style="font-size: var(--text-xs); color: var(--color-ocean-blue);">
-                ✨ ${i18n.t("reopenSetupWizard")}
+                ${i18n.t("reopenSetupWizard")}
               </button>
 
               <a href="${APP_CONFIG.githubRepo}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size: var(--text-xs); text-decoration: none;">
@@ -155,7 +155,7 @@ export function renderSettingsModal(settingsState) {
         <!-- Footer -->
         <div class="modal-footer">
           <button class="btn btn-primary" id="btn-save-settings">
-            ✓ ${i18n.t("saveSettings")}
+            ${i18n.t("saveSettings")}
           </button>
         </div>
       </div>

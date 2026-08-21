@@ -65,12 +65,12 @@ export function renderEndingModal(quiz, progress, onRedoWrong, onReviewAnswers, 
         <div class="modal-footer" style="flex-direction: column; gap: 10px;">
           ${wrongCount > 0 ? `
             <button class="btn btn-primary btn-orange" id="btn-redo-wrong" style="width: 100%;">
-              🔄 ${i18n.t("btnRedoWrongOnly")} (${wrongCount} câu)
+              ${i18n.t("btnRedoWrongOnly")} (${wrongCount} câu)
             </button>
           ` : ''}
 
           <button class="btn btn-primary" id="btn-review-answers" style="width: 100%;">
-            📖 ${i18n.t("btnReviewWithAnswers")}
+            ${i18n.t("btnReviewWithAnswers")}
           </button>
 
           <button class="btn btn-secondary" id="btn-ending-dashboard" style="width: 100%;">

@@ -65,13 +65,13 @@ export function renderAskGeminiModal(question, askState) {
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn btn-pill btn-secondary preset-chip" data-query="Hãy giải thích chi tiết vì sao đáp án đúng là chính xác.">
-                💡 Giải thích tại sao đáp án đúng
+                Giải thích tại sao đáp án đúng
               </button>
               <button class="btn btn-pill btn-secondary preset-chip" data-query="Hãy phân tích chi tiết vì sao từng phương án còn lại là sai.">
-                🔍 Phân tích các đáp án sai
+                Phân tích các đáp án sai
               </button>
               <button class="btn btn-pill btn-secondary preset-chip" data-query="Hãy cho thêm ví dụ minh họa thực tế để hiểu rõ câu hỏi này.">
-                🌟 Thêm ví dụ minh họa
+                Thêm ví dụ minh họa
               </button>
             </div>
           </div>
@@ -81,10 +81,10 @@ export function renderAskGeminiModal(question, askState) {
             <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">
               Thắc mắc cụ thể của bạn (Tùy chọn):
             </label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" class="form-input" id="ask-user-query-input" placeholder="Ví dụ: Tại sao phương án B lại sai trong trường hợp này?..." value="${escapeHtml(askState.userQuery || '')}">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <input type="text" class="form-input" id="ask-user-query-input" placeholder="Ví dụ: Tại sao phương án B lại sai trong trường hợp này?..." value="${escapeHtml(askState.userQuery || '')}" style="flex: 1; min-width: 200px;">
               <button class="btn btn-primary" id="btn-send-gemini-query" ${isQuerying ? 'disabled' : ''}>
-                Gửi tới Gemini ➔
+                Gửi tới Gemini
               </button>
             </div>
           </div>

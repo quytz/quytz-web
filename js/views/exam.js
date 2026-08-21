@@ -22,9 +22,10 @@ export function renderExamView(project, quiz, examState) {
   const hasReading = !!(currentQ.readingPassage && currentQ.readingPassage.trim());
 
   const remainingSeconds = examState.timeRemainingSeconds;
-  const minutes = Math.floor(remainingSeconds / 60);
-  const seconds = remainingSeconds % 60;
-  const isTimeWarning = remainingSeconds <= 300; // <= 5 minutes
+  const isUnlimited = remainingSeconds === null || remainingSeconds === undefined;
+  const minutes = isUnlimited ? 0 : Math.floor(remainingSeconds / 60);
+  const seconds = isUnlimited ? 0 : remainingSeconds % 60;
+  const isTimeWarning = !isUnlimited && remainingSeconds <= 300; // <= 5 minutes
 
   return `
     <div class="study-view-shell" id="exam-view-shell">
@@ -46,15 +47,14 @@ export function renderExamView(project, quiz, examState) {
         <div class="study-header-actions">
           <!-- Countdown Timer Widget -->
           <div class="timer-widget ${isTimeWarning ? 'warning' : ''}" id="timer-display-box">
-            <span>⏱️</span>
-            <span>${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</span>
+            <span>${isUnlimited ? 'Không giới hạn' : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}</span>
           </div>
 
           <button class="btn btn-pill ${storage.settings.isShuffleEnabled ? 'active' : 'btn-secondary'}" id="btn-exam-shuffle" title="${i18n.t("toggleShuffle")}">
-            <span>${storage.settings.isShuffleEnabled ? '🔀' : '🔁'}</span>
+            <span class="btn-text-hide-mobile">${i18n.t("toggleShuffle")}</span>
           </button>
           <button class="btn btn-pill ${examState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-exam-nav" title="${i18n.t("questionNavPane")}">
-            <span>☰</span> <span class="btn-text-hide-mobile">${i18n.t("questionNavPane")}</span>
+            <span class="btn-text-hide-mobile">${i18n.t("questionNavPane")}</span>
           </button>
         </div>
       </div>
@@ -78,8 +78,8 @@ export function renderExamView(project, quiz, examState) {
 
             ${currentQ.skill || currentQ.subTopic ? `
               <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
-                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">📖 ${currentQ.skill}</span>` : ''}
-                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">🏷️ ${currentQ.subTopic}</span>` : ''}
+                ${currentQ.skill ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple); text-transform: uppercase;">${currentQ.skill}</span>` : ''}
+                ${currentQ.subTopic ? `<span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">${currentQ.subTopic}</span>` : ''}
               </div>
             ` : ''}
 
@@ -137,16 +137,16 @@ export function renderExamView(project, quiz, examState) {
       <footer class="study-footer">
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-secondary" id="btn-exam-prev" ${currentIdx === 0 ? 'disabled' : ''}>
-            <span>←</span> <span class="btn-text-hide-mobile">Câu trước</span>
+            <span>←</span> <span class="btn-text-hide-mobile">${i18n.t("prevQuestion")}</span>
           </button>
           <button class="btn btn-secondary" id="btn-exam-next" ${currentIdx + 1 >= totalQ ? 'disabled' : ''}>
-            <span class="btn-text-hide-mobile">Câu sau</span> <span>→</span>
+            <span class="btn-text-hide-mobile">${i18n.t("nextQuestion")}</span> <span>→</span>
           </button>
         </div>
 
         <div>
           <button class="btn btn-primary btn-orange" id="btn-exam-submit">
-            ✓ ${i18n.t("submitExamBtn")} (${answeredCount}/${totalQ})
+            ${i18n.t("submitExamBtn")} (${answeredCount}/${totalQ})
           </button>
         </div>
       </footer>

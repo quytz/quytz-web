@@ -1,7 +1,7 @@
 # QuizMaster Web 🚀
 ### Ứng dụng Ôn tập & Tạo Đề thi Trắc nghiệm Thông minh bằng Gemini AI (Client-First Web Edition)
 
-QuizMaster Web là phiên bản Web hoàn chỉnh (v1.0.0) được chuyển đổi từ ứng dụng macOS gốc, mang lại trải nghiệm ôn tập trắc nghiệm cao cấp chuẩn Apple Liquid Glass, xử lý 100% trên thiết bị người dùng (Client-Side) với chi phí hosting bằng **0 đồng**.
+QuizMaster Web là phiên bản Web hoàn chỉnh (v1.0.1) được chuyển đổi từ ứng dụng macOS gốc, mang lại trải nghiệm ôn tập trắc nghiệm cao cấp chuẩn Apple Liquid Glass, xử lý 100% trên thiết bị người dùng (Client-Side) với chi phí hosting bằng **0 đồng**.
 
 ![QuizMaster Web](assets/AppIcon.png)
 
@@ -94,5 +94,5 @@ Sau đó mở trình duyệt tại địa chỉ: `http://localhost:8000` hoặc 
 
 ## 📜 Bản quyền & Tác giả
 - **Tác giả**: @tozn607 (Anh Vinh)
-- **Phiên bản**: v1.0.0 (Web Edition)
+- **Phiên bản**: v1.0.1 (Web Edition)
 - Được phát triển với mục tiêu mang lại giải pháp tự học trắc nghiệm thông minh, hoàn toàn miễn phí và tôn trọng quyền riêng tư người dùng.

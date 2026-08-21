@@ -133,23 +133,28 @@ export function bindReadingPaneEvents(state, updateStateCallback) {
 
 export function formatMarkdownHTML(rawText) {
   if (!rawText) return "";
-  let text = rawText
+  let text = String(rawText)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
   // Code block fences
-  text = text.replace(/```[a-z]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  text = text.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, '<pre><code class="code-block">$2</code></pre>');
+  // Inline code: `code`
+  text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
   // Bold: **word** or __word__
-  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__([^_]+)__/g, '<strong>$1</strong>');
   // Italic: *word* or _word_
-  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
-  // Underline tags: [underlined]
-  text = text.replace(/\[([^\]]+)\]/g, '<u>$1</u>');
 
   // Convert line breaks to paragraphs
   const paragraphs = text.split(/\n\s*\n/);
-  return paragraphs.map(p => `<p style="margin-bottom: 12px;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+  return paragraphs.map(p => {
+    const trimmed = p.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("<pre>") && trimmed.endsWith("</pre>")) return trimmed;
+    return `<p style="margin-bottom: 0.65em; line-height: 1.55;">${trimmed.replace(/\n/g, '<br>')}</p>`;
+  }).filter(Boolean).join('');
 }
