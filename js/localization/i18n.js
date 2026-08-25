@@ -186,10 +186,25 @@ export const DICTIONARIES = {
     confirmQuitExamPrompt: "Bạn có chắc chắn muốn thoát bài thi thử? Tiến độ làm bài hiện tại sẽ không được lưu.",
     projectTypeGeneral: "Dự án Ôn tập Chung",
     projectTypeLanguage: "Dự án Học Ngoại ngữ",
+    projectTypeTHPT: "Dự án THPT Quốc gia",
     projectTypeSelector: "Loại Dự án:",
+    thptModeHeader: "Đề thi THPT Quốc gia (3 Phần chuẩn)",
+    thptPart1: "Phần I: Nhiều lựa chọn (chọn 1 trong 4)",
+    thptPart2: "Phần II: Đúng / Sai (4 ý a, b, c, d)",
+    thptPart3: "Phần III: Trả lời ngắn (điền kết quả)",
+    thptTrue: "Đúng",
+    thptFalse: "Sai",
+    thptSubItemPrompt: "Chọn Đúng hoặc Sai cho từng ý:",
+    thptShortAnswerPrompt: "Tự điền đáp án / giá trị số:",
+    thptShortAnswerPlaceholder: "Nhập kết quả (ví dụ: 12.5, -4, 2/3)...",
+    thptCheckAnswer: "Kiểm tra",
+    thptScoreScale: "Điểm số (Thang điểm 10):",
+    resetProgressSuccess: "Đã đặt lại tiến độ học của bộ đề.",
+    confirmResetProgress: "Bạn có chắc chắn muốn đặt lại tiến độ và làm lại bộ đề này từ đầu?",
     onlyInLLProjectNotice: "Chế độ Học ngoại ngữ chỉ áp dụng cho 'Dự án Học Ngoại ngữ'. Vui lòng chọn hoặc tạo Dự án Ngoại ngữ ở thanh bên.",
     onlyInGeneralProjectNotice: "Chế độ Quét tài liệu bài giảng thông thường chỉ áp dụng cho 'Dự án Ôn tập Chung'. Vui lòng chọn hoặc tạo Dự án Ôn tập Chung ở thanh bên.",
-    cannotMoveAcrossTypes: "Không thể chuyển bộ đề giữa hai loại dự án khác nhau (Ngoại ngữ và Chung)."
+    onlyInTHPTProjectNotice: "Chế độ Quét Đề thi THPT Quốc gia chỉ áp dụng cho 'Dự án THPT Quốc gia'. Vui lòng chọn hoặc tạo Dự án THPT Quốc gia ở thanh bên.",
+    cannotMoveAcrossTypes: "Không thể chuyển bộ đề giữa các loại dự án khác nhau."
   },
   en: {
     appName: "QuizMaster",
@@ -377,10 +392,25 @@ export const DICTIONARIES = {
     confirmQuitExamPrompt: "Are you sure you want to quit the exam? Your current progress will not be saved.",
     projectTypeGeneral: "General Study Project",
     projectTypeLanguage: "Language Learning Project",
+    projectTypeTHPT: "National High School Exam (THPT)",
     projectTypeSelector: "Project Type:",
+    thptModeHeader: "THPT National Exam (Standard 3-Part)",
+    thptPart1: "Part I: Multiple Choice (1 out of 4)",
+    thptPart2: "Part II: True / False (4 sub-items a, b, c, d)",
+    thptPart3: "Part III: Short Answer (fill in result)",
+    thptTrue: "True",
+    thptFalse: "False",
+    thptSubItemPrompt: "Select True or False for each statement:",
+    thptShortAnswerPrompt: "Fill in your answer / numerical value:",
+    thptShortAnswerPlaceholder: "Enter result (e.g. 12.5, -4, 2/3)...",
+    thptCheckAnswer: "Check",
+    thptScoreScale: "Score (10-Point Scale):",
+    resetProgressSuccess: "Quiz progress has been reset.",
+    confirmResetProgress: "Are you sure you want to reset all progress for this quiz set?",
     onlyInLLProjectNotice: "Language Learning mode only applies to 'Language Learning Projects'. Please select or create a Language Project.",
     onlyInGeneralProjectNotice: "General lecture scanning only applies to 'General Study Projects'. Please select or create a General Project.",
-    cannotMoveAcrossTypes: "Cannot move quiz sets between different project types (Language and General)."
+    onlyInTHPTProjectNotice: "THPT National Exam mode only applies to 'THPT National Exam Projects'. Please select or create a THPT Project in the sidebar.",
+    cannotMoveAcrossTypes: "Cannot move quiz sets between different project types."
   }
 };
 

@@ -511,3 +511,264 @@
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   SF Symbols Icon System
+   ========================================================================== */
+.sf-icon {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.sf-icon-sm {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.sf-icon-lg {
+  width: 1.35em;
+  height: 1.35em;
+}
+
+/* Completed Card Reset Button */
+.btn-card-reset {
+  color: var(--color-ocean-blue);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-card-reset:hover {
+  color: var(--color-coral-red) !important;
+  transform: rotate(-90deg) scale(1.1);
+}
+
+/* ==========================================================================
+   THPT Quốc Gia - 3-Part Component Styles
+   ========================================================================== */
+.thpt-subitems-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.thpt-subitem-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.thpt-subitem-row.is-correct {
+  border-color: var(--color-emerald-mint);
+  background: rgba(46, 158, 102, 0.08);
+}
+
+.thpt-subitem-row.is-wrong {
+  border-color: var(--color-coral-red);
+  background: rgba(214, 71, 82, 0.08);
+}
+
+.thpt-subitem-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.thpt-tf-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.thpt-tf-btn {
+  padding: 6px 14px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 68px;
+  text-align: center;
+  user-select: none;
+}
+
+.thpt-tf-btn:hover:not(:disabled) {
+  border-color: var(--color-ocean-blue);
+  color: var(--color-ocean-blue);
+}
+
+/* User selected while ticking (neutral accent, NOT red/green) */
+.thpt-tf-btn.is-selected,
+.thpt-tf-btn.selected-true,
+.thpt-tf-btn.selected-false {
+  background: var(--color-ocean-blue) !important;
+  border-color: var(--color-ocean-blue) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(31, 122, 232, 0.35);
+}
+
+/* Graded state (revealed after submission / answering) */
+.thpt-tf-btn.ans-correct {
+  background: var(--color-emerald-mint) !important;
+  border-color: var(--color-emerald-mint) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(46, 158, 102, 0.35);
+}
+
+.thpt-tf-btn.ans-wrong {
+  background: var(--color-coral-red) !important;
+  border-color: var(--color-coral-red) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(214, 71, 82, 0.35);
+}
+
+.thpt-tf-btn.is-key-correct,
+.thpt-tf-btn.correct-indicator {
+  border: 2px dashed var(--color-emerald-mint) !important;
+  font-weight: 900;
+}
+
+/* Markdown Tables & Math KaTeX */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin: 12px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-align: center;
+}
+
+.markdown-table th,
+.markdown-table td {
+  padding: 8px 14px;
+  border: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  text-align: center;
+}
+
+.markdown-table th {
+  background: var(--bg-secondary);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.markdown-table tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.katex {
+  font-size: 1.08em;
+  line-height: 1.2;
+}
+
+.katex-display {
+  margin: 0.5em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+/* THPT Part III Short Answer */
+.thpt-short-answer-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: var(--radius-md);
+}
+
+.thpt-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.thpt-short-input {
+  flex: 1;
+  min-width: 220px;
+  font-size: var(--text-base);
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: var(--font-family-mono);
+}
+
+.thpt-short-input:focus {
+  border-color: var(--color-ocean-blue);
+  background: var(--bg-card);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 122, 232, 0.2);
+}
+
+/* ==========================================================================
+   Code Snippets, Indentation & Spacing Preservation
+   ========================================================================== */
+pre {
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  overflow-x: auto;
+  margin: 0.6em 0;
+  white-space: pre;
+}
+
+code.code-block {
+  font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
+  font-size: 0.88em;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre;
+  tab-size: 4;
+  display: block;
+}
+
+code.inline-code {
+  font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--color-ocean-blue);
+  white-space: pre-wrap;
+}
+
+.formatted-paragraph {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+

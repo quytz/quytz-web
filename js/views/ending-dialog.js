@@ -3,31 +3,20 @@
  */
 import { i18n } from "../localization/i18n.js";
 import { formatMarkdownHTML } from "../components/reading-pane.js";
+import { calculateQuizScore } from "../models/types.js";
+import { renderSF } from "../components/icons.js";
 
 export function renderEndingModal(quiz, progress, onRedoWrong, onReviewAnswers, onBackDashboard) {
+  const scoreRes = calculateQuizScore(quiz, progress);
   const totalQ = quiz.questions.length;
-  let correctCount = 0;
-  let wrongCount = 0;
-
-  quiz.questions.forEach(q => {
-    const userOptId = progress.userSelectedOptionIds ? progress.userSelectedOptionIds[q.id] : null;
-    const correctOptId = q.options[q.correctAnswerIndex]?.id;
-    if (userOptId && userOptId === correctOptId) {
-      correctCount++;
-    } else if (userOptId) {
-      wrongCount++;
-    }
-  });
-
-  const percent = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
-  const isPerfect = percent === 100;
-  const starCount = percent >= 85 ? 3 : (percent >= 60 ? 2 : (percent >= 30 ? 1 : 0));
+  const isPerfect = scoreRes.percentage === 100;
+  const starCount = scoreRes.percentage >= 85 ? 3 : (scoreRes.percentage >= 60 ? 2 : (scoreRes.percentage >= 30 ? 1 : 0));
 
   const starsHtml = "⭐".repeat(starCount) + "☆".repeat(3 - starCount);
 
   return `
     <div class="modal-overlay open" id="ending-modal-overlay">
-      <div class="modal-container" style="max-width: 520px; width: 100%;">
+      <div class="modal-container" style="max-width: 540px; width: 100%;">
         <div class="modal-header" style="text-align: center; justify-content: center;">
           <h2 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-primary);">
             ${i18n.t("quizFinishedTitle")}
@@ -35,42 +24,72 @@ export function renderEndingModal(quiz, progress, onRedoWrong, onReviewAnswers, 
         </div>
 
         <div class="modal-body" style="text-align: center;">
-          <div style="font-size: 54px; margin-bottom: 12px;">
-            ${isPerfect ? '🏆' : '🎯'}
+          <div style="margin-bottom: 12px; color: ${isPerfect ? 'var(--color-sunset-orange)' : 'var(--color-ocean-blue)'};">
+            ${renderSF(isPerfect ? "trophy" : "target", { size: "54px" })}
           </div>
 
           <div style="font-size: 32px; letter-spacing: 4px; margin-bottom: 16px;">
             ${starsHtml}
           </div>
 
-          <div style="font-size: var(--text-3xl); font-weight: 800; color: var(--color-emerald-mint);">
-            ${percent}%
-          </div>
-          <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); margin-top: 4px;">
-            ${i18n.t("masteryLevel")}: ${correctCount} / ${totalQ} câu đúng
-          </div>
+          ${scoreRes.isTHPT ? `
+            <div style="font-size: var(--text-3xl); font-weight: 900; color: var(--color-emerald-mint);">
+              ${scoreRes.scoreOutOf10} <span style="font-size: var(--text-lg); color: var(--text-secondary); font-weight: 600;">/ 10.0 đ</span>
+            </div>
+            <div style="font-size: var(--text-sm); font-weight: 700; color: var(--color-ocean-blue); margin-top: 4px;">
+              Mức độ hoàn thành: ${scoreRes.percentage}% (${scoreRes.correctCount} / ${totalQ} câu hoàn thành)
+            </div>
+          ` : `
+            <div style="font-size: var(--text-3xl); font-weight: 800; color: var(--color-emerald-mint);">
+              ${scoreRes.percentage}%
+            </div>
+            <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); margin-top: 4px;">
+              ${i18n.t("masteryLevel")}: ${scoreRes.correctCount} / ${totalQ} câu đúng
+            </div>
+          `}
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 12px;">
-            <div class="glass-card" style="padding: 12px; text-align: center; border-color: rgba(46, 158, 102, 0.3);">
-              <div style="font-size: var(--text-xl); font-weight: 800; color: var(--color-emerald-mint);">${correctCount}</div>
-              <div style="font-size: var(--text-xs); color: var(--text-secondary);">Câu làm Đúng</div>
+          <!-- THPT Breakdown -->
+          ${scoreRes.isTHPT ? `
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 20px 0 12px;">
+              <div class="glass-card" style="padding: 10px 6px; text-align: center; border-color: rgba(31, 122, 232, 0.3);">
+                <div style="font-size: 11px; font-weight: 800; color: var(--color-ocean-blue);">PHẦN I</div>
+                <div style="font-size: var(--text-md); font-weight: 800; margin-top: 2px;">${scoreRes.parts.part1.earned}đ</div>
+                <div style="font-size: 10px; color: var(--text-secondary);">${scoreRes.parts.part1.correctCount}/${scoreRes.parts.part1.count} câu</div>
+              </div>
+              <div class="glass-card" style="padding: 10px 6px; text-align: center; border-color: rgba(122, 92, 204, 0.3);">
+                <div style="font-size: 11px; font-weight: 800; color: var(--color-deep-purple);">PHẦN II</div>
+                <div style="font-size: var(--text-md); font-weight: 800; margin-top: 2px;">${scoreRes.parts.part2.earned}đ</div>
+                <div style="font-size: 10px; color: var(--text-secondary);">${scoreRes.parts.part2.correctCount}/${scoreRes.parts.part2.count} câu</div>
+              </div>
+              <div class="glass-card" style="padding: 10px 6px; text-align: center; border-color: rgba(245, 158, 11, 0.3);">
+                <div style="font-size: 11px; font-weight: 800; color: var(--color-sunset-orange);">PHẦN III</div>
+                <div style="font-size: var(--text-md); font-weight: 800; margin-top: 2px;">${scoreRes.parts.part3.earned}đ</div>
+                <div style="font-size: 10px; color: var(--text-secondary);">${scoreRes.parts.part3.correctCount}/${scoreRes.parts.part3.count} câu</div>
+              </div>
             </div>
-            <div class="glass-card" style="padding: 12px; text-align: center; border-color: rgba(214, 71, 82, 0.3);">
-              <div style="font-size: var(--text-xl); font-weight: 800; color: var(--color-coral-red);">${wrongCount}</div>
-              <div style="font-size: var(--text-xs); color: var(--text-secondary);">Câu làm Sai</div>
+          ` : `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 12px;">
+              <div class="glass-card" style="padding: 12px; text-align: center; border-color: rgba(46, 158, 102, 0.3);">
+                <div style="font-size: var(--text-xl); font-weight: 800; color: var(--color-emerald-mint);">${scoreRes.correctCount}</div>
+                <div style="font-size: var(--text-xs); color: var(--text-secondary);">Câu làm Đúng</div>
+              </div>
+              <div class="glass-card" style="padding: 12px; text-align: center; border-color: rgba(214, 71, 82, 0.3);">
+                <div style="font-size: var(--text-xl); font-weight: 800; color: var(--color-coral-red);">${scoreRes.wrongCount}</div>
+                <div style="font-size: var(--text-xs); color: var(--text-secondary);">Câu làm Sai / Chưa xong</div>
+              </div>
             </div>
-          </div>
+          `}
         </div>
 
         <div class="modal-footer" style="flex-direction: column; gap: 10px;">
-          ${wrongCount > 0 ? `
+          ${scoreRes.wrongCount > 0 ? `
             <button class="btn btn-primary btn-orange" id="btn-redo-wrong" style="width: 100%;">
-              ${i18n.t("btnRedoWrongOnly")} (${wrongCount} câu)
+              ${renderSF("arrow.counterclockwise", { size: "15px" })} ${i18n.t("btnRedoWrongOnly")} (${scoreRes.wrongCount} câu)
             </button>
           ` : ''}
 
           <button class="btn btn-primary" id="btn-review-answers" style="width: 100%;">
-            ${i18n.t("btnReviewWithAnswers")}
+            ${renderSF("book.closed", { size: "15px" })} ${i18n.t("btnReviewWithAnswers")}
           </button>
 
           <button class="btn btn-secondary" id="btn-ending-dashboard" style="width: 100%;">
@@ -102,7 +121,9 @@ export function renderNationalAnthemModal() {
           <h2 style="font-size: var(--text-lg); font-weight: 800; color: var(--color-coral-red);">
             TIẾN QUÂN CA
           </h2>
-          <button class="btn btn-ghost btn-icon-only" id="btn-close-anthem" style="position: absolute; right: 12px; top: 10px;">✕</button>
+          <button class="btn btn-ghost btn-icon-only" id="btn-close-anthem" style="position: absolute; right: 12px; top: 10px;">
+            ${renderSF("xmark", { size: "14px" })}
+          </button>
         </div>
 
         <div class="modal-body" style="padding: 20px; overflow-y: auto;">
@@ -163,3 +184,4 @@ export function bindNationalAnthemEvents(onClose) {
   const doneBtn = document.getElementById("btn-done-anthem");
   if (doneBtn) doneBtn.onclick = () => onClose();
 }
+

@@ -160,6 +160,11 @@ body {
   color: var(--color-deep-purple);
 }
 
+.project-item.is-thpt .project-icon-box {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-coral-red);
+}
+
 .project-details {
   flex: 1;
   min-width: 0;
@@ -201,13 +206,12 @@ body {
   position: relative;
 }
 
-/* Top Dashboard Bar */
+/* Top Dashboard Bar - 2-Row Header Layout */
 .top-header-bar {
   padding: 0.85rem 1.25rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -218,12 +222,12 @@ body {
   flex-shrink: 0;
 }
 
-.top-header-left {
+.top-header-primary {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   min-width: 0;
-  flex: 1;
 }
 
 .top-header-title {
@@ -232,7 +236,7 @@ body {
 }
 
 .top-header-title h1 {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: 800;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -250,11 +254,13 @@ body {
   text-overflow: ellipsis;
 }
 
-.top-header-actions {
+.top-header-toolbar {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
-  flex-shrink: 0;
+  width: 100%;
+  flex-wrap: wrap;
 }
 
 /* Multi-select Toolbar */

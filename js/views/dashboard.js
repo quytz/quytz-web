@@ -3,14 +3,15 @@
  */
 import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
-import { calculateProjectStats } from "../models/types.js";
+import { calculateProjectStats, calculateQuizScore } from "../models/types.js";
+import { renderSF } from "../components/icons.js";
 
 export function renderDashboard(project, appState) {
   if (!project) {
     return `
       <main class="app-main">
         <div style="margin: auto; text-align: center; color: var(--text-secondary); padding: 40px 20px;">
-          <div style="font-size: 54px; margin-bottom: 12px;">📂</div>
+          <div style="margin-bottom: 12px; color: var(--color-ocean-blue);">${renderSF("folder", { size: "54px" })}</div>
           <div style="font-size: var(--text-lg); font-weight: 700;">${i18n.t("noProjectsYet")}</div>
           <p style="margin-top: 6px;">${i18n.t("createFirstProjectPrompt")}</p>
         </div>
@@ -25,11 +26,11 @@ export function renderDashboard(project, appState) {
 
   return `
     <main class="app-main">
-      <!-- Top Dashboard Bar -->
+      <!-- Top Dashboard Bar - 2-Row Layout -->
       <header class="top-header-bar">
-        <div class="top-header-left">
+        <div class="top-header-primary">
           <button class="btn btn-secondary btn-icon-only mobile-menu-btn" id="btn-toggle-mobile-sidebar" title="Mở danh sách dự án">
-            ☰
+            ${renderSF("line.3.horizontal", { size: "1.2rem" })}
           </button>
           <div class="top-header-title">
             <h1>${escapeHtml(project.name)}</h1>
@@ -37,20 +38,22 @@ export function renderDashboard(project, appState) {
           </div>
         </div>
 
-        <div class="top-header-actions">
+        <div class="top-header-toolbar">
           <!-- Shuffle Button -->
           <button class="btn btn-pill ${isShuffle ? 'active' : 'btn-secondary'}" id="btn-toggle-shuffle" title="Bật/tắt xáo trộn câu hỏi và phương án A/B/C/D">
+            ${renderSF("arrow.triangle.2.circlepath", { size: "14px" })}
             <span class="btn-text-hide-mobile">${i18n.t("toggleShuffle")}</span>
           </button>
 
           <!-- Multi-select Mode Button -->
           <button class="btn btn-pill ${isMulti ? 'btn-primary btn-purple' : 'btn-secondary'}" id="btn-toggle-multi-select" title="Chọn nhiều bộ đề">
+            ${renderSF("square.stack", { size: "14px" })}
             <span class="btn-text-hide-mobile">${isMulti ? i18n.t("exitMultiSelect") : i18n.t("multiSelectQuizzes")}</span>
           </button>
 
           <!-- Import Document Button -->
           <button class="btn btn-primary btn-rainbow" id="btn-open-import">
-            <span>＋</span> <span>${i18n.t("importDoc")}</span>
+            ${renderSF("plus", { size: "16px" })} <span>${i18n.t("importDoc")}</span>
           </button>
         </div>
       </header>
@@ -59,7 +62,7 @@ export function renderDashboard(project, appState) {
       ${isMulti && selectedCount > 0 ? `
         <div class="multi-select-bar">
           <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-ocean-blue); font-size: var(--text-sm);">
-            <span>✓</span>
+            ${renderSF("checkmark", { size: "14px" })}
             <span>Đã chọn ${selectedCount} bộ đề</span>
           </div>
 
@@ -74,7 +77,7 @@ export function renderDashboard(project, appState) {
               Chuyển...
             </button>
             <button class="btn btn-secondary" id="btn-multi-delete" style="color: var(--color-coral-red);">
-              Xóa (${selectedCount})
+              ${renderSF("trash", { size: "13px" })} Xóa (${selectedCount})
             </button>
           </div>
         </div>
@@ -84,11 +87,11 @@ export function renderDashboard(project, appState) {
       <div class="dashboard-content">
         ${project.quizzes.length === 0 ? `
           <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary); max-width: 500px; margin: 0 auto;">
-            <div style="font-size: 50px; margin-bottom: 12px;">📚</div>
+            <div style="margin-bottom: 12px; color: var(--color-ocean-blue);">${renderSF("doc.text", { size: "48px" })}</div>
             <div style="font-size: var(--text-lg); font-weight: 700; color: var(--text-primary);">${i18n.t("noQuizzesInProject")}</div>
             <p style="margin: 8px 0 16px; font-size: var(--text-sm);">Tải lên tài liệu PDF, Word .docx hoặc bài giảng để Gemini AI tự động tạo đề thi.</p>
             <button class="btn btn-primary btn-rainbow" id="btn-empty-import">
-              <span>＋</span> ${i18n.t("importDoc")}
+              ${renderSF("plus", { size: "16px" })} ${i18n.t("importDoc")}
             </button>
           </div>
         ` : `
@@ -105,6 +108,7 @@ function renderQuizCard(quiz, project, appState) {
   const prog = project.progressMap[quiz.id];
   const isFullyCompleted = prog && (prog.isCompleted || (Object.keys(prog.userAnswers || {}).length >= quiz.questions.length && quiz.questions.length > 0));
   const isLL = quiz.quizType === "languageLearning" || project.projectType === "languageLearning";
+  const isTHPT = quiz.quizType === "thptQuocGia" || project.projectType === "thptQuocGia";
   const isSelectedInMulti = appState.selectedQuizIds && appState.selectedQuizIds.has(quiz.id);
 
   let progressPercent = 0;
@@ -112,6 +116,19 @@ function renderQuizCard(quiz, project, appState) {
   if (prog && prog.userAnswers) {
     practicedCount = Object.keys(prog.userAnswers).length;
     progressPercent = quiz.questions.length > 0 ? Math.round((practicedCount / quiz.questions.length) * 100) : 0;
+  }
+
+  // Calculate score if practiced
+  let scoreBadgeHtml = "";
+  if (isFullyCompleted) {
+    if (isTHPT) {
+      const scoreRes = calculateQuizScore(quiz, prog);
+      scoreBadgeHtml = `<span class="badge badge-green">${renderSF("checkmark", { size: "11px" })} Đạt ${scoreRes.scoreOutOf10}/10đ (${scoreRes.percentage}%)</span>`;
+    } else {
+      scoreBadgeHtml = `<span class="badge badge-green">${renderSF("checkmark", { size: "11px" })} Đã ôn xong</span>`;
+    }
+  } else if (practicedCount > 0) {
+    scoreBadgeHtml = `<span class="badge badge-orange">Đang học ${progressPercent}%</span>`;
   }
 
   return `
@@ -122,15 +139,27 @@ function renderQuizCard(quiz, project, appState) {
         ` : ''}
         <div class="quiz-card-title">${escapeHtml(quiz.title)}</div>
         <div class="quiz-card-actions">
-          <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">✏️</button>
-          <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn">⋯</button>
+          ${(isFullyCompleted || practicedCount > 0) ? `
+            <button class="btn btn-ghost btn-icon-only btn-card-reset" data-quiz-id="${quiz.id}" title="${i18n.t("resetProgress")}">
+              ${renderSF("arrow.counterclockwise", { size: "15px" })}
+            </button>
+          ` : ''}
+          <button class="btn btn-ghost btn-icon-only btn-card-edit" data-quiz-id="${quiz.id}" title="Chỉnh sửa câu hỏi">
+            ${renderSF("square.and.pencil", { size: "15px" })}
+          </button>
+          <button class="btn btn-ghost btn-icon-only btn-card-menu" data-quiz-id="${quiz.id}" title="Tùy chọn">
+            ${renderSF("ellipsis", { size: "14px" })}
+          </button>
         </div>
       </div>
 
       <div class="quiz-card-meta">
-        <span class="badge ${isLL ? 'badge-purple' : 'badge-blue'}">${quiz.questions.length} ${i18n.t("questionsCount")}</span>
+        <span class="badge ${isTHPT ? 'badge-orange' : (isLL ? 'badge-purple' : 'badge-blue')}">
+          ${quiz.questions.length} ${i18n.t("questionsCount")}
+        </span>
+        ${isTHPT ? `<span class="badge badge-red">THPT QG (3 Phần)</span>` : ''}
         ${isLL && quiz.vocabularies ? `<span class="badge badge-teal">${quiz.vocabularies.length} từ vựng</span>` : ''}
-        ${isFullyCompleted ? `<span class="badge badge-green">✓ Đã ôn xong</span>` : (practicedCount > 0 ? `<span class="badge badge-orange">Đang học ${progressPercent}%</span>` : '')}
+        ${scoreBadgeHtml}
       </div>
 
       <div class="study-modes-row">
@@ -204,6 +233,13 @@ export function bindDashboardEvents(project, appState, handlers) {
     btn.onclick = () => handlers.onStartFlashcard(btn.dataset.quizId);
   });
 
+  document.querySelectorAll(".btn-card-reset").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      handlers.onResetQuizProgress(btn.dataset.quizId);
+    };
+  });
+
   document.querySelectorAll(".btn-card-edit").forEach(btn => {
     btn.onclick = () => handlers.onEditQuiz(btn.dataset.quizId);
   });
@@ -217,3 +253,4 @@ function escapeHtml(text) {
   if (!text) return "";
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+

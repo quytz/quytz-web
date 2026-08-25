@@ -1,8 +1,6 @@
-/**
- * QuizMaster Web - Ask Gemini AI Tutor Modal
- */
 import { i18n } from "../localization/i18n.js";
 import { formatMarkdownHTML } from "../components/reading-pane.js";
+import { renderSF } from "../components/icons.js";
 
 export function renderAskGeminiModal(question, askState) {
   const isQuerying = askState.isQuerying;
@@ -15,20 +13,22 @@ export function renderAskGeminiModal(question, askState) {
         <!-- Header -->
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 22px; color: var(--color-ocean-blue);">✨</span>
+            ${renderSF("sparkles", { size: "22px" })}
             <h2 style="font-size: var(--text-lg); font-weight: 800; color: var(--text-primary);">
               Hỏi Gemini AI về Câu hỏi này
             </h2>
           </div>
 
-          <button class="btn btn-ghost btn-icon-only" id="btn-close-ask-gemini">✕</button>
+          <button class="btn btn-ghost btn-icon-only" id="btn-close-ask-gemini">
+            ${renderSF("xmark", { size: "14px" })}
+          </button>
         </div>
 
         <!-- Body -->
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
           <!-- Rate Limit Warning Banner -->
           <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1px solid rgba(224, 117, 51, 0.35);">
-            <span style="font-size: 18px; color: var(--color-sunset-orange);">⚠️</span>
+            <span style="color: var(--color-sunset-orange);">${renderSF("info.circle", { size: "18px" })}</span>
             <div>
               <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
                 CẢNH BÁO GIỚI HẠN API (API RATE LIMIT):

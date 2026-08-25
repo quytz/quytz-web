@@ -5,6 +5,7 @@ import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
 import { APP_CONFIG } from "../config.js";
 import { calculateProjectStats } from "../models/types.js";
+import { renderSF } from "../components/icons.js";
 
 export const MORNING_GREETINGS = [
   { emoji: "🌅", text: "Chào buổi sáng! Làm tách cà phê rồi vào cày đề nào ☕" },
@@ -85,6 +86,7 @@ export function getTimePool(hour = new Date().getHours()) {
 }
 
 let lastGreetingIndex = -1;
+let currentActiveGreeting = null;
 
 export function getRandomGreeting(hour = new Date().getHours()) {
   const pool = getTimePool(hour);
@@ -98,7 +100,10 @@ export function getRandomGreeting(hour = new Date().getHours()) {
 
 export function renderSidebar(selectedProjectId, appState) {
   const currentHour = new Date().getHours();
-  const greeting = getRandomGreeting(currentHour);
+  if (!currentActiveGreeting) {
+    currentActiveGreeting = getRandomGreeting(currentHour);
+  }
+  const greeting = currentActiveGreeting;
   const isOpen = !!appState.isMobileSidebarOpen;
 
   return `
@@ -110,11 +115,11 @@ export function renderSidebar(selectedProjectId, appState) {
             <div class="brand-title">${i18n.t("appName")}</div>
             <div class="brand-subtitle">${i18n.t("projects")}</div>
           </div>
-          <button class="btn btn-ghost btn-icon-only" id="btn-open-settings" title="${i18n.t("settings")}" style="font-size: 1.35rem; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center;">
-            ⚙️
+          <button class="btn btn-ghost btn-icon-only" id="btn-open-settings" title="${i18n.t("settings")}" style="font-size: 1.25rem; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center;">
+            ${renderSF("gearshape", { size: "1.35rem" })}
           </button>
           <button class="btn btn-ghost btn-icon-only mobile-menu-btn" id="btn-close-sidebar" title="Đóng thanh bên" style="display: none;">
-            ✕
+            ${renderSF("xmark", { size: "1.2rem" })}
           </button>
         </div>
 
@@ -127,18 +132,29 @@ export function renderSidebar(selectedProjectId, appState) {
       <div class="project-list-container" id="project-list-container">
         ${storage.projects.length === 0 ? `
           <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
-            <div style="font-size: 36px; margin-bottom: 8px;">📂</div>
+            <div style="margin-bottom: 8px; color: var(--color-ocean-blue);">${renderSF("folder", { size: "36px" })}</div>
             <div style="font-size: var(--text-sm);">${i18n.t("noProjects")}</div>
           </div>
         ` : storage.projects.map(project => {
           const stats = calculateProjectStats(project);
           const isSelected = project.id === selectedProjectId;
           const isLL = project.projectType === "languageLearning";
+          const isTHPT = project.projectType === "thptQuocGia";
+
+          let iconName = "folder";
+          let projectTypeClass = "";
+          if (isLL) {
+            iconName = "book.closed";
+            projectTypeClass = "is-ll";
+          } else if (isTHPT) {
+            iconName = "graduationcap";
+            projectTypeClass = "is-thpt";
+          }
 
           return `
-            <div class="project-item ${isSelected ? 'active' : ''} ${isLL ? 'is-ll' : ''}" data-project-id="${project.id}">
+            <div class="project-item ${isSelected ? 'active' : ''} ${projectTypeClass}" data-project-id="${project.id}">
               <div class="project-icon-box">
-                ${isLL ? '📖' : '📁'}
+                ${renderSF(iconName, { size: "18px" })}
               </div>
               <div class="project-details">
                 <div class="project-name">${escapeHtml(project.name)}</div>
@@ -147,11 +163,13 @@ export function renderSidebar(selectedProjectId, appState) {
                 </div>
               </div>
               ${stats.masteryPercentage > 0 ? `
-                <span class="badge ${stats.masteryPercentage >= 75 ? 'badge-green' : 'badge-blue'}">
+                <span class="badge ${stats.masteryPercentage >= 75 ? 'badge-green' : (isTHPT ? 'badge-orange' : (isLL ? 'badge-purple' : 'badge-blue'))}">
                   ${stats.masteryPercentage}%
                 </span>
               ` : ''}
-              <button class="btn btn-ghost btn-icon-only btn-project-menu" data-project-id="${project.id}" title="Tùy chọn dự án" style="width: 1.85rem; height: 1.85rem; flex-shrink: 0; margin-left: 2px;">⋯</button>
+              <button class="btn btn-ghost btn-icon-only btn-project-menu" data-project-id="${project.id}" title="Tùy chọn dự án" style="width: 1.85rem; height: 1.85rem; flex-shrink: 0; margin-left: 2px;">
+                ${renderSF("ellipsis", { size: "14px" })}
+              </button>
             </div>
           `;
         }).join('')}
@@ -159,7 +177,7 @@ export function renderSidebar(selectedProjectId, appState) {
 
       <div class="sidebar-footer">
         <button class="btn btn-primary" id="btn-add-project" style="width: 100%;">
-          <span>＋</span> ${i18n.t("addProject")}
+          ${renderSF("plus", { size: "16px" })} ${i18n.t("addProject")}
         </button>
 
         <!-- Easter Egg Footer -->
@@ -204,6 +222,7 @@ export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpe
   if (greetingBadge) {
     greetingBadge.onclick = () => {
       const next = getRandomGreeting();
+      currentActiveGreeting = next;
       const emojiEl = document.getElementById("greeting-emoji");
       const textEl = document.getElementById("greeting-text");
       if (emojiEl) emojiEl.textContent = next.emoji;

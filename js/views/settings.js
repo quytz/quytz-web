@@ -4,6 +4,7 @@
 import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
 import { APP_CONFIG } from "../config.js";
+import { renderSF } from "../components/icons.js";
 
 export function renderSettingsModal(settingsState) {
   const isTestingKey = settingsState.isTestingKey;
@@ -15,13 +16,15 @@ export function renderSettingsModal(settingsState) {
         <!-- Header -->
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">⚙</span>
+            ${renderSF("gearshape", { size: "20px" })}
             <h2 style="font-size: var(--text-lg); font-weight: 800; color: var(--text-primary);">
               ${i18n.t("settingsTitle")}
             </h2>
           </div>
 
-          <button class="btn btn-ghost btn-icon-only" id="btn-close-settings">✕</button>
+          <button class="btn btn-ghost btn-icon-only" id="btn-close-settings">
+            ${renderSF("xmark", { size: "14px" })}
+          </button>
         </div>
 
         <!-- Body -->

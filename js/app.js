@@ -1,6 +1,6 @@
 /**
  * QuizMaster Web - Central Application Controller & Router
- * Version: v1.1.0
+ * Version: v1.2.0
  */
 import { APP_CONFIG } from "./config.js";
 import { i18n } from "./localization/i18n.js";
@@ -10,7 +10,8 @@ import { documentParser } from "./services/document-parser.js";
 import { exporter } from "./services/exporter.js";
 import { telemetry } from "./services/telemetry.js";
 import { keyboard } from "./components/keyboard.js";
-import { createQuizProgress, shuffleQuestionOptions, createQuiz, createQuestion, createQuestionOption } from "./models/types.js";
+import { createQuizProgress, shuffleQuestionOptions, createQuiz, createQuestion, createQuestionOption, scoreQuestion } from "./models/types.js";
+import { renderSF } from "./components/icons.js";
 
 // Views
 import { renderSidebar, bindSidebarEvents } from "./views/sidebar.js";
@@ -219,6 +220,82 @@ class QuizMasterApp {
     this.render();
   }
 
+  selectPracticePart2Answers(questionId, subAnswers) {
+    const q = this.practiceState.activeQuestions[this.practiceState.currentIndex];
+    if (!q) return;
+
+    this.practiceState.userSelectedOptionIds[q.id] = subAnswers;
+    this.practiceState.userAnswers[q.id] = subAnswers;
+
+    const scoreRes = scoreQuestion(q, subAnswers);
+    if (scoreRes.isFullyCorrect) {
+      this.practiceState.wrongQuestionIds.delete(q.id);
+    } else {
+      this.practiceState.wrongQuestionIds.add(q.id);
+    }
+
+    if (this.practiceState.isRedo && this.activeProject && this.activeQuiz) {
+      let mainProg = this.activeProject.progressMap[this.activeQuiz.id];
+      if (mainProg) {
+        if (!mainProg.userSelectedOptionIds) mainProg.userSelectedOptionIds = {};
+        if (!mainProg.userAnswers) mainProg.userAnswers = {};
+        mainProg.userSelectedOptionIds[q.id] = subAnswers;
+        mainProg.userAnswers[q.id] = subAnswers;
+
+        let wrongIds = new Set(mainProg.wrongQuestionIds || []);
+        if (scoreRes.isFullyCorrect) wrongIds.delete(q.id);
+        else wrongIds.add(q.id);
+        mainProg.wrongQuestionIds = Array.from(wrongIds);
+        storage.saveProgress(this.activeProject.id, mainProg);
+      }
+    }
+
+    this.saveCurrentPracticeProgress();
+    this.render();
+  }
+
+  selectPracticePart3Answer(questionId, shortAnswer) {
+    const q = this.practiceState.activeQuestions[this.practiceState.currentIndex];
+    if (!q) return;
+
+    this.practiceState.userSelectedOptionIds[q.id] = shortAnswer;
+    this.practiceState.userAnswers[q.id] = shortAnswer;
+
+    const scoreRes = scoreQuestion(q, shortAnswer);
+    if (scoreRes.isFullyCorrect) {
+      this.practiceState.wrongQuestionIds.delete(q.id);
+    } else {
+      this.practiceState.wrongQuestionIds.add(q.id);
+    }
+
+    if (this.practiceState.isRedo && this.activeProject && this.activeQuiz) {
+      let mainProg = this.activeProject.progressMap[this.activeQuiz.id];
+      if (mainProg) {
+        if (!mainProg.userSelectedOptionIds) mainProg.userSelectedOptionIds = {};
+        if (!mainProg.userAnswers) mainProg.userAnswers = {};
+        mainProg.userSelectedOptionIds[q.id] = shortAnswer;
+        mainProg.userAnswers[q.id] = shortAnswer;
+
+        let wrongIds = new Set(mainProg.wrongQuestionIds || []);
+        if (scoreRes.isFullyCorrect) wrongIds.delete(q.id);
+        else wrongIds.add(q.id);
+        mainProg.wrongQuestionIds = Array.from(wrongIds);
+        storage.saveProgress(this.activeProject.id, mainProg);
+      }
+    }
+
+    this.saveCurrentPracticeProgress();
+    this.render();
+  }
+
+  resetQuizProgress(quizId) {
+    const project = this.getSelectedProject();
+    if (!project) return;
+    storage.resetQuizProgress(project.id, quizId);
+    this.showToast("success", "Đã đặt lại tiến độ bộ đề thi thành công!");
+    this.render();
+  }
+
   nextPracticeQuestion() {
     if (this.practiceState.currentIndex + 1 < this.practiceState.activeQuestions.length) {
       this.practiceState.currentIndex++;
@@ -356,6 +433,17 @@ class QuizMasterApp {
     this.render();
   }
 
+  selectExamPart2Answers(questionId, subAnswers) {
+    this.examState.userSelectedOptionIds[questionId] = subAnswers;
+    this.examState.userAnswers[questionId] = subAnswers;
+    this.render();
+  }
+
+  selectExamPart3Answer(questionId, shortAnswer) {
+    this.examState.userSelectedOptionIds[questionId] = shortAnswer;
+    this.examState.userAnswers[questionId] = shortAnswer;
+  }
+
   submitExam() {
     if (this.examTimerInterval) {
       clearInterval(this.examTimerInterval);
@@ -365,8 +453,8 @@ class QuizMasterApp {
     const wrongIds = [];
     this.examState.activeQuestions.forEach(q => {
       const chosen = this.examState.userSelectedOptionIds[q.id];
-      const correctOptId = q.options[q.correctAnswerIndex]?.id;
-      if (!chosen || chosen !== correctOptId) {
+      const scoreRes = scoreQuestion(q, chosen);
+      if (!scoreRes.isFullyCorrect) {
         wrongIds.push(q.id);
       }
     });
@@ -554,10 +642,11 @@ class QuizMasterApp {
   openImportModal() {
     const proj = this.getSelectedProject();
     const isLL = proj?.projectType === "languageLearning";
+    const isTHPT = proj?.projectType === "thptQuocGia";
 
     this.activeModal = "import";
     this.modalState = {
-      activeTab: isLL ? "lang" : "gemini",
+      activeTab: isTHPT ? "thpt" : (isLL ? "lang" : "gemini"),
       selectedFileName: "",
       selectedFileContent: "",
       quizTitle: "",
@@ -732,6 +821,8 @@ class QuizMasterApp {
     }
 
     this.modalState.isScanning = true;
+    this.modalState.scanProgress = 10;
+    this.modalState.scanStatusText = "Đang chuẩn bị quét tài liệu...";
     this.render();
 
     try {
@@ -741,7 +832,8 @@ class QuizMasterApp {
         isCreateMultipleChoice: this.modalState.isCreateMultipleChoice,
         apiKey: storage.settings.apiKey,
         language: selectedAiLang,
-        depthMode: this.modalState.depthMode
+        depthMode: this.modalState.depthMode,
+        onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
       storage.settings.language = selectedAiLang;
@@ -787,13 +879,16 @@ class QuizMasterApp {
     }
 
     this.modalState.isScanning = true;
+    this.modalState.scanProgress = 10;
+    this.modalState.scanStatusText = "Đang chuẩn bị quét đề thi ngoại ngữ...";
     this.render();
 
     try {
       const result = await geminiService.generateLanguageExam({
         documentText: this.modalState.selectedFileContent,
         targetCEFR: this.modalState.targetCEFR,
-        apiKey: storage.settings.apiKey
+        apiKey: storage.settings.apiKey,
+        onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
       if (!result.questions || result.questions.length === 0) {
@@ -819,6 +914,84 @@ class QuizMasterApp {
       this.showToast("error", `Lỗi quét đề ngoại ngữ: ${e.message}`);
       this.render();
     }
+  }
+
+  async handleTHPTScan() {
+    const project = this.getSelectedProject();
+    if (!project) return;
+
+    if (!this.modalState.selectedFileContent || !this.modalState.selectedFileContent.trim()) {
+      this.showToast("error", "Vui lòng chọn một tệp đề thi THPT hợp lệ.");
+      return;
+    }
+
+    if (!storage.settings.apiKey) {
+      this.showToast("error", "Vui lòng cấu hình Google AI Studio API Key trong Cài đặt.");
+      this.openSettingsModal();
+      return;
+    }
+
+    this.modalState.isScanning = true;
+    this.modalState.scanProgress = 10;
+    this.modalState.scanStatusText = "Đang chuẩn bị quét đề thi THPT Quốc gia...";
+    this.render();
+
+    try {
+      let questions = [];
+      const fileName = (this.modalState.selectedFile?.name || "").toLowerCase();
+      
+      if (fileName.endsWith(".pdf") && this.modalState.selectedFile) {
+        if (this.updateScanProgress) this.updateScanProgress(15, "Đang trích xuất ảnh độ phân giải cao từ PDF...");
+        const images = await documentParser.extractPdfAsImages(this.modalState.selectedFile, 2.0);
+        
+        if (this.updateScanProgress) this.updateScanProgress(40, "Đang phân tích PDF bằng Google Gemini Vision (có thể mất tới 1 phút)...");
+        questions = await geminiService.generateTHPTQuiz({
+          documentText: this.modalState.selectedFileContent,
+          apiKey: storage.settings.apiKey,
+          images: images,
+          onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
+        });
+      } else {
+        questions = await geminiService.generateTHPTQuiz({
+          documentText: this.modalState.selectedFileContent,
+          apiKey: storage.settings.apiKey,
+          onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
+        });
+      }
+
+      if (!questions || questions.length === 0) {
+        throw new Error("Không tìm thấy câu hỏi nào trong đề thi.");
+      }
+
+      const newQuiz = createQuiz({
+        title: this.modalState.quizTitle || this.modalState.selectedFileName.replace(/\.[^/.]+$/, "") || "Đề thi THPT Quốc gia",
+        questions: questions,
+        quizType: "thptQuocGia",
+        isPreMade: true
+      });
+
+      storage.addQuiz(project.id, newQuiz);
+      telemetry.trackAiFeature("questions_generated", questions.length);
+      this.showToast("success", `Đã quét thành công ${questions.length} câu hỏi theo cấu trúc THPT Quốc gia (3 Phần)!`);
+      this.closeModal();
+    } catch (e) {
+      this.modalState.isScanning = false;
+      this.showToast("error", `Lỗi quét đề THPT: ${e.message}`);
+      this.render();
+    }
+  }
+
+  updateScanProgress(percent, message) {
+    if (this.modalState) {
+      this.modalState.scanProgress = percent;
+      this.modalState.scanStatusText = message;
+    }
+    const bar = document.getElementById("scan-progress-bar");
+    const status = document.getElementById("scan-progress-status");
+    const pct = document.getElementById("scan-progress-percent");
+    if (bar) bar.style.width = `${percent}%`;
+    if (status) status.textContent = message;
+    if (pct) pct.textContent = `${percent}%`;
   }
 
   async handlePremadeImport(file) {
@@ -875,6 +1048,8 @@ class QuizMasterApp {
       bindPracticeEvents(this.activeProject, this.activeQuiz, this.practiceState, {
         onQuit: () => this.navigateToDashboard(),
         onSelectOption: (optId, optIdx) => this.selectPracticeOption(optId, optIdx),
+        onSelectPart2Answers: (qId, subAnswers) => this.selectPracticePart2Answers(qId, subAnswers),
+        onSelectPart3Answer: (qId, shortAns) => this.selectPracticePart3Answer(qId, shortAns),
         onNext: () => this.nextPracticeQuestion(),
         onJumpQuestion: (idx) => {
           this.practiceState.currentIndex = idx;
@@ -895,6 +1070,8 @@ class QuizMasterApp {
       bindExamEvents(this.activeProject, this.activeQuiz, this.examState, {
         onQuit: () => this.navigateToDashboard(),
         onSelectOption: (optId, optIdx) => this.selectExamOption(optId, optIdx),
+        onSelectPart2Answers: (qId, subAnswers) => this.selectExamPart2Answers(qId, subAnswers),
+        onSelectPart3Answer: (qId, shortAns) => this.selectExamPart3Answer(qId, shortAns),
         onPrev: () => {
           if (this.examState.currentIndex > 0) {
             this.examState.currentIndex--;
@@ -1041,7 +1218,8 @@ class QuizMasterApp {
         onStartExam: (qid) => this.openExamTimerModal(qid),
         onStartFlashcard: (qid) => this.startFlashcard(qid),
         onEditQuiz: (qid) => this.openEditorModal(qid),
-        onOpenQuizMenu: (qid) => this.openQuizActionSheet(qid)
+        onOpenQuizMenu: (qid) => this.openQuizActionSheet(qid),
+        onResetQuizProgress: (qid) => this.resetQuizProgress(qid)
       });
     }
 
@@ -1072,6 +1250,7 @@ class QuizMasterApp {
           this.render();
         },
         onFileSelected: async (file) => {
+          this.modalState.selectedFile = file;
           this.modalState.selectedFileName = file.name;
           const ext = file.name.split(".").pop();
           telemetry.trackDocumentImport(ext);
@@ -1079,6 +1258,7 @@ class QuizMasterApp {
           this.render();
         },
         onPremadeFileSelected: (file) => this.handlePremadeImport(file),
+        onStartTHPTScan: () => this.handleTHPTScan(),
         onStartGeminiScan: () => this.handleGeminiScan(),
         onStartLanguageScan: () => this.handleLanguageScan(),
         onUpdateView: () => this.render()
@@ -1398,17 +1578,19 @@ class QuizMasterApp {
               <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
                 Tùy chọn: ${escapeHtml(project.name)}
               </div>
-              <button class="btn btn-ghost btn-icon-only" id="btn-close-action-sheet">✕</button>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-action-sheet">
+                ${renderSF("xmark", { size: "14px" })}
+              </button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
               <button class="btn btn-secondary" id="btn-proj-rename" style="justify-content: flex-start;">
-                ✏️ Đổi tên dự án
+                ${renderSF("square.and.pencil", { size: "14px" })} Đổi tên dự án
               </button>
               <button class="btn btn-secondary" id="btn-proj-reset" style="justify-content: flex-start;">
-                🔄 Đặt lại tiến độ học của dự án
+                ${renderSF("arrow.counterclockwise", { size: "14px" })} Đặt lại tiến độ học của dự án
               </button>
               <button class="btn btn-secondary" id="btn-proj-delete" style="justify-content: flex-start; color: var(--color-coral-red);">
-                🗑️ Xóa dự án
+                ${renderSF("trash", { size: "14px" })} Xóa dự án
               </button>
             </div>
           </div>
@@ -1459,7 +1641,9 @@ class QuizMasterApp {
               <div style="font-size: var(--text-md); font-weight: 800; color: var(--text-primary);">
                 ${i18n.t("newProjectTitle")}
               </div>
-              <button class="btn btn-ghost btn-icon-only" id="btn-close-new-project">✕</button>
+              <button class="btn btn-ghost btn-icon-only" id="btn-close-new-project">
+                ${renderSF("xmark", { size: "14px" })}
+              </button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
               <div>
@@ -1477,15 +1661,34 @@ class QuizMasterApp {
                   <label class="glass-card" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px;">
                     <input type="radio" name="project-type" value="general" checked style="width: 18px; height: 18px; accent-color: var(--color-ocean-blue);">
                     <div>
-                      <div style="font-size: var(--text-sm); font-weight: 700;">📁 Dự án Ôn tập Chung</div>
-                      <div style="font-size: var(--text-xs); color: var(--text-secondary);">Quét tài liệu bài giảng, giáo trình PDF/Word thành câu hỏi trắc nghiệm</div>
+                      <div style="font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        ${renderSF("folder", { size: "15px" })} <span>Dự án Ôn tập Chung</span>
+                      </div>
+                      <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px;">
+                        Quét tài liệu bài giảng, giáo trình PDF/Word thành câu hỏi trắc nghiệm
+                      </div>
                     </div>
                   </label>
                   <label class="glass-card" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px;">
                     <input type="radio" name="project-type" value="languageLearning" style="width: 18px; height: 18px; accent-color: var(--color-deep-purple);">
                     <div>
-                      <div style="font-size: var(--text-sm); font-weight: 700;">📖 Dự án Học Ngoại ngữ <span class="badge badge-orange" style="font-size: 9px; padding: 1px 5px;">WIP</span></div>
-                      <div style="font-size: var(--text-xs); color: var(--text-secondary);">Đọc hiểu song song, câu hỏi ngữ âm/từ vựng và thẻ từ vựng CEFR</div>
+                      <div style="font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        ${renderSF("book.closed", { size: "15px" })} <span>Dự án Học Ngoại ngữ</span> <span class="badge badge-orange" style="font-size: 9px; padding: 1px 5px;">WIP</span>
+                      </div>
+                      <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px;">
+                        Đọc hiểu song song, câu hỏi ngữ âm/từ vựng và thẻ từ vựng CEFR
+                      </div>
+                    </div>
+                  </label>
+                  <label class="glass-card" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px;">
+                    <input type="radio" name="project-type" value="thptQuocGia" style="width: 18px; height: 18px; accent-color: var(--color-deep-purple);">
+                    <div>
+                      <div style="font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        ${renderSF("graduationcap", { size: "15px" })} <span>Dự án THPT Quốc gia (3 Phần)</span> <span class="badge badge-orange" style="font-size: 9px; padding: 1px 5px;">WIP</span>
+                      </div>
+                      <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px;">
+                        Cấu trúc 3 Phần chuẩn Bộ GD&ĐT: Phần I (4 Lựa chọn), Phần II (Đúng/Sai 4 ý), Phần III (Trả lời ngắn)
+                      </div>
                     </div>
                   </label>
                 </div>

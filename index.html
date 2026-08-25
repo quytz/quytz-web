@@ -16,6 +16,11 @@
   <meta name="description" content="Tự động quét tài liệu PDF, Word .docx thành câu hỏi trắc nghiệm, luyện tập tức thì, thi thử chống gian lận và thẻ ghi nhớ 3D bằng Google Gemini AI hoàn toàn trên trình duyệt.">
   <meta name="author" content="Anh Vinh (@tozn607)">
 
+  <!-- Cache Invalidation Directives -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <!-- Open Graph -->
   <meta property="og:title" content="QuizMaster - AI Quiz Generator & Study App">
   <meta property="og:description" content="Self-study & multiple-choice exam generator using Google Gemini AI, 100% client-side.">
@@ -27,10 +32,14 @@
   <link rel="apple-touch-icon" href="assets/AppIcon.png">
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/design-tokens.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/views.css">
+  <link rel="stylesheet" href="css/design-tokens.css?v=2.0.0">
+  <link rel="stylesheet" href="css/components.css?v=2.0.0">
+  <link rel="stylesheet" href="css/layout.css?v=2.0.0">
+  <link rel="stylesheet" href="css/views.css?v=2.0.0">
+
+  <!-- KaTeX for Mathematical LaTeX Rendering -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 
   <!-- Client-Side Libraries for Document Extraction (JSZip & PDF.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -58,6 +67,6 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=2.0.0"></script>
 </body>
 </html>

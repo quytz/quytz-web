@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v2.0.0] - 2026-08-25
+
+### Added
+- **Third "THPT Quốc gia" Project Mode (3-Part MOET Exam Format - WIP)**:
+  - Added a dedicated THPT Quốc Gia project mode distinct from General and Language Learning modes with prominent WIP badge & warning indicators.
+  - **Phần I**: Multiple choice (1 of 4 choices; 0.25 points per correct answer).
+  - **Phần II**: True / False Group (4 sub-items a, b, c, d; official MOET scoring formula: 1 correct = 0.1đ, 2 correct = 0.25đ, 3 correct = 0.5đ, 4 correct = 1.0đ).
+  - **Phần III**: Short answer fill-in with numeric and string matching (0.25đ / 0.5đ per question).
+  - **Comprehensive Mode Support**:
+    - **Practice Mode**: Interactive True/False sub-item toggles and short answer input with instant feedback and score computation.
+    - **Exam Mode**: Full countdown exam taking across all 3 question parts.
+    - **Review Modal**: Detailed sub-item breakdown and short answer comparison against answer keys.
+    - **Ending Dialog**: Official 10.0 scale scoring with individual score breakdowns for Part I, Part II, and Part III.
+    - **Quiz Editor**: Dynamic form supporting creation and customization of all 3 question types.
+    - **Gemini AI Scanner**: Dedicated prompt and parser to scan and extract THPT Quốc gia exam documents into the 3-part structure.
+    - **Demo THPT Project**: Pre-loaded with a comprehensive THPT National Exam in Mathematics.
+- **Card Reset Progress Button**:
+  - Added a direct progress reset button next to the direct edit pencil and 3-dot options menu on completed/practiced quiz cards.
+- **SF Symbols Vector Icons System**:
+  - Implemented an SVG-based SF Symbols icon engine (`renderSF`) replacing emojis across the sidebar, dashboard, navigation, study views, modals, and buttons with crisp Apple-styled vector icons (excluding greetings).
+
+### Fixed & Improved
+- **Header Bar 2-Row Layout**:
+  - Refactored the dashboard top header into a 2-row layout (`.top-header-primary` and `.top-header-toolbar`), ensuring the project name remains fully visible at all times regardless of browser zoom level or screen width.
+- **DOCX Math & Binary MTEF v5 Parsing**:
+  - Engineered a native MathType MTEF v5 binary decoder in `document-parser.js` converting MathType formulas inside OLE compound streams directly into LaTeX formulas ($\vec{u}, \vec{v}, \frac{a}{b}, \sqrt{x}, \int, [0; 40)$).
+- **Cross-Batch Image Token Tracking**:
+  - Synchronized image token state across section batches in `gemini.js` to ensure diagrams and illustrations are uniquely matched to questions without repeated duplicates.
+- **Accurate Section Boundary Detection**:
+  - Fixed false answer key regex matching to prevent slicing exam questions mid-sentence.
+
+---
+
 ## [v1.1.0] - 2026-08-22
 
 ### Added

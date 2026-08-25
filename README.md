@@ -1,98 +1,97 @@
-# QuizMaster Web 🚀
-### Ứng dụng Ôn tập & Tạo Đề thi Trắc nghiệm Thông minh bằng Gemini AI (Client-First Web Edition)
+<p align="center">
+  <img src="assets/AppIcon.png" width="128" height="128" alt="QuizMaster Web App Icon">
+</p>
 
-QuizMaster Web là phiên bản Web hoàn chỉnh (v1.1.0) được chuyển đổi từ ứng dụng macOS gốc, mang lại trải nghiệm ôn tập trắc nghiệm cao cấp chuẩn Apple Liquid Glass, xử lý 100% trên thiết bị người dùng (Client-Side) với chi phí hosting bằng **0 đồng**.
+# QuizMaster Web (v2.0.0)
 
-![QuizMaster Web](assets/AppIcon.png)
+[![Web Supported](https://img.shields.io/badge/Web-Modern_Browsers-blue.svg)](https://tozn607.github.io/quizmaster-web/)
+[![Language](https://img.shields.io/badge/Stack-Vanilla_JS_•_CSS3-orange.svg)](js/)
+[![AI Powered](https://img.shields.io/badge/Gemini_AI-3.5_Flash_Lite-purple.svg)](https://aistudio.google.com)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
----
-
-## ✨ Điểm nổi bật & Tính năng chính
-
-1. **Kiến trúc Client-First (Không tốn chi phí Server)**:
-   - **Zero Backend**: Hoạt động hoàn toàn trên trình duyệt người dùng.
-   - **Bảo mật & Riêng tư**: API Key cá nhân từ Google AI Studio và toàn bộ dữ liệu bộ đề thi được lưu trong `localStorage` / `IndexedDB` của người dùng.
-   - **Xử lý tài liệu tức thì**: Trích xuất văn bản từ tệp Word (`.docx`), PDF (`.pdf`), TXT, JSON và Zip Bundle ngay trên trình duyệt mà không cần tải file lên máy chủ trung gian.
-
-2. **Tạo Đề thi Thông minh với Google Gemini 3.5 Flash Lite**:
-   - Sử dụng độc quyền mô hình **Google Gemini 3.5 Flash Lite** tối ưu tốc độ và độ chính xác.
-   - Tự động quét và phân tích bài giảng / tài liệu học tập thành câu hỏi trắc nghiệm kèm lời giải thích chi tiết.
-   - **3 Chế độ Quét chuyên sâu (Depth Mode)**:
-     - 🎯 **Trọng tâm (Core)**: Tập trung vào các định lý, quy tắc và luận điểm cốt lõi.
-     - ⚖️ **Tiêu chuẩn (Normal)**: Độ phủ đồng đều, cân bằng.
-     - 🔬 **Toàn diện (Thorough)**: Quét chi tiết từng dòng, định nghĩa, mốc thời gian và ví dụ.
-   - **Chế độ Luyện thi Ngoại ngữ Chuyên sâu (WIP)**: Phân tích đề thi THPT Quốc gia / IELTS, trích xuất đoạn văn đọc hiểu song song, câu hỏi ngữ pháp/phát âm và bộ thẻ từ vựng phân loại theo khung tham chiếu Châu Âu **CEFR (A1 - C2)**.
-
-3. **3 Chế độ Ôn tập Thông minh**:
-   - ✏️ **Luyện tập (Practice)**: Phản hồi đáp án đúng/sai ngay lập tức, bảng điều hướng câu hỏi phân loại theo kỹ năng, công cụ "Hỏi Gemini AI" giải thích từng bước.
-   - ⏱️ **Thi thử (Exam Mode)**: Môi trường làm bài thi chuẩn hóa, đồng hồ đếm ngược (15p, Pomodoro 25p, 45p, tùy chỉnh), tự động nộp bài khi hết giờ.
-   - 🎴 **Thẻ ghi nhớ 3D (3D Flashcard)**: Hiệu ứng lật thẻ 3D mượt mà với phím Spacebar, học nhiều vòng lặp cách quãng (Spaced Repetition) cho đến khi thuộc 100%.
-
-4. **Công cụ Quản lý & Xuất bản**:
-   - **Xuất Gói Zip Bundle**: Xuất bộ câu hỏi (.rtf), đáp án (.rtf) và tệp `quiz_bundle.json` để nhập lại trên bất kỳ thiết bị nào mà không lo mất dữ liệu.
-   - **Xuất Word (.docx)**: Xuất đề thi và đáp án sang file Word chuẩn định dạng.
-   - **Sao lưu & Khôi phục**: Tải xuống tệp cơ sở dữ liệu JSON và khôi phục nhanh chóng.
-   - **Bộ biên tập đề thi (In-App Quiz Editor)**: Thêm, sửa, xóa câu hỏi, phương án và giải thích trực tiếp.
-
-5. **Thiết kế & Trải nghiệm Người dùng**:
-   - Giao diện Liquid Glass Apple mượt mà với chế độ Sáng / Tối / Tự động.
-   - Menu thao tác 3 chấm thiết kế dạng Action Sheet bằng nút bấm tiện lợi.
-   - Hệ thống phím tắt toàn diện: `1, 2, 3, 4` hoặc `A, B, C, D`, `Spacebar`, `Enter`, `Esc`, `← / →`.
-   - Hỗ trợ đa ngôn ngữ: Tiếng Việt 🇻🇳 và English 🇬🇧.
+> **Ứng dụng Web tự học trắc nghiệm & tạo bộ đề với AI**  
+> *Phát triển bởi [@tozn607](https://github.com/tozn607)*
 
 ---
 
-## 🌐 Hướng dẫn Triển khai Miễn phí (Free Hosting)
+### Mở ứng dụng ngay:
+Bấm vào nút bên dưới 👇   
+  
+[![](https://img.shields.io/badge/Trải_nghiệm_ngay_QuizMaster_Web-Bản_Mới_Nhất-blue?style=for-the-badge&logo=googlechrome)](https://tozn607.github.io/quizmaster-web/)
 
-Vì QuizMaster Web là một ứng dụng tĩnh (Static Single-Page App), bạn có thể lưu trữ miễn phí vĩnh viễn trên bất kỳ nền tảng nào:
-
-### 1. GitHub Pages (Khuyên dùng)
-1. Đẩy mã nguồn thư mục `quiz-web` lên một kho lưu trữ (Repository) trên GitHub.
-2. Vào **Settings** > **Pages**.
-3. Tại mục **Branch**, chọn `main` (hoặc `master`) và thư mục `/ (root)`, sau đó bấm **Save**.
-4. Trang web sẽ sẵn sàng tại `https://<your-username>.github.io/<repo-name>/`.
-
-### 2. Cloudflare Pages (Tiêu thụ 0 Functions/Workers Quota)
-1. Đăng nhập vào [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Workers & Pages**.
-2. Chọn **Create application** > **Pages** > **Connect to Git** (hoặc kéo thả thư mục `quiz-web` trực tiếp).
-3. Bấm **Deploy**.
-4. 💡 **Tối ưu Quota**: Toàn bộ ứng dụng được cấu hình tĩnh 100% với `_headers` và trang điều hướng tĩnh `404.html` (không cần tệp `_redirects`). Các tệp tĩnh được phân phối qua CDN toàn cầu mà **hoàn toàn không tiêu tốn hạn ngạch 100,000 lượt gọi Workers/Functions Free hàng ngày** của Cloudflare!
+> **Toàn bộ dữ liệu, đề thi và API Key được xử lý trực tiếp trên trình duyệt của bạn thông, hoàn toàn không phụ thuộc vào máy chủ trung gian và đảm bảo quyền riêng tư.**
 
 ---
 
-## 🔍 Tự động Co giãn Giao diện theo Trình duyệt (Browser Zoom)
-Ứng dụng sử dụng hệ thống đơn vị đo lường linh hoạt (`rem`, `clamp`, fluid layout) thay vì các nút bấm co giãn thủ công, tự động tương thích mượt mà với:
-- Phím tắt phóng to / thu nhỏ trình duyệt (`Cmd/Ctrl +` và `Cmd/Ctrl -`).
-- Cài đặt kích thước phông chữ mặc định của hệ điều hành và trình duyệt trên mọi thiết bị (máy tính để bàn, laptop, tablet, điện thoại).
+## Tài liệu Hướng dẫn
 
-### 4. Chạy trên Thiết bị Phần cứng Thấp (Raspberry Pi / VPS 512MB RAM)
-Với Nginx hoặc bất kỳ máy chủ web tĩnh nào:
-```bash
-# Cài đặt Nginx và copy file vào /var/www/html
-sudo cp -r /Users/tozn/Misc/quiz-web/* /var/www/html/
-sudo systemctl restart nginx
-```
+Nhấn vào đây: **[Hướng dẫn Sử dụng Chi tiết](User_guide.md)**
+
+## Tổng quan & Tính năng Nổi bật
+
+**QuizMaster Web** là phiên bản web hoàn chỉnh được phát triển thuần bằng **HTML5**, **Vanilla JavaScript** và **CSS3 Modern Glass**, không cần máy chủ backend. Ứng dụng kết nối với mô hình AI **Gemini 3.5 Flash Lite** từ Google AI Studio giúp sinh viên, học sinh và giáo viên tự động quét tài liệu bài giảng (PDF, Word `.docx`, TXT, Zip Bundle) để tạo ra các bộ đề thi trắc nghiệm chất lượng cao.
+
+### Về trách nhiệm sử dụng AI tạo sinh (Generative AI):
+- **QuizMaster Web** được hỗ trợ biên soạn mã nguồn bằng model AI tạo sinh **Gemini 3.7 Flash**. Việc chỉnh sửa và kiểm nghiệm mã nguồn đều do con người (tác giả [@tozn607](https://github.com/tozn607)) thực hiện.
+- **Điều quan trọng nhất**, với vai trò là một sinh viên đang trong quá trình học tập, tác giả tin rằng tất cả các nội dung do AI tạo ra đều **mang tính chất tham khảo và cần được kiểm nghiệm bởi người sử dụng** để đảm bảo tính chính xác và phù hợp. Tác giả không chịu trách nhiệm về các sai sót có thể xảy ra khi người dùng sử dụng các nội dung do AI tạo ra.
+
+### Các Tính năng Nổi bật:
+- **Chế độ Đề thi THPT Quốc gia (3 Phần - Thử nghiệm)**: Hỗ trợ cấu trúc đề thi 3 phần chuẩn Bộ GD&ĐT gồm Phần I (Trắc nghiệm 4 lựa chọn), Phần II (Trắc nghiệm Đúng/Sai 4 ý chấm điểm theo công thức Bộ), Phần III (Trả lời ngắn). Tích hợp giải mã công thức toán MathType/LaTeX và chấm điểm tự động trên thang 10.0.
+- **Chế độ Học Ngoại ngữ (Thử nghiệm)**: Hỗ trợ phân tích chuyên sâu các đề thi tiếng Anh (THPT Quốc Gia, IELTS, TOEIC), tự động tách bài đọc hiểu với thanh tùy biến định dạng font/màu giấy, chia nhóm kỹ năng (Phát âm, Ngữ pháp, Điền từ) và trích xuất bộ thẻ Flashcard từ vựng theo khung trình độ CEFR.
+- **Quét Tài liệu & Tạo Đề bằng AI**: Tự động chuyển đổi tài liệu bài giảng PDF, Word (`.docx`), TXT thành bộ đề trắc nghiệm hoàn chỉnh kèm đáp án và lời giải chi tiết.
+- **Hệ thống Icon Apple SF Symbols**: Toàn bộ icon trong ứng dụng được chuẩn hóa bằng thư viện vector SVG lấy cảm hứng từ Apple SF Symbols, mang lại giao diện tinh tế và sắc nét trên mọi độ phân giải.
+- **Mức độ Chi tiết Câu hỏi**: 3 chế độ quét linh hoạt: **Trọng tâm** (~8-15 câu), **Tiêu chuẩn** (~12-20 câu), **Toàn diện** (~35-60+ câu).
+- **Thẻ ghi nhớ 3D**: Lật thẻ mượt mà với nút "Thẻ trước" xem lại lịch sử thẻ. Khi kết thúc vòng học, màn hình tổng kết cho phép tiếp tục học các thẻ chưa thuộc hoặc học lại từ đầu.
+- **Chế độ Thi thử**: Môi trường thi thật không hiện đáp án và ẩn nút Hỏi AI để đảm bảo đánh giá chính xác năng lực. Có đồng hồ đếm ngược linh hoạt và tự động nộp bài khi hết giờ.
+- **Công tắc Xáo trộn**: Nút **"🔀 Xáo trộn"** bật/tắt xáo trộn vị trí câu hỏi và các phương án A/B/C/D linh hoạt, hoàn toàn bảo toàn kết quả đã chọn và lịch sử làm bài.
+- **Thanh Điều hướng Câu hỏi**: Bảng bên phải hiển thị danh sách câu hỏi theo màu trạng thái (Đúng, Sai, Đã thuộc, Chưa làm) giúp di chuyển nhanh giữa các câu.
+- **Lưu Vị trí Học Tự động**: Tự động lưu tiến độ làm bài luyện tập, cho phép thoát ra và quay lại đúng câu đang làm dở.
+- **Trình Chỉnh sửa Đề thi**: Thêm, chỉnh sửa hoặc xóa câu hỏi, phương án và giải thích chi tiết trực tiếp trong ứng dụng.
+- **Xuất & Sao lưu Dữ liệu**: Hỗ trợ xuất gói Zip Bundle (chứa RTF và JSON để nhập lại), xuất tệp Word (`.docx`) để in ấn ra giấy, sao lưu và khôi phục toàn bộ dữ liệu chỉ với một nút bấm.
+
+### Phím tắt Bàn phím
+
+| Chế độ | Phím tắt | Thao tác |
+| :--- | :--- | :--- |
+| **Luyện tập & Thi thử** | `A`, `B`, `C`, `D` (hoặc `1`, `2`, `3`, `4`) | Chọn phương án A, B, C, D |
+| **Luyện tập & Thi thử** | `Enter (↵)` | Sang câu tiếp theo / Nộp bài |
+| **Thi thử** | `Mũi tên Trái / Phải (← →)` | Di chuyển qua lại giữa các câu |
+| **Thẻ ghi nhớ**| `Phím Cách (Spacebar ␣)` | Lật mặt trước / mặt sau của thẻ |
+| **Thẻ ghi nhớ**| `Mũi tên Trái (←)` | Quay lại thẻ trước |
+| **Thẻ ghi nhớ**| `Phím V` (hoặc `1`) | Đánh dấu thẻ **V - Đã thuộc** |
+| **Thẻ ghi nhớ**| `Phím X` (hoặc `2`) | Đánh dấu thẻ **X - Chưa thuộc** |
+| **Tất cả các chế độ** | `Phím Esc` | Thoát chế độ học về màn hình chính |
 
 ---
 
-## 💻 Chạy Thử nghiệm Cục bộ (Local Development)
+## Chạy Thử nghiệm Cục bộ & Triển khai
 
-Bạn có thể chạy thử nghiệm cục bộ bằng bất kỳ công cụ dòng lệnh nào:
+### 1. Chạy Thử nghiệm Cục bộ
+
+Bạn có thể khởi chạy ứng dụng nhanh chóng bằng Python hoặc Node.js:
 
 ```bash
-# Cách 1: Sử dụng npx serve (Node.js)
-cd /Users/tozn/Misc/quiz-web
-npx serve .
+# Clone repository
+git clone https://github.com/tozn607/quizmaster-web.git
+cd quizmaster-web
 
-# Cách 2: Sử dụng Python
-cd /Users/tozn/Misc/quiz-web
+# Cách 1: Chạy bằng Python 3
 python3 -m http.server 8000
+
+# Cách 2: Chạy bằng Node.js npx serve
+npx serve .
 ```
-Sau đó mở trình duyệt tại địa chỉ: `http://localhost:8000` hoặc `http://localhost:3000`.
+
+Sau đó mở trình duyệt tại `http://localhost:8000`.
+
+### 2. Triển khai Miễn phí (Hosting)
+
+- **GitHub Pages**: Đẩy mã nguồn lên nhánh `main`, vào **Settings** > **Pages** và chọn Deploy từ thư mục `/ (root)`.
+- **Cloudflare Pages**: Kết nối với kho mã nguồn trên GitHub, chọn Deploy trực tiếp (0 Workers call, phân phối qua CDN toàn cầu).
 
 ---
 
-## 📜 Bản quyền & Tác giả
-- **Tác giả**: @tozn607 (Anh Vinh)
-- **Phiên bản**: v1.1.0 (Web Edition)
-- Được phát triển với mục tiêu mang lại giải pháp tự học trắc nghiệm thông minh, hoàn toàn miễn phí và tôn trọng quyền riêng tư người dùng.
+## Tác giả & Giấy phép
+
+- **Tác giả**: [@tozn607](https://github.com/tozn607)
+- **Giấy phép**: Phát hành theo giấy phép MIT.

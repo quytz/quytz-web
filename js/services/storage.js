@@ -2,7 +2,7 @@
  * QuizMaster Web - Local Storage & Persistence Service
  */
 import { APP_CONFIG } from "../config.js";
-import { createStudyProject, createQuiz, createQuestion, createQuestionOption, createVocabularyCard } from "../models/types.js";
+import { createStudyProject, createQuiz, createQuestion, createQuestionOption, createSubItem, createVocabularyCard } from "../models/types.js";
 
 class StorageService {
   constructor() {
@@ -10,8 +10,14 @@ class StorageService {
     this.projects = this.loadProjects();
     
     if (this.projects.length === 0) {
-      this.projects = [this.createDemoGeneralProject(), this.createDemoLanguageProject()];
+      this.projects = [this.createDemoGeneralProject(), this.createDemoLanguageProject(), this.createDemoTHPTProject()];
       this.saveProjects();
+    } else {
+      const hasTHPT = this.projects.some(p => p.projectType === "thptQuocGia");
+      if (!hasTHPT) {
+        this.projects.push(this.createDemoTHPTProject());
+        this.saveProjects();
+      }
     }
   }
 
@@ -406,6 +412,133 @@ In many developing mega-cities, rapid population growth has outpaced the develop
       quizzes: [demoQuiz]
     });
   }
+
+  createDemoTHPTProject() {
+    const questions = [
+      // PHẦN I: Trắc nghiệm 4 lựa chọn (0.25đ / câu)
+      createQuestion({
+        part: "part1",
+        questionType: "multipleChoice",
+        pointValue: 0.25,
+        text: "**Câu 1.** Cho hàm số $y = f(x)$ có bảng xét dấu đạo hàm như sau:\n\n| $x$ | $-\\infty$ | | $-1$ | | $2$ | | $+\\infty$ |\n|---|---|---|---|---|---|---|---|\n| $f'(x)$ | | $+$ | $0$ | $-$ | $0$ | $+$ | |\n\nHàm số đã cho đồng biến trên khoảng nào dưới đây?",
+        options: [
+          createQuestionOption("A", "(-1; 2)"),
+          createQuestionOption("B", "$(2; +\\infty)$"),
+          createQuestionOption("C", "$(-\\infty; 2)$"),
+          createQuestionOption("D", "$(-1; +\\infty)$")
+        ],
+        correctAnswerIndex: 1,
+        explanation: "Dựa vào bảng xét dấu đạo hàm, ta thấy $f'(x) > 0$ trên các khoảng $(-\\infty; -1)$ và $(2; +\\infty)$. Do đó hàm số đồng biến trên $(2; +\\infty)$."
+      }),
+      createQuestion({
+        part: "part1",
+        questionType: "multipleChoice",
+        pointValue: 0.25,
+        text: "**Câu 2.** Trong không gian $Oxyz$, cho mặt cầu $(S): (x-1)^2 + (y+2)^2 + (z-3)^2 = 16$. Tọa độ tâm $I$ và bán kính $R$ của mặt cầu $(S)$ là:",
+        options: [
+          createQuestionOption("A", "I(1; -2; 3), R = 4"),
+          createQuestionOption("B", "I(-1; 2; -3), R = 4"),
+          createQuestionOption("C", "I(1; -2; 3), R = 16"),
+          createQuestionOption("D", "I(-1; 2; -3), R = 16")
+        ],
+        correctAnswerIndex: 0,
+        explanation: "Phương trình mặt cầu dạng $(x-a)^2 + (y-b)^2 + (z-c)^2 = R^2$ có tâm $I(a; b; c) = (1; -2; 3)$ và bán kính $R = \\sqrt{16} = 4$."
+      }),
+      createQuestion({
+        part: "part1",
+        questionType: "multipleChoice",
+        pointValue: 0.25,
+        text: "**Câu 3.** Tập nghiệm của bất phương trình $\\log_2(x - 1) < 3$ là:",
+        options: [
+          createQuestionOption("A", "(1; 9)"),
+          createQuestionOption("B", "(-∞; 9)"),
+          createQuestionOption("C", "(1; 7)"),
+          createQuestionOption("D", "(1; +∞)")
+        ],
+        correctAnswerIndex: 0,
+        explanation: "Điều kiện xác định: $x - 1 > 0 \\Leftrightarrow x > 1$.\nBPT $\\Leftrightarrow x - 1 < 2^3 = 8 \\Leftrightarrow x < 9$.\nKết hợp điều kiện ta được tập nghiệm $S = (1; 9)$."
+      }),
+      createQuestion({
+        part: "part1",
+        questionType: "multipleChoice",
+        pointValue: 0.25,
+        text: "**Câu 4.** Cho khối chóp có diện tích đáy $B = 6a^2$ và chiều cao $h = 2a$. Thể tích của khối chóp đã cho bằng:",
+        options: [
+          createQuestionOption("A", "4a³"),
+          createQuestionOption("B", "12a³"),
+          createQuestionOption("C", "2a³"),
+          createQuestionOption("D", "6a³")
+        ],
+        correctAnswerIndex: 0,
+        explanation: "Công thức thể tích khối chóp là $V = \\frac{1}{3}Bh = \\frac{1}{3} \\cdot 6a^2 \\cdot 2a = 4a^3$."
+      }),
+
+      // PHẦN II: Trắc nghiệm Đúng / Sai (4 ý a, b, c, d - Tối đa 1.0đ)
+      createQuestion({
+        part: "part2",
+        questionType: "trueFalseGroup",
+        pointValue: 1.0,
+        text: "**Câu 1.** Cho hàm số bậc ba $f(x) = x^3 - 3x^2 + 2$. Xét tính đúng/sai của các mệnh đề sau:",
+        subItems: [
+          createSubItem("a", "Đạo hàm của hàm số là f'(x) = 3x² - 6x.", true),
+          createSubItem("b", "Hàm số đạt cực đại tại điểm x = 2.", false),
+          createSubItem("c", "Giá trị cực tiểu của hàm số bằng -2.", true),
+          createSubItem("d", "Đồ thị hàm số đi qua điểm M(1; 0).", true)
+        ],
+        explanation: "• a) Đúng vì $f'(x) = 3x^2 - 6x$.\n• b) Sai vì $f'(x) = 0 \\Leftrightarrow x = 0$ (cực đại) hoặc $x = 2$ (cực tiểu).\n• c) Đúng vì $y_{CT} = f(2) = 2^3 - 3(2^2) + 2 = -2$.\n• d) Đúng vì $f(1) = 1 - 3 + 2 = 0$ nên $M(1; 0)$ thuộc đồ thị."
+      }),
+      createQuestion({
+        part: "part2",
+        questionType: "trueFalseGroup",
+        pointValue: 1.0,
+        text: "**Câu 2.** Trong không gian $Oxyz$, cho hai điểm $A(1; 2; 3)$, $B(3; 0; 1)$ và mặt phẳng $(P): x + 2y - 2z + 1 = 0$. Xét tính đúng/sai của các mệnh đề sau:",
+        subItems: [
+          createSubItem("a", "Tọa độ vectơ $\\vec{AB} = (2; -2; -2)$.", true),
+          createSubItem("b", "Trung điểm M của đoạn thẳng AB có tọa độ M(2; 1; 2).", true),
+          createSubItem("c", "Khoảng cách từ điểm A đến mặt phẳng (P) bằng 2.", false),
+          createSubItem("d", "Điểm A thuộc mặt phẳng (P).", true)
+        ],
+        explanation: "• a) Đúng: $\\vec{AB} = (3-1; 0-2; 1-3) = (2; -2; -2)$.\n• b) Đúng: $M = \\left(\\frac{1+3}{2}; \\frac{2+0}{2}; \\frac{3+1}{2}\\right) = (2; 1; 2)$.\n• c) Sai: Thay tọa độ $A(1;2;3)$ vào vế trái $(P)$ ta được $1 + 2(2) - 2(3) + 1 = 0$, do đó $d(A, P) = 0$.\n• d) Đúng: Vì $d(A, P) = 0$ nên điểm $A$ nằm trên mặt phẳng $(P)$."
+      }),
+
+      // PHẦN III: Trắc nghiệm trả lời ngắn (0.25đ / 0.5đ / câu)
+      createQuestion({
+        part: "part3",
+        questionType: "shortAnswer",
+        pointValue: 0.5,
+        text: "**Câu 1.** Một người gửi 100 triệu đồng vào ngân hàng với lãi suất 6%/năm theo hình thức lãi kép hàng năm. Sau đúng 2 năm, số tiền lãi người đó nhận được là bao nhiêu triệu đồng? *(Nhập kết quả làm tròn 2 chữ số thập phân)*",
+        shortAnswer: "12.36",
+        acceptedAnswers: ["12.36", "12,36", "12.36 triệu", "12,36 triệu"],
+        explanation: "Tổng số tiền cả gốc lẫn lãi sau 2 năm: $S = 100 \\times (1 + 0.06)^2 = 112.36$ triệu đồng.\nSố tiền lãi nhận được là $112.36 - 100 = 12.36$ triệu đồng."
+      }),
+      createQuestion({
+        part: "part3",
+        questionType: "shortAnswer",
+        pointValue: 0.5,
+        text: "**Câu 2.** Cho hình hộp chữ nhật $ABCD.A'B'C'D'$ có đáy $ABCD$ là hình vuông cạnh $a = 1$, cạnh bên $AA' = 2$. Tính thể tích khối chóp $A'.ABCD$. *(Nhập kết quả dưới dạng số thập phân làm tròn 2 chữ số hoặc phân số tối giản a/b)*",
+        shortAnswer: "0.67",
+        acceptedAnswers: ["0.67", "0,67", "2/3", "0.667"],
+        explanation: "Diện tích đáy $S_{ABCD} = 1^2 = 1$. Chiều cao $h = AA' = 2$.\nThể tích khối chóp $V = \\frac{1}{3} \\cdot S \\cdot h = \\frac{1}{3} \\cdot 1 \\cdot 2 = \\frac{2}{3} \\approx 0.67$."
+      })
+    ];
+
+    const demoQuiz = createQuiz({
+      title: "Đề thi Minh họa THPT Quốc gia 2026 - Môn Toán",
+      description: "Đề thi chuẩn cấu trúc 3 phần mới của Bộ Giáo dục & Đào tạo (Phần I: 4 Lựa chọn, Phần II: Đúng/Sai 4 ý, Phần III: Trả lời ngắn)",
+      questions: questions,
+      isPreMade: true,
+      quizType: "thptQuocGia",
+      durationMinutes: 90
+    });
+
+    return createStudyProject({
+      name: "Dự án Luyện thi THPT Quốc gia (3 Phần Chuẩn)",
+      description: "Luyện đề theo cấu trúc phân tầng mới của Bộ GD&ĐT với thang điểm 10.0",
+      projectType: "thptQuocGia",
+      quizzes: [demoQuiz]
+    });
+  }
 }
 
 export const storage = new StorageService();
+

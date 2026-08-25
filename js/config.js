@@ -2,8 +2,8 @@
  * QuizMaster Web - Configuration & Constants
  */
 export const APP_CONFIG = {
-  version: "v1.1.0",
-  buildNumber: "4-web",
+  version: "v2.0.0",
+  buildNumber: "1-web",
   author: "@tozn607",
   authorName: "Anh Vinh",
   githubRepo: "https://github.com/tozn607/quizmaster-web",

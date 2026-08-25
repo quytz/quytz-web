@@ -1,11 +1,9 @@
-/**
- * QuizMaster Web - 3D Flashcard Mode View
- */
 import { i18n } from "../localization/i18n.js";
 import { storage } from "../services/storage.js";
 import { keyboard } from "../components/keyboard.js";
 import { formatMarkdownHTML } from "../components/reading-pane.js";
 import { CEFR_LEVELS } from "../models/types.js";
+import { renderSF } from "../components/icons.js";
 
 export function renderFlashcardView(project, quiz, cardState) {
   const isLL = (quiz.quizType === "languageLearning" || project.projectType === "languageLearning") && quiz.vocabularies && quiz.vocabularies.length > 0;
@@ -24,7 +22,7 @@ export function renderFlashcardView(project, quiz, cardState) {
       <!-- Top Header -->
       <div class="study-header">
         <button class="btn btn-ghost" id="btn-quit-flashcard" title="${i18n.t("quitQuiz")}">
-          <span>←</span> <span class="btn-text-hide-mobile">${i18n.t("quitQuiz")}</span>
+          ${renderSF("arrow.left", { size: "16px" })} <span class="btn-text-hide-mobile">${i18n.t("quitQuiz")}</span>
         </button>
 
         <div class="study-header-center">
@@ -46,7 +44,7 @@ export function renderFlashcardView(project, quiz, cardState) {
           ` : ''}
 
           <button class="btn btn-pill ${cardState.showNavPane ? 'active' : 'btn-secondary'}" id="btn-toggle-nav-pane" title="Danh sách thẻ">
-            <span>☰</span> <span>Danh sách thẻ</span>
+            ${renderSF("list.bullet", { size: "14px" })} <span>Danh sách thẻ</span>
           </button>
         </div>
       </div>
