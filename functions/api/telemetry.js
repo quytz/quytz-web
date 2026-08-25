@@ -188,6 +188,67 @@ export async function onRequestPost({ request, env }) {
 
     const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
 
+    // --- CASE 0: ADMIN MANAGES GIST (Create New Gist / Delete Current Gist / Reset) ---
+    if (incoming.type === "admin_gist_action" || incoming.type === "manage_gist") {
+      if ((incoming.action === "delete_gist" || incoming.action === "reset_gist") && gistId) {
+        try {
+          await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: "DELETE",
+            headers: {
+              "Authorization": authHeader,
+              "User-Agent": "QuizMaster-Telemetry",
+              "Accept": "application/vnd.github.v3+json"
+            }
+          });
+        } catch (e) {
+          console.warn("Delete old gist error:", e);
+        }
+      }
+
+      if (incoming.action === "create_new_gist" || incoming.action === "reset_gist" || incoming.action === "delete_gist") {
+        const createRes = await fetch("https://api.github.com/gists", {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "User-Agent": "QuizMaster-Telemetry",
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            description: "QuizMaster Web Telemetry & Feedback Database (Private)",
+            public: false,
+            files: {
+              "telemetry.json": {
+                content: JSON.stringify(getDefaultStats(), null, 2)
+              },
+              "feedback.json": {
+                content: "[]"
+              }
+            }
+          })
+        });
+
+        if (createRes.ok) {
+          const newGist = await createRes.json();
+          return new Response(JSON.stringify({
+            success: true,
+            gistId: newGist.id,
+            htmlUrl: newGist.html_url,
+            message: "Đã khởi tạo Gist mới thành công!"
+          }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        } else {
+          const err = await createRes.text();
+          return new Response(JSON.stringify({ success: false, error: err }), {
+            status: createRes.status,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+      }
+    }
+
     // --- CASE 1: USER SUBMITS FEEDBACK ---
     if (incoming.type === "feedback" || incoming.feedback) {
       const fbData = incoming.feedback || incoming;

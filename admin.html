@@ -677,10 +677,10 @@
 
     </div>
 
-    <!-- Developer Testing & System Diagnostics -->
+    <!-- Gist Management & System Diagnostics -->
     <div class="panel-section" style="margin-top: var(--space-4);">
       <h3>
-        <span>Kiểm Tra & Chẩn Đoán Hệ Thống</span>
+        <span>Quản Lý Lưu Trữ Gist & Chẩn Đoán Hệ Thống</span>
         <span id="last-updated-text" style="font-size: var(--text-xs); color: var(--text-secondary);">Cập nhật: --</span>
       </h3>
 
@@ -688,19 +688,26 @@
         Toàn bộ số liệu và phản hồi người dùng được tự động lưu trữ an toàn trong <strong>Private GitHub Gist</strong> thông qua Cloudflare Worker (0 Git Commits).
       </div>
 
-      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap;">
-        <button id="btn-simulate-event" class="btn btn-primary">
-          Gửi Thống Kê Thử Nghiệm (+1 Visitor & +1 Practice)
+      <!-- Quick Action Buttons -->
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; margin-bottom: var(--space-4);">
+        <button id="btn-create-gist" class="btn btn-primary" style="background: linear-gradient(135deg, #1f7ae8, #2e9e66);">
+          ➕ Tạo Gist Mới (Khởi tạo lại)
         </button>
-        <button id="btn-simulate-feedback" class="btn btn-secondary" style="color: var(--color-coral-red);">
-          Gửi Phản Hồi Mẫu (Báo lỗi kèm Logs)
-        </button>
-        <button id="btn-run-diagnostics" class="btn btn-secondary">
-          Kiểm Tra Kết Nối Cloudflare
+        <button id="btn-delete-gist" class="btn btn-secondary" style="color: var(--color-coral-red); border-color: rgba(214, 71, 82, 0.4);">
+          🗑️ Xóa Gist Hiện Tại
         </button>
         <a id="link-view-gist" href="#" target="_blank" class="btn btn-secondary" style="display: none;">
           Mở Private Gist trên GitHub ↗
         </a>
+        <button id="btn-run-diagnostics" class="btn btn-secondary">
+          Kiểm Tra Kết Nối Cloudflare
+        </button>
+        <button id="btn-simulate-event" class="btn btn-secondary">
+          +1 Test Visitor
+        </button>
+        <button id="btn-simulate-feedback" class="btn btn-secondary">
+          +1 Test Feedback
+        </button>
       </div>
 
       <div id="diagnostics-result" style="display: none; margin-top: var(--space-4); background: var(--bg-window); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
@@ -708,7 +715,8 @@
         <pre id="diagnostics-log" style="font-family: var(--font-family-mono); font-size: var(--text-xs); margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
       </div>
 
-      <div style="margin-top: var(--space-4);">
+      <!-- Advanced Gist / Raw Viewer Collapsibles -->
+      <div style="margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);">
         <details>
           <summary style="cursor: pointer; font-weight: 600; font-size: var(--text-sm); color: var(--color-ocean-blue);">
             Xem Dữ Liệu JSON Thô (Gist Payload)
@@ -790,6 +798,8 @@
     const elements = {
       status: document.getElementById("sync-status"),
       btnRefresh: document.getElementById("btn-refresh"),
+      btnCreateGist: document.getElementById("btn-create-gist"),
+      btnDeleteGist: document.getElementById("btn-delete-gist"),
       btnSimulate: document.getElementById("btn-simulate-event"),
       btnSimulateFeedback: document.getElementById("btn-simulate-feedback"),
       linkViewGist: document.getElementById("link-view-gist"),
@@ -862,9 +872,75 @@
       };
     }
 
-    // Clean legacy storage tokens
-    localStorage.removeItem("qm_telemetry_token");
-    localStorage.removeItem("qm_telemetry_gist_id");
+    // --- CREATE NEW GIST ACTION ---
+    elements.btnCreateGist.onclick = async () => {
+      if (!confirm("Bạn có chắc chắn muốn tạo một Private Gist mới?\n\nGist mới sẽ được tạo trên tài khoản GitHub của bạn với số liệu ban đầu sạch (0 lượt truy cập & danh sách phản hồi trống).")) {
+        return;
+      }
+
+      elements.btnCreateGist.disabled = true;
+      elements.btnCreateGist.textContent = "⏳ Đang tạo Gist mới...";
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "admin_gist_action",
+            action: "create_new_gist"
+          })
+        });
+
+        const resData = await res.json();
+        if (resData.success) {
+          alert(`✓ Đã tạo thành công Private Gist mới!\nGist ID: ${resData.gistId}`);
+          await fetchTelemetryData();
+        } else {
+          alert(`✕ Lỗi: ${resData.error || "Không thể tạo Gist"}`);
+        }
+      } catch (e) {
+        alert(`✕ Lỗi kết nối: ${e.message}`);
+      }
+
+      elements.btnCreateGist.disabled = false;
+      elements.btnCreateGist.textContent = "➕ Tạo Gist Mới (Khởi tạo lại)";
+    };
+
+    // --- DELETE CURRENT GIST ACTION ---
+    elements.btnDeleteGist.onclick = async () => {
+      if (!confirm("⚠️ CẢNH BÁO: Thao tác này sẽ xóa Gist lưu trữ hiện tại trên GitHub và tự động tạo một Gist mới tinh.\n\nBạn có chắc chắn muốn tiếp tục?")) {
+        return;
+      }
+
+      elements.btnDeleteGist.disabled = true;
+      elements.btnDeleteGist.textContent = "⏳ Đang xóa Gist...";
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "admin_gist_action",
+            action: "delete_gist"
+          })
+        });
+
+        const resData = await res.json();
+        if (resData.success) {
+          alert(`✓ Đã xóa Gist cũ và khởi tạo Gist mới sạch!\nGist ID: ${resData.gistId}`);
+          await fetchTelemetryData();
+        } else {
+          alert(`✕ Lỗi: ${resData.error || "Không thể xóa Gist"}`);
+        }
+      } catch (e) {
+        alert(`✕ Lỗi kết nối: ${e.message}`);
+      }
+
+      elements.btnDeleteGist.disabled = false;
+      elements.btnDeleteGist.textContent = "🗑️ Xóa Gist Hiện Tại";
+    };
 
     // Simulate Telemetry Event
     elements.btnSimulate.onclick = async () => {
@@ -894,7 +970,7 @@
       }
 
       elements.btnSimulate.disabled = false;
-      elements.btnSimulate.textContent = "Gửi Thống Kê Thử Nghiệm (+1 Visitor & +1 Practice)";
+      elements.btnSimulate.textContent = "+1 Test Visitor";
       await fetchTelemetryData();
     };
 
@@ -938,7 +1014,7 @@
       }
 
       elements.btnSimulateFeedback.disabled = false;
-      elements.btnSimulateFeedback.textContent = "Gửi Phản Hồi Mẫu (Báo lỗi kèm Logs)";
+      elements.btnSimulateFeedback.textContent = "+1 Test Feedback";
       await fetchTelemetryData();
     };
 
