@@ -228,18 +228,19 @@
       font-size: var(--text-sm);
     }
 
-    /* Feedback Cards */
+    /* Feedback Box & Optimization Styles */
     .feedback-item {
       background: var(--bg-window);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       padding: var(--space-4);
       margin-bottom: var(--space-3);
-      transition: border-color var(--transition-fast);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
     .feedback-item:hover {
       border-color: var(--color-ocean-blue);
+      box-shadow: var(--shadow-sm);
     }
 
     .feedback-item-header {
@@ -248,7 +249,7 @@
       align-items: flex-start;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .feedback-category-badge {
@@ -304,6 +305,9 @@
     }
 
     .feedback-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 6px 12px;
       border-radius: var(--radius-pill);
       font-size: var(--text-xs);
@@ -319,6 +323,80 @@
       background: var(--color-ocean-blue);
       color: #ffffff;
       border-color: var(--color-ocean-blue);
+    }
+
+    .feedback-filter-btn .count-pill {
+      background: rgba(0, 0, 0, 0.08);
+      padding: 1px 6px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+    }
+
+    .feedback-filter-btn.active .count-pill {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-top: var(--space-4);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .page-btn {
+      padding: 5px 10px;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .group-accordion {
+      background: var(--bg-window);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+      overflow: hidden;
+    }
+
+    .group-accordion summary {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      background: var(--bg-card);
+    }
+
+    .group-accordion summary:hover {
+      background: var(--bg-subtle);
+    }
+
+    .group-content {
+      padding: 12px;
+      border-top: 1px solid var(--border-subtle);
     }
 
     /* Passcode Lock Overlay */
@@ -458,18 +536,40 @@
     <div class="panel-section" id="feedback-section">
       <h3>
         <span>Phản Hồi & Báo Lỗi Từ Người Dùng</span>
-        <span id="count-feedbacks-badge" style="font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500;">0 phản hồi</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- View Mode Toggle -->
+          <div class="segmented-control" style="font-size: 11px; padding: 2px;">
+            <button class="segment-btn active" id="btn-mode-paged" style="padding: 4px 8px;">Phân trang</button>
+            <button class="segment-btn" id="btn-mode-grouped" style="padding: 4px 8px;">Gom nhóm</button>
+          </div>
+          <span id="count-feedbacks-badge" style="font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500;">0 phản hồi</span>
+        </div>
       </h3>
 
       <!-- Feedback Filter & Search Controls -->
       <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
         <!-- Category Filter Buttons -->
         <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="feedback-category-filters">
-          <button class="feedback-filter-btn active" data-fb-cat="all">Tất cả</button>
-          <button class="feedback-filter-btn" data-fb-cat="bug">Báo lỗi hệ thống</button>
-          <button class="feedback-filter-btn" data-fb-cat="feature">Đề xuất tính năng</button>
-          <button class="feedback-filter-btn" data-fb-cat="content">Góp ý nội dung</button>
-          <button class="feedback-filter-btn" data-fb-cat="general">Góp ý chung</button>
+          <button class="feedback-filter-btn active" data-fb-cat="all">
+            <span>Tất cả</span>
+            <span class="count-pill" id="cnt-cat-all">0</span>
+          </button>
+          <button class="feedback-filter-btn" data-fb-cat="bug">
+            <span>Báo lỗi hệ thống</span>
+            <span class="count-pill" id="cnt-cat-bug">0</span>
+          </button>
+          <button class="feedback-filter-btn" data-fb-cat="feature">
+            <span>Đề xuất tính năng</span>
+            <span class="count-pill" id="cnt-cat-feature">0</span>
+          </button>
+          <button class="feedback-filter-btn" data-fb-cat="content">
+            <span>Góp ý nội dung</span>
+            <span class="count-pill" id="cnt-cat-content">0</span>
+          </button>
+          <button class="feedback-filter-btn" data-fb-cat="general">
+            <span>Góp ý chung</span>
+            <span class="count-pill" id="cnt-cat-general">0</span>
+          </button>
         </div>
 
         <!-- Search Input -->
@@ -481,6 +581,27 @@
       <!-- Feedback List Container -->
       <div id="feedback-list-container">
         <p style="color: var(--text-secondary); font-size: var(--text-sm);">Đang tải danh sách phản hồi...</p>
+      </div>
+
+      <!-- Pagination Container -->
+      <div id="feedback-pagination-container" class="pagination-bar" style="display: none;">
+        <div style="font-size: var(--text-xs); color: var(--text-secondary);">
+          Hiển thị <span id="page-info-text">0-0 / 0</span>
+        </div>
+
+        <div class="pagination-controls">
+          <button class="page-btn" id="btn-page-first" title="Trang đầu">«</button>
+          <button class="page-btn" id="btn-page-prev" title="Trang trước">‹ Trước</button>
+          <span id="page-current-indicator" style="font-size: var(--text-xs); font-weight: 700; padding: 0 6px;">1 / 1</span>
+          <button class="page-btn" id="btn-page-next" title="Trang tiếp">Tiếp ›</button>
+          <button class="page-btn" id="btn-page-last" title="Trang cuối">»</button>
+
+          <select id="select-page-size" class="form-input" style="padding: 2px 6px; font-size: 11px; height: 26px; margin-left: 8px;">
+            <option value="5">5 / trang</option>
+            <option value="10">10 / trang</option>
+            <option value="20">20 / trang</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -646,6 +767,9 @@
     let loadedFeedbacks = [];
     let currentCategoryFilter = "all";
     let currentSearchTerm = "";
+    let currentViewMode = "paged"; // "paged" | "grouped"
+    let currentPage = 1;
+    let pageSize = 5;
 
     async function hashInput(str) {
       const buffer = new TextEncoder().encode(str + ":" + _SALT);
@@ -715,7 +839,26 @@
       // Feedback UI
       countFeedbacksBadge: document.getElementById("count-feedbacks-badge"),
       feedbackListContainer: document.getElementById("feedback-list-container"),
+      feedbackPaginationContainer: document.getElementById("feedback-pagination-container"),
       inputSearchFeedback: document.getElementById("input-search-feedback"),
+      btnModePaged: document.getElementById("btn-mode-paged"),
+      btnModeGrouped: document.getElementById("btn-mode-grouped"),
+      
+      // Category Counters
+      cntCatAll: document.getElementById("cnt-cat-all"),
+      cntCatBug: document.getElementById("cnt-cat-bug"),
+      cntCatFeature: document.getElementById("cnt-cat-feature"),
+      cntCatContent: document.getElementById("cnt-cat-content"),
+      cntCatGeneral: document.getElementById("cnt-cat-general"),
+
+      // Pagination elements
+      pageInfoText: document.getElementById("page-info-text"),
+      pageCurrentIndicator: document.getElementById("page-current-indicator"),
+      btnPageFirst: document.getElementById("btn-page-first"),
+      btnPagePrev: document.getElementById("btn-page-prev"),
+      btnPageNext: document.getElementById("btn-page-next"),
+      btnPageLast: document.getElementById("btn-page-last"),
+      selectPageSize: document.getElementById("select-page-size"),
 
       // Locations
       locationsList: document.getElementById("locations-list"),
@@ -1052,7 +1195,7 @@
             const fbContent = gistData.files && gistData.files["feedback.json"] ? gistData.files["feedback.json"].content : null;
             
             const stats = statsContent ? JSON.parse(statsContent) : getDefaultStats();
-            loadedFeedbacks = fbContent ? JSON.parse(fbContent) : [];
+            loadedFeedbacks = fbContent ? JSON.parse(fbContent) : (stats.feedbacks || []);
 
             elements.status.className = "status-badge online";
             elements.status.textContent = `● Đã kết nối (Direct Gist: ${gistId.substring(0, 8)}...)`;
@@ -1167,7 +1310,95 @@
       resolved: "Đã giải quyết"
     };
 
+    function updateCategoryCounters() {
+      const allCount = loadedFeedbacks.length;
+      const bugCount = loadedFeedbacks.filter(f => f.sectionId === "bug").length;
+      const featureCount = loadedFeedbacks.filter(f => f.sectionId === "feature").length;
+      const contentCount = loadedFeedbacks.filter(f => f.sectionId === "content").length;
+      const generalCount = loadedFeedbacks.filter(f => f.sectionId === "general").length;
+
+      if (elements.cntCatAll) elements.cntCatAll.textContent = allCount;
+      if (elements.cntCatBug) elements.cntCatBug.textContent = bugCount;
+      if (elements.cntCatFeature) elements.cntCatFeature.textContent = featureCount;
+      if (elements.cntCatContent) elements.cntCatContent.textContent = contentCount;
+      if (elements.cntCatGeneral) elements.cntCatGeneral.textContent = generalCount;
+    }
+
+    function renderFeedbackCard(item) {
+      const catClass = `cat-${item.sectionId || 'general'}`;
+      const catLabel = SECTION_LABELS[item.sectionId] || "Phản hồi";
+      const statusClass = `status-${item.status || 'new'}`;
+      const statusLabel = STATUS_LABELS[item.status] || "Mới";
+      
+      let dateFormatted = item.timestamp || "--";
+      try {
+        dateFormatted = new Date(item.timestamp).toLocaleString("vi-VN");
+      } catch {}
+
+      const hasLogs = Boolean(item.logs);
+      const cleanMessage = (item.message || '').trim();
+
+      return `
+        <div class="feedback-item" id="fb-card-${item.id}">
+          <div class="feedback-item-header">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="feedback-category-badge ${catClass}">${catLabel}</span>
+              ${item.subCategory ? `<span style="font-size: 11px; font-weight: 600; color: var(--text-secondary); background: var(--bg-subtle); padding: 2px 8px; border-radius: var(--radius-pill);">${escapeHtml(item.subCategory)}</span>` : ''}
+              <span class="feedback-status-pill ${statusClass}">${statusLabel}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+              ${item.country ? `<span class="location-pill" style="padding: 2px 6px;">📍 ${escapeHtml(item.country)}</span>` : ''}
+              <span>${dateFormatted}</span>
+            </div>
+          </div>
+
+          <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+            ${escapeHtml(item.title || '(Không có tiêu đề)')}
+          </div>
+
+          <div style="font-size: var(--text-xs); line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; margin-bottom: 6px;">${escapeHtml(cleanMessage)}</div>
+
+          ${item.contact ? `
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+              <strong>Người gửi:</strong> ${escapeHtml(item.contact)}
+            </div>
+          ` : ''}
+
+          ${hasLogs ? `
+            <details style="margin-top: 6px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 6px 10px;">
+              <summary style="font-size: 11px; color: var(--color-ocean-blue); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <span>🔍 Nhật Ký Chẩn Đoán (Logs đính kèm)</span>
+              </summary>
+              <div style="margin-top: 6px;">
+                <button class="btn btn-secondary btn-copy-logs" data-log-id="${item.id}" style="padding: 3px 8px; font-size: 10px; margin-bottom: 4px;">
+                  📋 Sao chép Logs
+                </button>
+                <pre id="log-content-${item.id}" style="margin: 0; font-family: var(--font-family-mono); font-size: 11px; background: var(--bg-window); padding: 6px 8px; border-radius: 4px; max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-secondary);">${escapeHtml(typeof item.logs === 'object' ? JSON.stringify(item.logs, null, 2) : item.logs)}</pre>
+              </div>
+            </details>
+          ` : ''}
+
+          <!-- Card Actions -->
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 11px; color: var(--text-secondary);">Trạng thái:</span>
+              <select class="form-input select-status" data-id="${item.id}" style="padding: 2px 6px; font-size: 11px; height: 24px;">
+                <option value="new" ${item.status === 'new' ? 'selected' : ''}>Mới</option>
+                <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>Đang xử lý</option>
+                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Đã giải quyết</option>
+              </select>
+            </div>
+
+            <button class="btn btn-ghost btn-delete-feedback" data-id="${item.id}" style="padding: 2px 6px; font-size: 11px; color: var(--color-coral-red);">
+              Xóa
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     function renderFeedbacks() {
+      updateCategoryCounters();
       elements.countFeedbacksBadge.textContent = `${loadedFeedbacks.length} phản hồi`;
       elements.valFeedbacksTotal.textContent = (loadedFeedbacks.length || 0).toLocaleString();
 
@@ -1190,6 +1421,7 @@
       }
 
       if (filtered.length === 0) {
+        elements.feedbackPaginationContainer.style.display = "none";
         elements.feedbackListContainer.innerHTML = `
           <div style="text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-secondary);">
             <div style="font-size: 28px; margin-bottom: 6px;">💬</div>
@@ -1199,81 +1431,70 @@
         return;
       }
 
-      elements.feedbackListContainer.innerHTML = filtered.map(item => {
-        const catClass = `cat-${item.sectionId || 'general'}`;
-        const catLabel = SECTION_LABELS[item.sectionId] || "Phản hồi";
-        const statusClass = `status-${item.status || 'new'}`;
-        const statusLabel = STATUS_LABELS[item.status] || "Mới";
+      // --- GROUPED VIEW MODE ---
+      if (currentViewMode === "grouped") {
+        elements.feedbackPaginationContainer.style.display = "none";
         
-        let dateFormatted = item.timestamp || "--";
-        try {
-          dateFormatted = new Date(item.timestamp).toLocaleString("vi-VN");
-        } catch {}
+        const sections = [
+          { id: "bug", title: "Báo lỗi hệ thống", color: "var(--color-coral-red)" },
+          { id: "feature", title: "Đề xuất tính năng", color: "var(--color-deep-purple)" },
+          { id: "content", title: "Góp ý nội dung", color: "var(--color-sunset-orange)" },
+          { id: "general", title: "Góp ý chung", color: "var(--color-ocean-blue)" }
+        ];
 
-        const hasLogs = Boolean(item.logs);
+        let html = "";
+        sections.forEach(sec => {
+          const secItems = filtered.filter(f => f.sectionId === sec.id);
+          if (secItems.length === 0 && currentCategoryFilter !== "all" && currentCategoryFilter !== sec.id) {
+            return;
+          }
 
-        return `
-          <div class="feedback-item" id="fb-card-${item.id}">
-            <div class="feedback-item-header">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span class="feedback-category-badge ${catClass}">${catLabel}</span>
-                ${item.subCategory ? `<span style="font-size: 11px; font-weight: 600; color: var(--text-secondary); background: var(--bg-subtle); padding: 2px 8px; border-radius: var(--radius-pill);">${escapeHtml(item.subCategory)}</span>` : ''}
-                <span class="feedback-status-pill ${statusClass}">${statusLabel}</span>
+          html += `
+            <details class="group-accordion" ${secItems.length > 0 ? 'open' : ''}>
+              <summary>
+                <span style="color: ${sec.color};">${sec.title}</span>
+                <span class="count-pill" style="font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--bg-subtle);">${secItems.length} phản hồi</span>
+              </summary>
+              <div class="group-content">
+                ${secItems.length === 0 ? `
+                  <div style="text-align: center; padding: 12px; font-size: var(--text-xs); color: var(--text-secondary);">Không có phản hồi nào trong nhóm này.</div>
+                ` : secItems.map(item => renderFeedbackCard(item)).join("")}
               </div>
-              <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-                ${item.country ? `<span class="location-pill" style="padding: 2px 6px;">📍 ${escapeHtml(item.country)}</span>` : ''}
-                <span>${dateFormatted}</span>
-              </div>
-            </div>
+            </details>
+          `;
+        });
 
-            <div style="font-size: var(--text-base); font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
-              ${escapeHtml(item.title || '(Không có tiêu đề)')}
-            </div>
+        elements.feedbackListContainer.innerHTML = html;
+      } else {
+        // --- PAGED VIEW MODE ---
+        elements.feedbackPaginationContainer.style.display = "flex";
 
-            <div style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;">
-              ${escapeHtml(item.message || '')}
-            </div>
+        const totalItems = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
 
-            ${item.contact ? `
-              <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                <strong>Người gửi:</strong> ${escapeHtml(item.contact)}
-              </div>
-            ` : ''}
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalItems);
+        const pagedItems = filtered.slice(startIdx, endIdx);
 
-            ${hasLogs ? `
-              <details style="margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px;">
-                <summary style="font-size: 11px; color: var(--color-ocean-blue); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-                  <span>Nhật Ký Chẩn Đoán & Thông Tin Lỗi (Logs đính kèm)</span>
-                </summary>
-                <div style="margin-top: 8px;">
-                  <button class="btn btn-secondary btn-copy-logs" data-log-id="${item.id}" style="padding: 4px 8px; font-size: 10px; margin-bottom: 6px;">
-                    Sao chép toàn bộ Logs
-                  </button>
-                  <pre id="log-content-${item.id}" style="margin: 0; font-family: var(--font-family-mono); font-size: 11px; background: var(--bg-window); padding: 8px; border-radius: 4px; max-height: 200px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-secondary);">${escapeHtml(typeof item.logs === 'object' ? JSON.stringify(item.logs, null, 2) : item.logs)}</pre>
-                </div>
-              </details>
-            ` : ''}
+        elements.pageInfoText.textContent = `${startIdx + 1}-${endIdx} / ${totalItems} phản hồi`;
+        elements.pageCurrentIndicator.textContent = `${currentPage} / ${totalPages}`;
+        
+        elements.btnPageFirst.disabled = (currentPage === 1);
+        elements.btnPagePrev.disabled = (currentPage === 1);
+        elements.btnPageNext.disabled = (currentPage === totalPages);
+        elements.btnPageLast.disabled = (currentPage === totalPages);
 
-            <!-- Card Actions -->
-            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Trạng thái:</span>
-                <select class="form-input select-status" data-id="${item.id}" style="padding: 2px 6px; font-size: 11px; height: 26px;">
-                  <option value="new" ${item.status === 'new' ? 'selected' : ''}>Mới</option>
-                  <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>Đang xử lý</option>
-                  <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Đã giải quyết</option>
-                </select>
-              </div>
+        elements.feedbackListContainer.innerHTML = pagedItems.map(item => renderFeedbackCard(item)).join("");
+      }
 
-              <button class="btn btn-ghost btn-delete-feedback" data-id="${item.id}" style="padding: 4px 8px; font-size: 11px; color: var(--color-coral-red);">
-                Xóa
-              </button>
-            </div>
-          </div>
-        `;
-      }).join("");
+      bindFeedbackCardEvents();
+    }
 
-      // Bind feedback card events
+    function bindFeedbackCardEvents() {
+      // Copy Logs
       document.querySelectorAll(".btn-copy-logs").forEach(btn => {
         btn.onclick = () => {
           const logId = btn.dataset.logId;
@@ -1281,12 +1502,13 @@
           if (pre) {
             navigator.clipboard.writeText(pre.textContent).then(() => {
               btn.textContent = "✓ Đã sao chép!";
-              setTimeout(() => { btn.textContent = "Sao chép toàn bộ Logs"; }, 2000);
+              setTimeout(() => { btn.textContent = "📋 Sao chép Logs"; }, 2000);
             });
           }
         };
       });
 
+      // Status change
       document.querySelectorAll(".select-status").forEach(select => {
         select.onchange = async (e) => {
           const id = select.dataset.id;
@@ -1295,6 +1517,7 @@
         };
       });
 
+      // Delete feedback
       document.querySelectorAll(".btn-delete-feedback").forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
@@ -1305,12 +1528,57 @@
       });
     }
 
+    // View Mode Switchers
+    elements.btnModePaged.onclick = () => {
+      currentViewMode = "paged";
+      elements.btnModePaged.classList.add("active");
+      elements.btnModeGrouped.classList.remove("active");
+      renderFeedbacks();
+    };
+
+    elements.btnModeGrouped.onclick = () => {
+      currentViewMode = "grouped";
+      elements.btnModeGrouped.classList.add("active");
+      elements.btnModePaged.classList.remove("active");
+      renderFeedbacks();
+    };
+
+    // Pagination Button Handlers
+    elements.btnPageFirst.onclick = () => {
+      currentPage = 1;
+      renderFeedbacks();
+    };
+
+    elements.btnPagePrev.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderFeedbacks();
+      }
+    };
+
+    elements.btnPageNext.onclick = () => {
+      currentPage++;
+      renderFeedbacks();
+    };
+
+    elements.btnPageLast.onclick = () => {
+      currentPage = 999999;
+      renderFeedbacks();
+    };
+
+    elements.selectPageSize.onchange = (e) => {
+      pageSize = parseInt(e.target.value, 10) || 5;
+      currentPage = 1;
+      renderFeedbacks();
+    };
+
     // Filter by Category
     document.querySelectorAll("[data-fb-cat]").forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll("[data-fb-cat]").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentCategoryFilter = btn.dataset.fbCat;
+        currentPage = 1;
         renderFeedbacks();
       };
     });
@@ -1318,6 +1586,7 @@
     // Search filter
     elements.inputSearchFeedback.oninput = (e) => {
       currentSearchTerm = e.target.value.trim();
+      currentPage = 1;
       renderFeedbacks();
     };
 
