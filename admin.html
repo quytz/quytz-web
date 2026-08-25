@@ -210,25 +210,7 @@
       border: 1px solid var(--border-subtle);
     }
 
-    .input-row {
-      display: flex;
-      gap: var(--space-2);
-      margin-top: var(--space-3);
-      flex-wrap: wrap;
-    }
-
-    .input-row input {
-      flex: 1;
-      min-width: 220px;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-window);
-      color: var(--text-primary);
-      font-size: var(--text-sm);
-    }
-
-    /* Feedback Box & Optimization Styles */
+    /* Feedback Cards */
     .feedback-item {
       background: var(--bg-window);
       border: 1px solid var(--border-subtle);
@@ -695,30 +677,18 @@
 
     </div>
 
-    <!-- Developer Testing & Gist Storage Configuration -->
+    <!-- Developer Testing & System Diagnostics -->
     <div class="panel-section" style="margin-top: var(--space-4);">
       <h3>
-        <span>Thiết Lập Lưu Trữ Private Gist (0 Git Commits)</span>
+        <span>Kiểm Tra & Chẩn Đoán Hệ Thống</span>
         <span id="last-updated-text" style="font-size: var(--text-xs); color: var(--text-secondary);">Cập nhật: --</span>
       </h3>
 
-      <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-3); line-height: 1.6;">
-        Toàn bộ thống kê và phản hồi của người dùng được lưu trữ tự động trong một <strong>Private GitHub Gist</strong> riêng biệt. Không tạo commit nào vào kho lưu trữ mã nguồn.
-      </div>
-      
-      <div class="input-row">
-        <input type="password" id="input-gh-token" placeholder="GitHub Personal Access Token (ghp_... có quyền gist)" />
-        <input type="text" id="input-gist-id" placeholder="Gist ID (tùy chọn, để trống sẽ tự động tạo)" />
-        <button id="btn-auto-create-gist" class="btn btn-primary" style="background: linear-gradient(135deg, #1f7ae8, #2e9e66);">
-          Tạo & Kết Nối Gist
-        </button>
-        <button id="btn-save-config" class="btn btn-secondary">Lưu</button>
-        <button id="btn-clear-config" class="btn btn-secondary">Xóa</button>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4); line-height: 1.6;">
+        Toàn bộ số liệu và phản hồi người dùng được tự động lưu trữ an toàn trong <strong>Private GitHub Gist</strong> thông qua Cloudflare Worker (0 Git Commits).
       </div>
 
-      <div id="config-feedback" style="font-size: var(--text-xs); margin-top: 8px; font-weight: 600;"></div>
-
-      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4);">
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap;">
         <button id="btn-simulate-event" class="btn btn-primary">
           Gửi Thống Kê Thử Nghiệm (+1 Visitor & +1 Practice)
         </button>
@@ -726,10 +696,10 @@
           Gửi Phản Hồi Mẫu (Báo lỗi kèm Logs)
         </button>
         <button id="btn-run-diagnostics" class="btn btn-secondary">
-          Kiểm Tra Kết Nối Cloudflare (/api/telemetry)
+          Kiểm Tra Kết Nối Cloudflare
         </button>
         <a id="link-view-gist" href="#" target="_blank" class="btn btn-secondary" style="display: none;">
-          Mở Private Gist trên GitHub
+          Mở Private Gist trên GitHub ↗
         </a>
       </div>
 
@@ -822,12 +792,6 @@
       btnRefresh: document.getElementById("btn-refresh"),
       btnSimulate: document.getElementById("btn-simulate-event"),
       btnSimulateFeedback: document.getElementById("btn-simulate-feedback"),
-      btnAutoCreateGist: document.getElementById("btn-auto-create-gist"),
-      btnSaveConfig: document.getElementById("btn-save-config"),
-      btnClearConfig: document.getElementById("btn-clear-config"),
-      inputGhToken: document.getElementById("input-gh-token"),
-      inputGistId: document.getElementById("input-gist-id"),
-      configFeedback: document.getElementById("config-feedback"),
       linkViewGist: document.getElementById("link-view-gist"),
       
       valVisitors: document.getElementById("val-visitors"),
@@ -898,99 +862,9 @@
       };
     }
 
-    // Load saved settings
-    const savedToken = localStorage.getItem("qm_telemetry_token") || "";
-    const savedGistId = localStorage.getItem("qm_telemetry_gist_id") || "";
-    elements.inputGhToken.value = savedToken;
-    elements.inputGistId.value = savedGistId;
-
-    if (savedGistId) {
-      elements.linkViewGist.href = `https://gist.github.com/${savedGistId}`;
-      elements.linkViewGist.style.display = "inline-flex";
-    }
-
-    elements.btnSaveConfig.onclick = () => {
-      const token = elements.inputGhToken.value.trim();
-      const gistId = elements.inputGistId.value.trim();
-      localStorage.setItem("qm_telemetry_token", token);
-      localStorage.setItem("qm_telemetry_gist_id", gistId);
-      elements.configFeedback.textContent = "✓ Đã lưu cấu hình vào LocalStorage!";
-      elements.configFeedback.style.color = "var(--color-emerald-mint)";
-      fetchTelemetryData();
-    };
-
-    elements.btnClearConfig.onclick = () => {
-      localStorage.removeItem("qm_telemetry_token");
-      localStorage.removeItem("qm_telemetry_gist_id");
-      elements.inputGhToken.value = "";
-      elements.inputGistId.value = "";
-      elements.linkViewGist.style.display = "none";
-      elements.configFeedback.textContent = "Đã xóa cấu hình.";
-      elements.configFeedback.style.color = "var(--text-secondary)";
-      fetchTelemetryData();
-    };
-
-    // Auto-create private Gist
-    elements.btnAutoCreateGist.onclick = async () => {
-      const token = elements.inputGhToken.value.trim();
-      if (!token) {
-        elements.configFeedback.textContent = "Vui lòng nhập GitHub Token (quyền 'gist') trước khi tạo.";
-        elements.configFeedback.style.color = "var(--color-coral-red)";
-        return;
-      }
-
-      elements.btnAutoCreateGist.disabled = true;
-      elements.btnAutoCreateGist.textContent = "⏳ Đang tạo Private Gist...";
-      const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
-
-      try {
-        const res = await fetch("https://api.github.com/gists", {
-          method: "POST",
-          headers: {
-            "Authorization": authHeader,
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            description: "QuizMaster Web Telemetry & Feedback Database (Private)",
-            public: false,
-            files: {
-              "telemetry.json": {
-                content: JSON.stringify(getDefaultStats(), null, 2)
-              },
-              "feedback.json": {
-                content: "[]"
-              }
-            }
-          })
-        });
-
-        if (res.ok) {
-          const gist = await res.json();
-          elements.inputGistId.value = gist.id;
-          localStorage.setItem("qm_telemetry_token", token);
-          localStorage.setItem("qm_telemetry_gist_id", gist.id);
-          
-          elements.linkViewGist.href = gist.html_url;
-          elements.linkViewGist.style.display = "inline-flex";
-
-          elements.configFeedback.textContent = `✓ Đã tạo thành công Private Gist (${gist.id})!`;
-          elements.configFeedback.style.color = "var(--color-emerald-mint)";
-          alert("✓ Đã tạo Private Gist thành công! Mọi thống kê và phản hồi sẽ tự động lưu vào Gist này.");
-          await fetchTelemetryData();
-        } else {
-          const err = await res.json();
-          elements.configFeedback.textContent = `✕ Lỗi tạo Gist: ${err.message || res.statusText}`;
-          elements.configFeedback.style.color = "var(--color-coral-red)";
-        }
-      } catch (e) {
-        elements.configFeedback.textContent = `✕ Lỗi mạng: ${e.message}`;
-        elements.configFeedback.style.color = "var(--color-coral-red)";
-      }
-
-      elements.btnAutoCreateGist.disabled = false;
-      elements.btnAutoCreateGist.textContent = "Tạo & Kết Nối Gist";
-    };
+    // Clean legacy storage tokens
+    localStorage.removeItem("qm_telemetry_token");
+    localStorage.removeItem("qm_telemetry_gist_id");
 
     // Simulate Telemetry Event
     elements.btnSimulate.onclick = async () => {
@@ -1109,7 +983,7 @@
       }
 
       btnDiag.disabled = false;
-      btnDiag.textContent = "Kiểm Tra Kết Nối Cloudflare (/api/telemetry)";
+      btnDiag.textContent = "Kiểm Tra Kết Nối Cloudflare";
     };
 
     async function fetchTelemetryData() {
@@ -1120,7 +994,6 @@
 
       const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
 
-      // 1. Try Cloudflare Worker endpoint
       try {
         const res = await fetch(`${endpoint}?_t=${Date.now()}`);
         if (res.ok) {
@@ -1134,15 +1007,12 @@
             }
             loadedFeedbacks = data.feedbacks || data.stats?.feedbacks || [];
 
-            // If empty, automatically check Gist files directly
+            // If feedbacks is empty, fallback to reading Gist directly
             if ((!loadedFeedbacks || loadedFeedbacks.length === 0) && data.gistId) {
               try {
-                const token = elements.inputGhToken.value.trim();
-                const headers = { "Accept": "application/vnd.github.v3+json" };
-                if (token) {
-                  headers["Authorization"] = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
-                }
-                const gistRes = await fetch(`https://api.github.com/gists/${data.gistId}?_t=${Date.now()}`, { headers });
+                const gistRes = await fetch(`https://api.github.com/gists/${data.gistId}?_t=${Date.now()}`, {
+                  headers: { "Accept": "application/vnd.github.v3+json" }
+                });
                 if (gistRes.ok) {
                   const gistData = await gistRes.json();
                   if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
@@ -1178,32 +1048,6 @@
         }
       } catch (e) {
         console.error("Worker fetch failed", e);
-      }
-
-      // 2. Direct Gist Fallback
-      const token = elements.inputGhToken.value.trim();
-      const gistId = elements.inputGistId.value.trim();
-      if (token && gistId) {
-        try {
-          const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
-          const res = await fetch(`https://api.github.com/gists/${gistId}?_t=${Date.now()}`, {
-            headers: { "Authorization": authHeader, "Accept": "application/vnd.github.v3+json" }
-          });
-          if (res.ok) {
-            const gistData = await res.json();
-            const statsContent = gistData.files && gistData.files["telemetry.json"] ? gistData.files["telemetry.json"].content : null;
-            const fbContent = gistData.files && gistData.files["feedback.json"] ? gistData.files["feedback.json"].content : null;
-            
-            const stats = statsContent ? JSON.parse(statsContent) : getDefaultStats();
-            loadedFeedbacks = fbContent ? JSON.parse(fbContent) : (stats.feedbacks || []);
-
-            elements.status.className = "status-badge online";
-            elements.status.textContent = `● Đã kết nối (Direct Gist: ${gistId.substring(0, 8)}...)`;
-            renderDashboard(stats);
-            renderFeedbacks();
-            return;
-          }
-        } catch (e) {}
       }
 
       elements.status.className = "status-badge error";
