@@ -233,6 +233,18 @@ export async function onRequestPost({ request, env }) {
         feedbacks = feedbacks.slice(0, 500);
       }
 
+      // Also get current telemetry stats to keep telemetry.json feedbacks in sync
+      let currentStats = getDefaultStats();
+      if (getRes.ok) {
+        const gistData = await getRes.json();
+        if (gistData.files && gistData.files["telemetry.json"] && gistData.files["telemetry.json"].content) {
+          try {
+            currentStats = { ...currentStats, ...JSON.parse(gistData.files["telemetry.json"].content) };
+          } catch {}
+        }
+      }
+      currentStats.feedbacks = feedbacks;
+
       const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: "PATCH",
         headers: {
@@ -245,6 +257,9 @@ export async function onRequestPost({ request, env }) {
           files: {
             "feedback.json": {
               content: JSON.stringify(feedbacks, null, 2)
+            },
+            "telemetry.json": {
+              content: JSON.stringify(currentStats, null, 2)
             }
           }
         })
@@ -421,3 +436,19 @@ export async function onRequestPost({ request, env }) {
     });
   }
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    if (request.method === "OPTIONS") {
+      return onRequestOptions();
+    }
+    if (request.method === "GET") {
+      return onRequestGet({ request, env, ctx });
+    }
+    if (request.method === "POST") {
+      return onRequestPost({ request, env, ctx });
+    }
+    return new Response("Method not allowed", { status: 405 });
+  }
+};
+

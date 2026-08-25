@@ -989,7 +989,37 @@
               elements.linkViewGist.href = `https://gist.github.com/${data.gistId}`;
               elements.linkViewGist.style.display = "inline-flex";
             }
-            loadedFeedbacks = data.feedbacks || [];
+            loadedFeedbacks = data.feedbacks || data.stats?.feedbacks || [];
+
+            // If empty, automatically check Gist files directly
+            if ((!loadedFeedbacks || loadedFeedbacks.length === 0) && data.gistId) {
+              try {
+                const token = elements.inputGhToken.value.trim();
+                const headers = { "Accept": "application/vnd.github.v3+json" };
+                if (token) {
+                  headers["Authorization"] = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
+                }
+                const gistRes = await fetch(`https://api.github.com/gists/${data.gistId}?_t=${Date.now()}`, { headers });
+                if (gistRes.ok) {
+                  const gistData = await gistRes.json();
+                  if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
+                    try {
+                      loadedFeedbacks = JSON.parse(gistData.files["feedback.json"].content);
+                    } catch {}
+                  } else if (gistData.files && gistData.files["telemetry.json"] && gistData.files["telemetry.json"].content) {
+                    try {
+                      const tel = JSON.parse(gistData.files["telemetry.json"].content);
+                      if (tel.feedbacks && Array.isArray(tel.feedbacks)) {
+                        loadedFeedbacks = tel.feedbacks;
+                      }
+                    } catch {}
+                  }
+                }
+              } catch (e) {
+                console.warn("Direct gist feedback fetch:", e);
+              }
+            }
+
             renderDashboard(data.stats || {});
             renderFeedbacks();
             return;
@@ -997,7 +1027,7 @@
             elements.status.className = "status-badge warning";
             elements.status.textContent = "⚠️ Cần gán GITHUB_TOKEN vào Worker";
             elements.rawJsonViewer.textContent = data.error;
-            loadedFeedbacks = data.feedbacks || [];
+            loadedFeedbacks = data.feedbacks || data.stats?.feedbacks || [];
             renderDashboard(data.stats || getDefaultStats());
             renderFeedbacks();
             return;
