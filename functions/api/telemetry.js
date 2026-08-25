@@ -1,7 +1,7 @@
 /**
- * Cloudflare Pages Function - Auto-Discovering GitHub Gist Telemetry Handler
+ * Cloudflare Pages Function - Auto-Discovering GitHub Gist Telemetry & Feedback Handler
  * Endpoint: /api/telemetry
- * Automatically discovers or creates the telemetry.json Gist on the user's GitHub account.
+ * Automatically discovers or creates the telemetry.json & feedback.json Gist on the user's GitHub account.
  */
 
 function getDefaultStats() {
@@ -48,11 +48,14 @@ async function getOrCreateGistId(token, explicitGistId) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      description: "QuizMaster Web Telemetry Database (Private & Anonymous)",
+      description: "QuizMaster Web Telemetry & Feedback Database (Private)",
       public: false,
       files: {
         "telemetry.json": {
           content: JSON.stringify(getDefaultStats(), null, 2)
+        },
+        "feedback.json": {
+          content: "[]"
         }
       }
     })
@@ -84,7 +87,8 @@ export async function onRequestGet({ env }) {
       return new Response(JSON.stringify({
         isConfigured: false,
         message: "Chưa cấu hình GITHUB_TOKEN trong Cloudflare Pages Settings > Variables and secrets.",
-        stats: getDefaultStats()
+        stats: getDefaultStats(),
+        feedbacks: []
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -96,7 +100,8 @@ export async function onRequestGet({ env }) {
       return new Response(JSON.stringify({
         isConfigured: false,
         message: "Không thể tìm hoặc tạo Gist trên GitHub.",
-        stats: getDefaultStats()
+        stats: getDefaultStats(),
+        feedbacks: []
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -116,7 +121,8 @@ export async function onRequestGet({ env }) {
       return new Response(JSON.stringify({
         isConfigured: false,
         error: `GitHub API error ${res.status}`,
-        stats: getDefaultStats()
+        stats: getDefaultStats(),
+        feedbacks: []
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -127,16 +133,27 @@ export async function onRequestGet({ env }) {
     const fileContent = gistData.files && gistData.files["telemetry.json"] ? gistData.files["telemetry.json"].content : null;
     const stats = fileContent ? JSON.parse(fileContent) : getDefaultStats();
 
+    let feedbacks = [];
+    if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
+      try {
+        feedbacks = JSON.parse(gistData.files["feedback.json"].content);
+        if (!Array.isArray(feedbacks)) feedbacks = [];
+      } catch {
+        feedbacks = [];
+      }
+    }
+
     return new Response(JSON.stringify({
       isConfigured: true,
       gistId,
-      stats
+      stats,
+      feedbacks
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message, stats: getDefaultStats() }), {
+    return new Response(JSON.stringify({ error: err.message, stats: getDefaultStats(), feedbacks: [] }), {
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
@@ -171,7 +188,135 @@ export async function onRequestPost({ request, env }) {
 
     const authHeader = token.startsWith("ghp_") ? `token ${token}` : `Bearer ${token}`;
 
-    // 1. Get current stats
+    // --- CASE 1: USER SUBMITS FEEDBACK ---
+    if (incoming.type === "feedback" || incoming.feedback) {
+      const fbData = incoming.feedback || incoming;
+      const getRes = await fetch(`https://api.github.com/gists/${gistId}?_t=${Date.now()}`, {
+        headers: {
+          "Authorization": authHeader,
+          "User-Agent": "QuizMaster-Telemetry",
+          "Accept": "application/vnd.github.v3+json"
+        }
+      });
+
+      let feedbacks = [];
+      if (getRes.ok) {
+        const gistData = await getRes.json();
+        if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
+          try {
+            feedbacks = JSON.parse(gistData.files["feedback.json"].content);
+            if (!Array.isArray(feedbacks)) feedbacks = [];
+          } catch {}
+        }
+      }
+
+      const edgeCountry = request.cf?.country || "VN";
+      const edgeCity = request.cf?.city || "";
+
+      const newFeedback = {
+        id: `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        timestamp: new Date().toISOString(),
+        sectionId: fbData.sectionId || "bug",
+        subCategory: fbData.subCategory || "Khác",
+        title: fbData.title || "",
+        message: fbData.message || "",
+        contact: fbData.contact || "",
+        logs: fbData.logs || null,
+        systemInfo: fbData.systemInfo || null,
+        country: edgeCountry,
+        city: edgeCity,
+        status: "new"
+      };
+
+      feedbacks.unshift(newFeedback);
+      if (feedbacks.length > 500) {
+        feedbacks = feedbacks.slice(0, 500);
+      }
+
+      const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": authHeader,
+          "User-Agent": "QuizMaster-Telemetry",
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          files: {
+            "feedback.json": {
+              content: JSON.stringify(feedbacks, null, 2)
+            }
+          }
+        })
+      });
+
+      if (!patchRes.ok) {
+        const errText = await patchRes.text();
+        return new Response(JSON.stringify({ success: false, error: errText }), {
+          status: patchRes.status,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, feedbackId: newFeedback.id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // --- CASE 2: ADMIN MANAGES FEEDBACK (Status update / Delete) ---
+    if (incoming.type === "feedback_action") {
+      const getRes = await fetch(`https://api.github.com/gists/${gistId}?_t=${Date.now()}`, {
+        headers: {
+          "Authorization": authHeader,
+          "User-Agent": "QuizMaster-Telemetry",
+          "Accept": "application/vnd.github.v3+json"
+        }
+      });
+
+      let feedbacks = [];
+      if (getRes.ok) {
+        const gistData = await getRes.json();
+        if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
+          try {
+            feedbacks = JSON.parse(gistData.files["feedback.json"].content);
+            if (!Array.isArray(feedbacks)) feedbacks = [];
+          } catch {}
+        }
+      }
+
+      if (incoming.action === "delete") {
+        feedbacks = feedbacks.filter(f => f.id !== incoming.id);
+      } else if (incoming.action === "status") {
+        feedbacks = feedbacks.map(f => f.id === incoming.id ? { ...f, status: incoming.status } : f);
+      } else if (incoming.action === "clear_all") {
+        feedbacks = [];
+      }
+
+      const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": authHeader,
+          "User-Agent": "QuizMaster-Telemetry",
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          files: {
+            "feedback.json": {
+              content: JSON.stringify(feedbacks, null, 2)
+            }
+          }
+        })
+      });
+
+      return new Response(JSON.stringify({ success: patchRes.ok }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // --- CASE 3: TELEMETRY METRICS TRACKING ---
     const getRes = await fetch(`https://api.github.com/gists/${gistId}?_t=${Date.now()}`, {
       headers: {
         "Authorization": authHeader,
@@ -190,7 +335,7 @@ export async function onRequestPost({ request, env }) {
       }
     }
 
-    // 2. Aggregate
+    // Aggregate
     if (incoming.visitors) {
       current.total_visitors = (current.total_visitors || 0) + incoming.visitors;
     }
@@ -238,7 +383,7 @@ export async function onRequestPost({ request, env }) {
 
     current.last_updated = new Date().toISOString();
 
-    // 3. Update Gist
+    // Update Gist
     const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
       method: "PATCH",
       headers: {
@@ -248,7 +393,7 @@ export async function onRequestPost({ request, env }) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        description: "QuizMaster Web Telemetry Database (Private & Anonymous)",
+        description: "QuizMaster Web Telemetry & Feedback Database (Private)",
         files: {
           "telemetry.json": {
             content: JSON.stringify(current, null, 2)

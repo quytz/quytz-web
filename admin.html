@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>QuizMaster - Developer Telemetry & Analytics Dashboard</title>
+  <title>QuizMaster - Bảng Điều Khiển Quản Trị & Phân Tích</title>
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/AppIcon.png">
@@ -73,7 +73,7 @@
 
     .grid-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: var(--space-4);
       margin-bottom: var(--space-6);
     }
@@ -199,16 +199,6 @@
       color: var(--color-coral-red);
     }
 
-    .notice-box {
-      background: rgba(31, 122, 232, 0.08);
-      border: 1px solid rgba(31, 122, 232, 0.2);
-      border-radius: var(--radius-md);
-      padding: var(--space-4);
-      margin-bottom: var(--space-5);
-      font-size: var(--text-sm);
-      line-height: 1.5;
-    }
-
     .code-block {
       background: var(--bg-window);
       padding: var(--space-4);
@@ -237,6 +227,100 @@
       color: var(--text-primary);
       font-size: var(--text-sm);
     }
+
+    /* Feedback Cards */
+    .feedback-item {
+      background: var(--bg-window);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+      transition: border-color var(--transition-fast);
+    }
+
+    .feedback-item:hover {
+      border-color: var(--color-ocean-blue);
+    }
+
+    .feedback-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .feedback-category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .feedback-category-badge.cat-bug {
+      background: rgba(214, 71, 82, 0.15);
+      color: var(--color-coral-red);
+    }
+
+    .feedback-category-badge.cat-feature {
+      background: rgba(122, 92, 204, 0.15);
+      color: var(--color-deep-purple);
+    }
+
+    .feedback-category-badge.cat-content {
+      background: rgba(224, 117, 51, 0.15);
+      color: var(--color-sunset-orange);
+    }
+
+    .feedback-category-badge.cat-general {
+      background: rgba(31, 122, 232, 0.15);
+      color: var(--color-ocean-blue);
+    }
+
+    .feedback-status-pill {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+    }
+
+    .feedback-status-pill.status-new {
+      background: rgba(31, 122, 232, 0.15);
+      color: var(--color-ocean-blue);
+    }
+
+    .feedback-status-pill.status-in_progress {
+      background: rgba(224, 117, 51, 0.15);
+      color: var(--color-sunset-orange);
+    }
+
+    .feedback-status-pill.status-resolved {
+      background: rgba(46, 158, 102, 0.15);
+      color: var(--color-emerald-mint);
+    }
+
+    .feedback-filter-btn {
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .feedback-filter-btn.active {
+      background: var(--color-ocean-blue);
+      color: #ffffff;
+      border-color: var(--color-ocean-blue);
+    }
+
     /* Passcode Lock Overlay */
     .lock-overlay {
       position: fixed;
@@ -311,8 +395,8 @@
       <div class="admin-title">
         <img src="assets/AppIcon.png" alt="QuizMaster Logo">
         <div>
-          <h1>Metrics Dashboard</h1>
-          <p>Dữ liệu phân tích người dùng ẩn danh (Cloudflare Worker Live)</p>
+          <h1>Bảng Điều Khiển Quản Trị</h1>
+          <p>Dữ liệu phân tích người dùng & Quản lý phản hồi trực tiếp</p>
         </div>
       </div>
       <div class="admin-actions">
@@ -324,10 +408,10 @@
           Làm mới
         </button>
         <button id="btn-lock-dashboard" class="btn btn-secondary" title="Khóa bảng điều khiển">
-          🔒 Khóa
+          Khóa
         </button>
         <a href="index.html" class="btn btn-secondary">
-          Quay lại App
+          Quay lại Ứng dụng
         </a>
       </div>
     </header>
@@ -338,14 +422,14 @@
       <div class="metric-card">
         <div class="icon-badge" style="background: rgba(31, 122, 232, 0.15); color: var(--color-ocean-blue);">👥</div>
         <div class="value" id="val-visitors">0</div>
-        <div class="label">Tổng Lượt Truy Cập (Visitors)</div>
+        <div class="label">Tổng Lượt Truy Cập</div>
       </div>
 
       <!-- Imported Docs -->
       <div class="metric-card">
         <div class="icon-badge" style="background: rgba(46, 158, 102, 0.15); color: var(--color-emerald-mint);">📄</div>
         <div class="value" id="val-documents">0</div>
-        <div class="label">Tài Liệu Đã Nhập (Imports)</div>
+        <div class="label">Tài Liệu Đã Nhập</div>
       </div>
 
       <!-- Exam Sessions -->
@@ -361,6 +445,43 @@
         <div class="value" id="val-ai-queries">0</div>
         <div class="label">Tương Tác Gemini AI</div>
       </div>
+
+      <!-- Feedbacks -->
+      <div class="metric-card">
+        <div class="icon-badge" style="background: rgba(214, 71, 82, 0.15); color: var(--color-coral-red);">💬</div>
+        <div class="value" id="val-feedbacks-total" style="color: var(--color-coral-red);">0</div>
+        <div class="label">Phản Hồi & Báo Lỗi</div>
+      </div>
+    </div>
+
+    <!-- User Feedback Management Section -->
+    <div class="panel-section" id="feedback-section">
+      <h3>
+        <span>Phản Hồi & Báo Lỗi Từ Người Dùng</span>
+        <span id="count-feedbacks-badge" style="font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500;">0 phản hồi</span>
+      </h3>
+
+      <!-- Feedback Filter & Search Controls -->
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+        <!-- Category Filter Buttons -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="feedback-category-filters">
+          <button class="feedback-filter-btn active" data-fb-cat="all">Tất cả</button>
+          <button class="feedback-filter-btn" data-fb-cat="bug">Báo lỗi hệ thống</button>
+          <button class="feedback-filter-btn" data-fb-cat="feature">Đề xuất tính năng</button>
+          <button class="feedback-filter-btn" data-fb-cat="content">Góp ý nội dung</button>
+          <button class="feedback-filter-btn" data-fb-cat="general">Góp ý chung</button>
+        </div>
+
+        <!-- Search Input -->
+        <div style="flex: 1 1 200px; max-width: 320px;">
+          <input type="text" id="input-search-feedback" placeholder="Tìm kiếm phản hồi, email..." style="width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-window); color: var(--text-primary); font-size: var(--text-xs);" />
+        </div>
+      </div>
+
+      <!-- Feedback List Container -->
+      <div id="feedback-list-container">
+        <p style="color: var(--text-secondary); font-size: var(--text-sm);">Đang tải danh sách phản hồi...</p>
+      </div>
     </div>
 
     <!-- Detailed Breakdowns Grid -->
@@ -369,7 +490,7 @@
       <!-- Locations & Geographics -->
       <div class="panel-section">
         <h3>
-          <span>🌍 Địa Điểm & Khu Vực (Locations)</span>
+          <span>Địa Điểm & Khu Vực Truy Cập</span>
           <span id="count-locations" style="font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500;">0 khu vực</span>
         </h3>
         <div id="locations-list">
@@ -380,26 +501,26 @@
       <!-- Exam Modes Breakdown -->
       <div class="panel-section">
         <h3>
-          <span>🎯 Chế Độ Học & Thi (Exam Modes)</span>
+          <span>Chế Độ Học & Thi Thử</span>
         </h3>
         <div id="exam-modes-list">
           <div class="breakdown-row">
             <div>
-              <strong>Luyện tập tức thì (Practice)</strong>
+              <strong>Luyện tập tức thì</strong>
               <div class="progress-bar-bg"><div id="bar-practice" class="progress-bar-fill" style="width: 0%; background: var(--color-ocean-blue);"></div></div>
             </div>
             <span id="val-practice" style="font-weight: 700;">0</span>
           </div>
           <div class="breakdown-row">
             <div>
-              <strong>Thi thử bấm giờ (Exam)</strong>
+              <strong>Thi thử bấm giờ</strong>
               <div class="progress-bar-bg"><div id="bar-exam" class="progress-bar-fill" style="width: 0%; background: var(--color-coral-red);"></div></div>
             </div>
             <span id="val-exam" style="font-weight: 700;">0</span>
           </div>
           <div class="breakdown-row">
             <div>
-              <strong>Thẻ ghi nhớ 3D (Flashcard)</strong>
+              <strong>Thẻ ghi nhớ 3D</strong>
               <div class="progress-bar-bg"><div id="bar-flashcard" class="progress-bar-fill" style="width: 0%; background: var(--color-deep-purple);"></div></div>
             </div>
             <span id="val-flashcard" style="font-weight: 700;">0</span>
@@ -410,7 +531,7 @@
       <!-- Document Types Breakdown -->
       <div class="panel-section">
         <h3>
-          <span>📁 Định Dạng Tài Liệu (Import Types)</span>
+          <span>Định Dạng Tài Liệu Đã Nhập</span>
         </h3>
         <div id="doc-types-list">
           <div class="breakdown-row">
@@ -435,7 +556,7 @@
       <!-- AI & Exports Breakdown -->
       <div class="panel-section">
         <h3>
-          <span>⚡ Tính Năng AI & Xuất Tệp</span>
+          <span>Tính Năng AI & Xuất Tệp</span>
         </h3>
         <div class="breakdown-row">
           <span>Câu hỏi trắc nghiệm tạo bởi AI</span>
@@ -446,7 +567,7 @@
           <strong id="val-ai-explains" style="color: var(--color-deep-purple);">0</strong>
         </div>
         <div class="breakdown-row">
-          <span>Tổng số lượt xuất tệp (Exports)</span>
+          <span>Tổng số lượt xuất tệp</span>
           <strong id="val-exports-total" style="color: var(--color-sunset-orange);">0</strong>
         </div>
       </div>
@@ -456,19 +577,19 @@
     <!-- Developer Testing & Gist Storage Configuration -->
     <div class="panel-section" style="margin-top: var(--space-4);">
       <h3>
-        <span>⚙️ Thiết Lập Private Gist Storage (0 Git Commits)</span>
+        <span>Thiết Lập Lưu Trữ Private Gist (0 Git Commits)</span>
         <span id="last-updated-text" style="font-size: var(--text-xs); color: var(--text-secondary);">Cập nhật: --</span>
       </h3>
 
       <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-3); line-height: 1.6;">
-        Dữ liệu được lưu trữ tự động trong một <strong>Private GitHub Gist</strong> riêng biệt. Không tạo commit nào vào repository mã nguồn.
+        Toàn bộ thống kê và phản hồi của người dùng được lưu trữ tự động trong một <strong>Private GitHub Gist</strong> riêng biệt. Không tạo commit nào vào kho lưu trữ mã nguồn.
       </div>
       
       <div class="input-row">
         <input type="password" id="input-gh-token" placeholder="GitHub Personal Access Token (ghp_... có quyền gist)" />
         <input type="text" id="input-gist-id" placeholder="Gist ID (tùy chọn, để trống sẽ tự động tạo)" />
         <button id="btn-auto-create-gist" class="btn btn-primary" style="background: linear-gradient(135deg, #1f7ae8, #2e9e66);">
-          ✨ Tạo & Kết Nối Gist
+          Tạo & Kết Nối Gist
         </button>
         <button id="btn-save-config" class="btn btn-secondary">Lưu</button>
         <button id="btn-clear-config" class="btn btn-secondary">Xóa</button>
@@ -478,13 +599,16 @@
 
       <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4);">
         <button id="btn-simulate-event" class="btn btn-primary">
-          🚀 Gửi Sự Kiện Thử Nghiệm (+1 Visitor & +1 Practice)
+          Gửi Thống Kê Thử Nghiệm (+1 Visitor & +1 Practice)
+        </button>
+        <button id="btn-simulate-feedback" class="btn btn-secondary" style="color: var(--color-coral-red);">
+          Gửi Phản Hồi Mẫu (Báo lỗi kèm Logs)
         </button>
         <button id="btn-run-diagnostics" class="btn btn-secondary">
-          🔍 Kiểm Tra Kết Nối Cloudflare (/api/telemetry)
+          Kiểm Tra Kết Nối Cloudflare (/api/telemetry)
         </button>
         <a id="link-view-gist" href="#" target="_blank" class="btn btn-secondary" style="display: none;">
-          🔗 Mở Private Gist trên GitHub
+          Mở Private Gist trên GitHub
         </a>
       </div>
 
@@ -518,6 +642,10 @@
 
     const _AUTH_HASH = "65d3662abadec632cdea02114ccaae44e5899b029a88a87ee0d1f6b45b43749f";
     const _SALT = "QM_SEC_AUTH_V1";
+
+    let loadedFeedbacks = [];
+    let currentCategoryFilter = "all";
+    let currentSearchTerm = "";
 
     async function hashInput(str) {
       const buffer = new TextEncoder().encode(str + ":" + _SALT);
@@ -569,6 +697,7 @@
       status: document.getElementById("sync-status"),
       btnRefresh: document.getElementById("btn-refresh"),
       btnSimulate: document.getElementById("btn-simulate-event"),
+      btnSimulateFeedback: document.getElementById("btn-simulate-feedback"),
       btnAutoCreateGist: document.getElementById("btn-auto-create-gist"),
       btnSaveConfig: document.getElementById("btn-save-config"),
       btnClearConfig: document.getElementById("btn-clear-config"),
@@ -581,7 +710,13 @@
       valDocuments: document.getElementById("val-documents"),
       valExamModes: document.getElementById("val-exam-modes"),
       valAiQueries: document.getElementById("val-ai-queries"),
+      valFeedbacksTotal: document.getElementById("val-feedbacks-total"),
       
+      // Feedback UI
+      countFeedbacksBadge: document.getElementById("count-feedbacks-badge"),
+      feedbackListContainer: document.getElementById("feedback-list-container"),
+      inputSearchFeedback: document.getElementById("input-search-feedback"),
+
       // Locations
       locationsList: document.getElementById("locations-list"),
       countLocations: document.getElementById("count-locations"),
@@ -674,11 +809,14 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            description: "QuizMaster Web Telemetry Database (Private & Anonymous)",
+            description: "QuizMaster Web Telemetry & Feedback Database (Private)",
             public: false,
             files: {
               "telemetry.json": {
                 content: JSON.stringify(getDefaultStats(), null, 2)
+              },
+              "feedback.json": {
+                content: "[]"
               }
             }
           })
@@ -695,7 +833,7 @@
 
           elements.configFeedback.textContent = `✓ Đã tạo thành công Private Gist (${gist.id})!`;
           elements.configFeedback.style.color = "var(--color-emerald-mint)";
-          alert("✓ Đã tạo Private Gist thành công! Mọi thống kê sẽ tự động lưu vào Gist này.");
+          alert("✓ Đã tạo Private Gist thành công! Mọi thống kê và phản hồi sẽ tự động lưu vào Gist này.");
           await fetchTelemetryData();
         } else {
           const err = await res.json();
@@ -708,13 +846,13 @@
       }
 
       elements.btnAutoCreateGist.disabled = false;
-      elements.btnAutoCreateGist.textContent = "✨ Tạo & Kết Nối Gist";
+      elements.btnAutoCreateGist.textContent = "Tạo & Kết Nối Gist";
     };
 
     // Simulate Telemetry Event
     elements.btnSimulate.onclick = async () => {
       elements.btnSimulate.disabled = true;
-      elements.btnSimulate.textContent = "⏳ Đang ghi nhận sự kiện...";
+      elements.btnSimulate.textContent = "⏳ Đang ghi nhận...";
       const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
 
       try {
@@ -730,16 +868,60 @@
 
         const resData = await res.json();
         if (resData.success) {
-          alert("✓ Đã gửi sự kiện thử nghiệm thành công vào Telemetry Worker!");
+          alert("✓ Đã gửi sự kiện thử nghiệm thành công!");
         } else if (resData.error || resData.warning) {
-          alert(`⚠️ Worker báo: ${resData.error || resData.warning}`);
+          alert(`⚠️ Máy chủ báo: ${resData.error || resData.warning}`);
         }
       } catch (e) {
-        alert(`✕ Lỗi kết nối Worker: ${e.message}`);
+        alert(`✕ Lỗi kết nối: ${e.message}`);
       }
 
       elements.btnSimulate.disabled = false;
-      elements.btnSimulate.textContent = "🚀 Gửi Sự Kiện Thử Nghiệm (+1 Visitor & +1 Practice)";
+      elements.btnSimulate.textContent = "Gửi Thống Kê Thử Nghiệm (+1 Visitor & +1 Practice)";
+      await fetchTelemetryData();
+    };
+
+    // Simulate Feedback Event
+    elements.btnSimulateFeedback.onclick = async () => {
+      elements.btnSimulateFeedback.disabled = true;
+      elements.btnSimulateFeedback.textContent = "⏳ Đang gửi phản hồi mẫu...";
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "feedback",
+            feedback: {
+              sectionId: "bug",
+              subCategory: "Nhập tài liệu & Quét tệp",
+              title: "Thử nghiệm lỗi nhận diện câu hỏi PDF",
+              message: "Đây là phản hồi mẫu tự động được tạo từ trang quản trị để kiểm tra hệ thống nhận phản hồi và nhật ký lỗi.",
+              contact: "test_admin@quizmaster.local",
+              logs: "[18:45:00] [INFO] Bắt đầu quét tệp đề cương.pdf\n[18:45:02] [ERROR] Gemini API response parsing error: Unexpected token at pos 42",
+              systemInfo: {
+                appVersion: "1.2.0",
+                platform: navigator.platform,
+                screenResolution: `${window.screen.width}x${window.screen.height}`,
+                hasCustomApiKey: true
+              }
+            }
+          })
+        });
+
+        const resData = await res.json();
+        if (resData.success) {
+          alert("✓ Đã gửi phản hồi mẫu thành công vào hệ thống!");
+        } else {
+          alert(`⚠️ Kết quả: ${resData.error || resData.warning || "Không rõ"}`);
+        }
+      } catch (e) {
+        alert(`✕ Lỗi kết nối: ${e.message}`);
+      }
+
+      elements.btnSimulateFeedback.disabled = false;
+      elements.btnSimulateFeedback.textContent = "Gửi Phản Hồi Mẫu (Báo lỗi kèm Logs)";
       await fetchTelemetryData();
     };
 
@@ -777,14 +959,14 @@
         if (getText.includes("Chưa cấu hình GITHUB_TOKEN")) {
           diagLog.textContent += "\n⚠️ KẾT QUẢ: Worker đang hoạt động, nhưng bạn chưa thêm biến GITHUB_TOKEN vào Worker Settings > Variables and secrets.";
         } else if (postRes.ok) {
-          diagLog.textContent += "\n✅ KẾT QUẢ: Telemetry Worker hoạt động 100% hoàn hảo! Đã kết nối và cập nhật Gist thành công.";
+          diagLog.textContent += "\n✅ KẾT QUẢ: Worker hoạt động 100% hoàn hảo! Đã kết nối và cập nhật Gist thành công.";
         }
       } catch (e) {
         diagLog.textContent += `\n❌ Lỗi Exception: ${e.message}\n`;
       }
 
       btnDiag.disabled = false;
-      btnDiag.textContent = "🔍 Kiểm Tra Kết Nối Cloudflare (/api/telemetry)";
+      btnDiag.textContent = "Kiểm Tra Kết Nối Cloudflare (/api/telemetry)";
     };
 
     async function fetchTelemetryData() {
@@ -807,13 +989,17 @@
               elements.linkViewGist.href = `https://gist.github.com/${data.gistId}`;
               elements.linkViewGist.style.display = "inline-flex";
             }
+            loadedFeedbacks = data.feedbacks || [];
             renderDashboard(data.stats || {});
+            renderFeedbacks();
             return;
           } else if (data.error) {
             elements.status.className = "status-badge warning";
             elements.status.textContent = "⚠️ Cần gán GITHUB_TOKEN vào Worker";
             elements.rawJsonViewer.textContent = data.error;
+            loadedFeedbacks = data.feedbacks || [];
             renderDashboard(data.stats || getDefaultStats());
+            renderFeedbacks();
             return;
           }
         }
@@ -832,11 +1018,16 @@
           });
           if (res.ok) {
             const gistData = await res.json();
-            const fileContent = gistData.files && gistData.files["telemetry.json"] ? gistData.files["telemetry.json"].content : null;
-            const stats = fileContent ? JSON.parse(fileContent) : getDefaultStats();
+            const statsContent = gistData.files && gistData.files["telemetry.json"] ? gistData.files["telemetry.json"].content : null;
+            const fbContent = gistData.files && gistData.files["feedback.json"] ? gistData.files["feedback.json"].content : null;
+            
+            const stats = statsContent ? JSON.parse(statsContent) : getDefaultStats();
+            loadedFeedbacks = fbContent ? JSON.parse(fbContent) : [];
+
             elements.status.className = "status-badge online";
             elements.status.textContent = `● Đã kết nối (Direct Gist: ${gistId.substring(0, 8)}...)`;
             renderDashboard(stats);
+            renderFeedbacks();
             return;
           }
         } catch (e) {}
@@ -845,12 +1036,17 @@
       elements.status.className = "status-badge error";
       elements.status.textContent = "✕ Chưa kết nối Endpoint";
       elements.rawJsonViewer.textContent = `Không thể kết nối ${endpoint}.`;
+      loadedFeedbacks = [];
       renderDashboard(getDefaultStats());
+      renderFeedbacks();
     }
 
     function renderDashboard(stats) {
       // Visitors
       elements.valVisitors.textContent = (stats.total_visitors || 0).toLocaleString();
+
+      // Feedbacks
+      elements.valFeedbacksTotal.textContent = (loadedFeedbacks.length || 0).toLocaleString();
 
       // Documents
       const docs = stats.imported_documents || {};
@@ -924,12 +1120,223 @@
       }
 
       // Raw JSON
-      elements.rawJsonViewer.textContent = JSON.stringify(stats, null, 2);
+      elements.rawJsonViewer.textContent = JSON.stringify({ stats, feedbacks_count: loadedFeedbacks.length }, null, 2);
+    }
+
+    // --- FEEDBACK LIST RENDERING & ACTIONS ---
+    const SECTION_LABELS = {
+      bug: "Báo lỗi hệ thống",
+      feature: "Đề xuất tính năng",
+      content: "Góp ý nội dung",
+      general: "Góp ý chung"
+    };
+
+    const STATUS_LABELS = {
+      new: "Mới",
+      in_progress: "Đang xử lý",
+      resolved: "Đã giải quyết"
+    };
+
+    function renderFeedbacks() {
+      elements.countFeedbacksBadge.textContent = `${loadedFeedbacks.length} phản hồi`;
+      elements.valFeedbacksTotal.textContent = (loadedFeedbacks.length || 0).toLocaleString();
+
+      let filtered = [...loadedFeedbacks];
+
+      // Category filter
+      if (currentCategoryFilter !== "all") {
+        filtered = filtered.filter(f => f.sectionId === currentCategoryFilter);
+      }
+
+      // Search term filter
+      if (currentSearchTerm) {
+        const q = currentSearchTerm.toLowerCase();
+        filtered = filtered.filter(f => 
+          (f.title && f.title.toLowerCase().includes(q)) ||
+          (f.message && f.message.toLowerCase().includes(q)) ||
+          (f.contact && f.contact.toLowerCase().includes(q)) ||
+          (f.subCategory && f.subCategory.toLowerCase().includes(q))
+        );
+      }
+
+      if (filtered.length === 0) {
+        elements.feedbackListContainer.innerHTML = `
+          <div style="text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-secondary);">
+            <div style="font-size: 28px; margin-bottom: 6px;">💬</div>
+            <div style="font-weight: 600; font-size: var(--text-sm);">Không có phản hồi nào trong bộ lọc này.</div>
+          </div>
+        `;
+        return;
+      }
+
+      elements.feedbackListContainer.innerHTML = filtered.map(item => {
+        const catClass = `cat-${item.sectionId || 'general'}`;
+        const catLabel = SECTION_LABELS[item.sectionId] || "Phản hồi";
+        const statusClass = `status-${item.status || 'new'}`;
+        const statusLabel = STATUS_LABELS[item.status] || "Mới";
+        
+        let dateFormatted = item.timestamp || "--";
+        try {
+          dateFormatted = new Date(item.timestamp).toLocaleString("vi-VN");
+        } catch {}
+
+        const hasLogs = Boolean(item.logs);
+
+        return `
+          <div class="feedback-item" id="fb-card-${item.id}">
+            <div class="feedback-item-header">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="feedback-category-badge ${catClass}">${catLabel}</span>
+                ${item.subCategory ? `<span style="font-size: 11px; font-weight: 600; color: var(--text-secondary); background: var(--bg-subtle); padding: 2px 8px; border-radius: var(--radius-pill);">${escapeHtml(item.subCategory)}</span>` : ''}
+                <span class="feedback-status-pill ${statusClass}">${statusLabel}</span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                ${item.country ? `<span class="location-pill" style="padding: 2px 6px;">📍 ${escapeHtml(item.country)}</span>` : ''}
+                <span>${dateFormatted}</span>
+              </div>
+            </div>
+
+            <div style="font-size: var(--text-base); font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+              ${escapeHtml(item.title || '(Không có tiêu đề)')}
+            </div>
+
+            <div style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;">
+              ${escapeHtml(item.message || '')}
+            </div>
+
+            ${item.contact ? `
+              <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+                <strong>Người gửi:</strong> ${escapeHtml(item.contact)}
+              </div>
+            ` : ''}
+
+            ${hasLogs ? `
+              <details style="margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px;">
+                <summary style="font-size: 11px; color: var(--color-ocean-blue); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                  <span>Nhật Ký Chẩn Đoán & Thông Tin Lỗi (Logs đính kèm)</span>
+                </summary>
+                <div style="margin-top: 8px;">
+                  <button class="btn btn-secondary btn-copy-logs" data-log-id="${item.id}" style="padding: 4px 8px; font-size: 10px; margin-bottom: 6px;">
+                    Sao chép toàn bộ Logs
+                  </button>
+                  <pre id="log-content-${item.id}" style="margin: 0; font-family: var(--font-family-mono); font-size: 11px; background: var(--bg-window); padding: 8px; border-radius: 4px; max-height: 200px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-secondary);">${escapeHtml(typeof item.logs === 'object' ? JSON.stringify(item.logs, null, 2) : item.logs)}</pre>
+                </div>
+              </details>
+            ` : ''}
+
+            <!-- Card Actions -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 11px; color: var(--text-secondary);">Trạng thái:</span>
+                <select class="form-input select-status" data-id="${item.id}" style="padding: 2px 6px; font-size: 11px; height: 26px;">
+                  <option value="new" ${item.status === 'new' ? 'selected' : ''}>Mới</option>
+                  <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>Đang xử lý</option>
+                  <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Đã giải quyết</option>
+                </select>
+              </div>
+
+              <button class="btn btn-ghost btn-delete-feedback" data-id="${item.id}" style="padding: 4px 8px; font-size: 11px; color: var(--color-coral-red);">
+                Xóa
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Bind feedback card events
+      document.querySelectorAll(".btn-copy-logs").forEach(btn => {
+        btn.onclick = () => {
+          const logId = btn.dataset.logId;
+          const pre = document.getElementById(`log-content-${logId}`);
+          if (pre) {
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+              btn.textContent = "✓ Đã sao chép!";
+              setTimeout(() => { btn.textContent = "Sao chép toàn bộ Logs"; }, 2000);
+            });
+          }
+        };
+      });
+
+      document.querySelectorAll(".select-status").forEach(select => {
+        select.onchange = async (e) => {
+          const id = select.dataset.id;
+          const newStatus = e.target.value;
+          await updateFeedbackStatus(id, newStatus);
+        };
+      });
+
+      document.querySelectorAll(".btn-delete-feedback").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          if (confirm("Bạn có chắc chắn muốn xóa phản hồi này?")) {
+            await deleteFeedback(id);
+          }
+        };
+      });
+    }
+
+    // Filter by Category
+    document.querySelectorAll("[data-fb-cat]").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll("[data-fb-cat]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentCategoryFilter = btn.dataset.fbCat;
+        renderFeedbacks();
+      };
+    });
+
+    // Search filter
+    elements.inputSearchFeedback.oninput = (e) => {
+      currentSearchTerm = e.target.value.trim();
+      renderFeedbacks();
+    };
+
+    async function updateFeedbackStatus(id, status) {
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+      // Update local state immediately
+      loadedFeedbacks = loadedFeedbacks.map(f => f.id === id ? { ...f, status } : f);
+      renderFeedbacks();
+
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "feedback_action",
+            action: "status",
+            id,
+            status
+          })
+        });
+      } catch (e) {
+        console.error("Failed to update status on server:", e);
+      }
+    }
+
+    async function deleteFeedback(id) {
+      const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+      // Update local state immediately
+      loadedFeedbacks = loadedFeedbacks.filter(f => f.id !== id);
+      renderFeedbacks();
+
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "feedback_action",
+            action: "delete",
+            id
+          })
+        });
+      } catch (e) {
+        console.error("Failed to delete feedback on server:", e);
+      }
     }
 
     function escapeHtml(str) {
       if (!str) return "";
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     elements.btnRefresh.onclick = () => fetchTelemetryData();

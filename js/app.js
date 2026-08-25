@@ -9,6 +9,7 @@ import { geminiService } from "./services/gemini.js";
 import { documentParser } from "./services/document-parser.js";
 import { exporter } from "./services/exporter.js";
 import { telemetry } from "./services/telemetry.js";
+import { logger } from "./services/logger.js";
 import { keyboard } from "./components/keyboard.js";
 import { createQuizProgress, shuffleQuestionOptions, createQuiz, createQuestion, createQuestionOption, scoreQuestion } from "./models/types.js";
 import { renderSF } from "./components/icons.js";
@@ -26,6 +27,7 @@ import { renderAskGeminiModal, bindAskGeminiEvents } from "./views/ask-gemini.js
 import { renderSettingsModal, bindSettingsEvents } from "./views/settings.js";
 import { renderSetupWizardModal, bindSetupWizardEvents } from "./views/setup-wizard.js";
 import { renderEndingModal, bindEndingModalEvents, renderNationalAnthemModal, bindNationalAnthemEvents } from "./views/ending-dialog.js";
+import { renderFeedbackModal, bindFeedbackModalEvents } from "./views/feedback-modal.js";
 
 class QuizMasterApp {
   constructor() {
@@ -117,6 +119,7 @@ class QuizMasterApp {
     if (!quiz) quiz = this.activeQuiz;
 
     telemetry.trackExamMode("practice");
+    logger.action("Bắt đầu luyện tập", { quizId, title: quiz.title });
 
     this.activeProject = project;
     this.activeQuiz = quiz;
@@ -365,6 +368,7 @@ class QuizMasterApp {
     if (!quiz) return;
 
     telemetry.trackExamMode("exam");
+    logger.action("Bắt đầu thi thử", { quizId, durationMinutes, title: quiz.title });
 
     this.activeProject = project;
     this.activeQuiz = quiz;
@@ -481,6 +485,7 @@ class QuizMasterApp {
     if (!quiz) return;
 
     telemetry.trackExamMode("flashcard");
+    logger.action("Bắt đầu học thẻ ghi nhớ 3D", { quizId, title: quiz.title });
 
     this.activeProject = project;
     this.activeQuiz = quiz;
@@ -734,6 +739,72 @@ class QuizMasterApp {
     this.render();
   }
 
+  openFeedbackModal(initialSection = "bug", contextData = {}) {
+    logger.action("Mở cửa sổ phản hồi & báo lỗi", { initialSection });
+    this.activeModal = "feedback";
+    this.modalState = {
+      selectedSectionId: initialSection,
+      subCategory: contextData.subCategory || null,
+      title: contextData.title || "",
+      message: contextData.message || "",
+      contact: contextData.contact || "",
+      includeLogs: initialSection === "bug",
+      isSending: false
+    };
+    this.render();
+  }
+
+  async submitFeedback(payload) {
+    this.modalState.isSending = true;
+    this.render();
+
+    let logs = null;
+    let systemInfo = null;
+
+    if (payload.includeLogs) {
+      logs = logger.getFormattedDiagnostics();
+      systemInfo = logger.getSystemInfo();
+    }
+
+    const endpoint = APP_CONFIG.telemetryUrl || "/api/telemetry";
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "feedback",
+          feedback: {
+            sectionId: payload.sectionId,
+            subCategory: payload.subCategory,
+            title: payload.title,
+            message: payload.message,
+            contact: payload.contact,
+            logs,
+            systemInfo
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        logger.info("Gửi phản hồi thành công", { sectionId: payload.sectionId, title: payload.title });
+        this.showToast("success", "Cảm ơn bạn! Phản hồi đã được gửi thành công.");
+        this.closeModal();
+      } else {
+        logger.warn("Gửi phản hồi máy chủ từ chối", data);
+        this.modalState.isSending = false;
+        this.showToast("error", data.error || data.warning || "Không thể gửi phản hồi lúc này.");
+        this.render();
+      }
+    } catch (err) {
+      logger.error("Lỗi khi gửi phản hồi", { error: err.message });
+      this.modalState.isSending = false;
+      this.showToast("error", "Lỗi kết nối mạng khi gửi phản hồi.");
+      this.render();
+    }
+  }
+
   openAskGemini(question) {
     this.activeModal = "askGemini";
     this.modalState = {
@@ -820,6 +891,12 @@ class QuizMasterApp {
       return;
     }
 
+    logger.action("Bắt đầu quét tài liệu bằng Gemini AI", {
+      fileName: this.modalState.selectedFileName,
+      isAutoGenerate: this.modalState.isCreateMultipleChoice,
+      depthMode: this.modalState.depthMode
+    });
+
     this.modalState.isScanning = true;
     this.modalState.scanProgress = 10;
     this.modalState.scanStatusText = "Đang chuẩn bị quét tài liệu...";
@@ -851,9 +928,11 @@ class QuizMasterApp {
 
       storage.addQuiz(project.id, newQuiz);
       telemetry.trackAiFeature("questions_generated", questions.length);
+      logger.info("Quét tài liệu thành công", { questionsCount: questions.length });
       this.showToast("success", `Đã xử lý thành công ${questions.length} câu hỏi trắc nghiệm!`);
       this.closeModal();
     } catch (e) {
+      logger.error("Lỗi khi quét tài liệu Gemini AI", { error: e.message });
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét AI: ${e.message}`);
       this.render();
@@ -877,6 +956,11 @@ class QuizMasterApp {
       this.openSettingsModal();
       return;
     }
+
+    logger.action("Bắt đầu quét đề thi ngoại ngữ", {
+      fileName: this.modalState.selectedFileName,
+      targetCEFR: this.modalState.targetCEFR
+    });
 
     this.modalState.isScanning = true;
     this.modalState.scanProgress = 10;
@@ -907,9 +991,11 @@ class QuizMasterApp {
 
       storage.addQuiz(project.id, newQuiz);
       telemetry.trackAiFeature("questions_generated", result.questions.length);
+      logger.info("Quét đề ngoại ngữ thành công", { questionsCount: result.questions.length, vocabsCount: result.vocabularies?.length || 0 });
       this.showToast("success", `Đã quét thành công ${result.questions.length} câu hỏi & ${result.vocabularies.length} thẻ từ vựng CEFR!`);
       this.closeModal();
     } catch (e) {
+      logger.error("Lỗi khi quét đề thi ngoại ngữ", { error: e.message });
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét đề ngoại ngữ: ${e.message}`);
       this.render();
@@ -930,6 +1016,10 @@ class QuizMasterApp {
       this.openSettingsModal();
       return;
     }
+
+    logger.action("Bắt đầu quét đề thi THPT Quốc Gia", {
+      fileName: this.modalState.selectedFileName
+    });
 
     this.modalState.isScanning = true;
     this.modalState.scanProgress = 10;
@@ -972,9 +1062,11 @@ class QuizMasterApp {
 
       storage.addQuiz(project.id, newQuiz);
       telemetry.trackAiFeature("questions_generated", questions.length);
+      logger.info("Quét đề THPT thành công", { questionsCount: questions.length });
       this.showToast("success", `Đã quét thành công ${questions.length} câu hỏi theo cấu trúc THPT Quốc gia (3 Phần)!`);
       this.closeModal();
     } catch (e) {
+      logger.error("Lỗi khi quét đề thi THPT", { error: e.message });
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét đề THPT: ${e.message}`);
       this.render();
@@ -1175,7 +1267,8 @@ class QuizMasterApp {
         this.render();
       },
       () => this.openNationalAnthemModal(),
-      (pid) => this.openProjectActionSheet(pid)
+      (pid) => this.openProjectActionSheet(pid),
+      () => this.openFeedbackModal("bug")
     );
 
     // Bind Dashboard Events
@@ -1240,7 +1333,15 @@ class QuizMasterApp {
     const modalHost = document.createElement("div");
     modalHost.id = "modal-host";
 
-    if (this.activeModal === "import") {
+    if (this.activeModal === "feedback") {
+      modalHost.innerHTML = renderFeedbackModal(this.modalState);
+      root.appendChild(modalHost);
+      bindFeedbackModalEvents(this.modalState, {
+        onClose: () => this.closeModal(),
+        onUpdateView: () => this.render(),
+        onSubmit: (payload) => this.submitFeedback(payload)
+      });
+    } else if (this.activeModal === "import") {
       modalHost.innerHTML = renderImportModal(this.getSelectedProject(), this.modalState);
       root.appendChild(modalHost);
       bindImportModalEvents(this.modalState, {
@@ -1310,6 +1411,9 @@ class QuizMasterApp {
         },
         onOpenAuthorEasterEgg: () => {
           this.openAuthorEasterEggModal();
+        },
+        onOpenFeedback: () => {
+          this.openFeedbackModal("general");
         },
         onUpdateView: () => this.render()
       });

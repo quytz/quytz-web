@@ -180,6 +180,10 @@ export function renderSidebar(selectedProjectId, appState) {
           ${renderSF("plus", { size: "16px" })} ${i18n.t("addProject")}
         </button>
 
+        <button class="btn btn-secondary" id="btn-sidebar-feedback" style="width: 100%; margin-top: 6px; font-size: var(--text-xs); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px;">
+          ${renderSF("bubble.left.and.bubble.right", { size: "13px" })} Gửi Phản Hồi & Báo Lỗi
+        </button>
+
         <!-- Easter Egg Footer -->
         <div class="app-easter-egg-footer" id="app-easter-egg-footer" title="Chạm 2 lần để xem điều bất ngờ!">
           QuizMaster ${APP_CONFIG.version} © 2026 | Made in Vietnam
@@ -189,7 +193,7 @@ export function renderSidebar(selectedProjectId, appState) {
   `;
 }
 
-export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings, onCloseSidebar, onOpenEasterEgg, onOpenProjectMenu) {
+export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpenSettings, onCloseSidebar, onOpenEasterEgg, onOpenProjectMenu, onOpenFeedback) {
   document.querySelectorAll(".project-item").forEach(item => {
     item.onclick = (e) => {
       // If click was on the project menu button, don't trigger selection
@@ -208,6 +212,9 @@ export function bindSidebarEvents(appState, onProjectSelect, onNewProject, onOpe
 
   const addBtn = document.getElementById("btn-add-project");
   if (addBtn) addBtn.onclick = () => onNewProject();
+
+  const feedbackBtn = document.getElementById("btn-sidebar-feedback");
+  if (feedbackBtn && onOpenFeedback) feedbackBtn.onclick = () => onOpenFeedback();
 
   const settingsBtn = document.getElementById("btn-open-settings");
   if (settingsBtn) settingsBtn.onclick = () => onOpenSettings();

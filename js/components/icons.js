@@ -40,7 +40,12 @@ const SF_ICONS = {
   "play.circle": `<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/>`,
   "list.bullet": `<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>`,
   "target": `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
-  "arrow.right.arrow.left": `<path d="m17 7 4 4-4 4M21 11H3M7 17l-4-4 4-4M3 13h18"/>`
+  "arrow.right.arrow.left": `<path d="m17 7 4 4-4 4M21 11H3M7 17l-4-4 4-4M3 13h18"/>`,
+  "bubble.left.and.bubble.right": `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+  "paperplane": `<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>`,
+  "envelope": `<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>`,
+  "exclamationmark.bubble": `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`,
+  "ladybug": `<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6 13H2"/><path d="M3 21l3.5-3.5"/><path d="M22 13h-4"/><path d="M21 21l-3.5-3.5"/>`
 };
 
 /**

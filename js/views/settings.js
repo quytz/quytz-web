@@ -108,6 +108,23 @@ export function renderSettingsModal(settingsState) {
             </div>
           </div>
 
+          <!-- Feedback Section -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="font-size: var(--text-sm); font-weight: 800; color: var(--text-primary);">
+                  Phản hồi & Báo lỗi hệ thống
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px;">
+                  Gửi báo cáo sự cố kèm nhật ký hệ thống hoặc đề xuất tính năng mới cho tác giả.
+                </div>
+              </div>
+              <button class="btn btn-secondary" id="btn-settings-open-feedback" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                ${renderSF("bubble.left.and.bubble.right", { size: "14px" })} Gửi phản hồi
+              </button>
+            </div>
+          </div>
+
           <!-- Author Info Section -->
           <div class="glass-card">
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
@@ -189,6 +206,12 @@ export function bindSettingsEvents(settingsState, handlers) {
   // Re-open wizard
   const wizardBtn = document.getElementById("btn-reopen-wizard");
   if (wizardBtn) wizardBtn.onclick = () => handlers.onReopenWizard();
+
+  // Open feedback modal
+  const feedbackBtn = document.getElementById("btn-settings-open-feedback");
+  if (feedbackBtn && handlers.onOpenFeedback) {
+    feedbackBtn.onclick = () => handlers.onOpenFeedback();
+  }
 
   // Author double click easter egg
   const authorTrigger = document.getElementById("author-easter-egg-trigger");
