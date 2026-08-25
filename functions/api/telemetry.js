@@ -200,13 +200,22 @@ export async function onRequestPost({ request, env }) {
       });
 
       let feedbacks = [];
+      let currentStats = getDefaultStats();
+
       if (getRes.ok) {
         const gistData = await getRes.json();
-        if (gistData.files && gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
-          try {
-            feedbacks = JSON.parse(gistData.files["feedback.json"].content);
-            if (!Array.isArray(feedbacks)) feedbacks = [];
-          } catch {}
+        if (gistData.files) {
+          if (gistData.files["feedback.json"] && gistData.files["feedback.json"].content) {
+            try {
+              feedbacks = JSON.parse(gistData.files["feedback.json"].content);
+              if (!Array.isArray(feedbacks)) feedbacks = [];
+            } catch {}
+          }
+          if (gistData.files["telemetry.json"] && gistData.files["telemetry.json"].content) {
+            try {
+              currentStats = { ...currentStats, ...JSON.parse(gistData.files["telemetry.json"].content) };
+            } catch {}
+          }
         }
       }
 
@@ -233,16 +242,6 @@ export async function onRequestPost({ request, env }) {
         feedbacks = feedbacks.slice(0, 500);
       }
 
-      // Also get current telemetry stats to keep telemetry.json feedbacks in sync
-      let currentStats = getDefaultStats();
-      if (getRes.ok) {
-        const gistData = await getRes.json();
-        if (gistData.files && gistData.files["telemetry.json"] && gistData.files["telemetry.json"].content) {
-          try {
-            currentStats = { ...currentStats, ...JSON.parse(gistData.files["telemetry.json"].content) };
-          } catch {}
-        }
-      }
       currentStats.feedbacks = feedbacks;
 
       const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
