@@ -24,7 +24,10 @@ class StorageService {
   loadSettings() {
     if (typeof localStorage !== "undefined" && typeof localStorage.getItem === "function") {
       try {
-        const raw = localStorage.getItem(APP_CONFIG.storageKeys.settings);
+        let raw = localStorage.getItem(APP_CONFIG.storageKeys.settings);
+        if (!raw && APP_CONFIG.storageKeys.legacySettings) {
+          raw = localStorage.getItem(APP_CONFIG.storageKeys.legacySettings);
+        }
         if (raw) {
           return JSON.parse(raw);
         }
@@ -58,7 +61,10 @@ class StorageService {
   loadProjects() {
     if (typeof localStorage !== "undefined" && typeof localStorage.getItem === "function") {
       try {
-        const raw = localStorage.getItem(APP_CONFIG.storageKeys.projects);
+        let raw = localStorage.getItem(APP_CONFIG.storageKeys.projects);
+        if (!raw && APP_CONFIG.storageKeys.legacyProjects) {
+          raw = localStorage.getItem(APP_CONFIG.storageKeys.legacyProjects);
+        }
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -66,7 +72,10 @@ class StorageService {
           }
         }
         // Check backup
-        const backup = localStorage.getItem(APP_CONFIG.storageKeys.backup);
+        let backup = localStorage.getItem(APP_CONFIG.storageKeys.backup);
+        if (!backup && APP_CONFIG.storageKeys.legacyBackup) {
+          backup = localStorage.getItem(APP_CONFIG.storageKeys.legacyBackup);
+        }
         if (backup) {
           const parsedBackup = JSON.parse(backup);
           if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
@@ -281,7 +290,7 @@ class StorageService {
         explanation: "Hà Nội là thủ đô, trung tâm chính trị và văn hóa của nước Cộng hòa Xã hội Chủ nghĩa Việt Nam."
       }),
       createQuestion({
-        text: "QuizMaster Web sử dụng công nghệ nào để đảm bảo ứng dụng có thể chạy không tốn chi phí hosting?",
+        text: "Quýtz Web sử dụng công nghệ nào để đảm bảo ứng dụng có thể chạy không tốn chi phí hosting?",
         options: [
           createQuestionOption("A", "Client-Side Processing (Toàn bộ tác vụ OCR, AI và lưu trữ chạy trên trình duyệt người dùng)"),
           createQuestionOption("B", "Cụm máy chủ Kubernetes đắt tiền"),
@@ -289,7 +298,7 @@ class StorageService {
           createQuestionOption("D", "Hệ thống backend trung gian lưu dữ liệu riêng tư")
         ],
         correctAnswerIndex: 0,
-        explanation: "QuizMaster Web được thiết kế theo kiến trúc Client-First, mọi dữ liệu lưu offline trong IndexedDB / LocalStorage của người dùng, gọi trực tiếp Gemini API và xuất file hoàn toàn trên client."
+        explanation: "Quýtz Web được thiết kế theo kiến trúc Client-First, mọi dữ liệu lưu offline trong IndexedDB / LocalStorage của người dùng, gọi trực tiếp Gemini API và xuất file hoàn toàn trên client."
       }),
       createQuestion({
         text: "Khi trả lời sai một câu hỏi trong chế độ Luyện tập (Practice), câu hỏi đó sẽ được xử lý như thế nào?",

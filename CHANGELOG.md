@@ -1,9 +1,19 @@
 # Changelog
 
-All notable changes to the **QuizMaster Web** project will be documented in this file.
+All notable changes to the **Quýtz Web** project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [v2.0.1] - 2026-08-26
+
+### Added & Rebranded
+- **Rebrand: QuizMaster ➔ Quýtz**:
+  - Rebranded the application name to **Quýtz** (play on *Quýt* 🍊 + *Quiz*).
+  - Adopted a vibrant mandarin orange / quýt citrus color scheme (`#fa5a0e` & `#ffb820`) across buttons, badges, ambient glass glows, and icons.
+  - Updated all labels, documentation, splash screen, and storage keys with backward-compatible migration for existing user data.
 
 ---
 

@@ -111,7 +111,7 @@ export function renderSetupWizardModal(wizardState) {
 function renderStep1() {
   return `
     <div style="text-align: center;">
-      <img src="assets/AppIcon.png" alt="QuizMaster" style="width: 68px; height: 68px; border-radius: 16px; margin-bottom: 14px; box-shadow: var(--shadow-md);">
+      <img src="assets/AppIcon.png" alt="Quýtz" style="width: 68px; height: 68px; border-radius: 16px; margin-bottom: 14px; box-shadow: var(--shadow-md);">
       <h2 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-primary);">
         ${i18n.t("welcomeTitle")}
       </h2>

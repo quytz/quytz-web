@@ -163,7 +163,7 @@ export function renderNationalAnthemModal() {
           </div>
 
           <div style="margin-top: 14px; font-size: 11px; color: var(--text-muted);">
-            ⭐ Tự hào Tổ quốc Việt Nam • QuizMaster Web Edition 🇻🇳
+            ⭐ Tự hào Tổ quốc Việt Nam • Quýtz Web Edition 🇻🇳
           </div>
         </div>
 

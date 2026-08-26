@@ -1,17 +1,17 @@
-# HƯỚNG DẪN SỬ DỤNG CHI TIẾT QUIZMASTER WEB (v1.1.0)
+# HƯỚNG DẪN SỬ DỤNG CHI TIẾT QUÝTZ WEB (v2.0.1)
 
 Tác giả: **@tozn607**  
 Nền tảng: Web (Trình duyệt máy tính & di động)  
-Ngày soạn: **22 Tháng 8 năm 2026**  
-Dành cho phiên bản: **v1.1.0**
+Ngày soạn: **26 Tháng 8 năm 2026**  
+Dành cho phiên bản: **v2.0.1**
 
 
 ## CHƯƠNG 1: MÀN HÌNH HƯỚNG DẪN CẤU HÌNH BAN ĐẦU & API KEY
 
-Khi truy cập **QuizMaster Web** lần đầu tiên trên trình duyệt, ứng dụng sẽ tự động hiển thị **Màn hình Cấu hình Ban đầu** gồm 4 bước đơn giản:
+Khi truy cập **Quýtz Web** lần đầu tiên trên trình duyệt, ứng dụng sẽ tự động hiển thị **Màn hình Cấu hình Ban đầu** gồm 4 bước đơn giản:
 
 1. **Bước 1: Giới thiệu chung**
-   - Giới thiệu tổng quan về các tính năng của QuizMaster Web. Nhấn nút **"Bắt đầu Cấu hình ➔"** để chuyển sang bước tiếp theo.
+   - Giới thiệu tổng quan về các tính năng của Quýtz Web. Nhấn nút **"Bắt đầu Cấu hình ➔"** để chuyển sang bước tiếp theo.
 
 2. **Bước 2: Cài đặt API Key Gemini AI**
    - **Tại sao lại cần API Key cá nhân?:** Để đảm bảo quyền riêng tư và để ứng dụng dễ tiếp cận hơn với số đông, tác giả không tích hợp sẵn API Key mà để người dùng tự cấu hình bằng API Key miễn phí đến từ Google. Mỗi tài khoản Google của bạn được cấp một hạn mức sử dụng model Gemini 3.5 Flash Lite miễn phí, dư dả để tạo một lượng lớn đề thi và lời giải trong một ngày. Việc tự nhập API Key cá nhân giúp giữ ứng dụng miễn phí và có mã nguồn mở. Ngược lại, nếu tác giả đính kèm sẵn API Key thì lượng sử dụng từ cộng đồng sẽ vượt hạn mức và tác giả sẽ phải trả phí dịch vụ cho Google.
@@ -25,14 +25,14 @@ Khi truy cập **QuizMaster Web** lần đầu tiên trên trình duyệt, ứng
    - Xem qua tóm tắt các phím tắt và thao tác nhanh để tiện sử dụng trên máy tính.
 
 4. **Bước 4: Hoàn tất Cấu hình**
-   - Bấm **"Vào sử dụng QuizMaster ngay 🚀"** để bắt đầu hành trình ôn tập.
+   - Bấm **"Vào sử dụng Quýtz ngay 🚀"** để bắt đầu hành trình ôn tập.
 
 *(Nếu muốn thay đổi lại API Key hoặc Giao diện sau này, bạn có thể bấm vào biểu tượng **Cài đặt (⚙️)** ở thanh bên bất kỳ lúc nào).*
 
 <details>
   <summary>Nhấn vào đây để xem cách chỉnh sửa lại Cài đặt & API Key</summary>
 
-   1. Mở trang **QuizMaster Web** trên trình duyệt của bạn.
+   1. Mở trang **Quýtz Web** trên trình duyệt của bạn.
    2. Nhấn vào biểu tượng **Cài đặt (⚙️)** ở đầu thanh bên (Sidebar).
    3. Nếu cần lấy mã mới, bấm nút **"Lấy API Key từ Google AI Studio ↗"**, tạo và sao chép mã dán vào ô **"Google AI Studio Key (Gemini API)"**.
    4. Nhấn **"Kiểm tra API Key"** để chắc chắn hệ thống phản hồi tốt (hiển thị thông báo màu xanh `✓ API Key hợp lệ`).
@@ -146,7 +146,7 @@ Hệ thống phím tắt giúp bạn thao tác nhanh chóng và thuận tiện k
 ## CHƯƠNG PHỤ: XUẤT ĐỀ, SAO LƯU DỮ LIỆU & TIỆN ÍCH THÚ VỊ
 
 1. **Xuất Đề thi & Chia sẻ**:
-   - **Xuất gói Zip Bundle**: Tải về tệp `.zip` chứa đề thi (.rtf), đáp án (.rtf) và tệp dữ liệu `quiz_bundle.json`. Bạn có thể gửi file này cho bạn bè nạp lại trực tiếp vào QuizMaster Web trên máy của họ.
+   - **Xuất gói Zip Bundle**: Tải về tệp `.zip` chứa đề thi (.rtf), đáp án (.rtf) và tệp dữ liệu `quiz_bundle.json`. Bạn có thể gửi file này cho bạn bè nạp lại trực tiếp vào Quýtz Web trên máy của họ.
    - **Xuất tệp Word (.docx)**: Xuất toàn bộ câu hỏi và đáp án ra file Word với định dạng ngay ngắn, sẵn sàng để in ấn ra giấy làm bài.
 
 2. **Sao lưu & Khôi phục Dữ liệu**:

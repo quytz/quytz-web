@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/AppIcon.png" width="128" height="128" alt="QuizMaster Web App Icon">
+  <img src="assets/AppIcon.png" width="128" height="128" alt="Quýtz Web App Icon">
 </p>
 
-# QuizMaster Web (v2.0.0)
+# Quýtz Web (v2.0.1)
 
-[![Web Supported](https://img.shields.io/badge/Web-Modern_Browsers-blue.svg)](https://tozn607.github.io/quizmaster-web/)
+[![Web Supported](https://img.shields.io/badge/Web-Modern_Browsers-orange.svg)](https://tozn607.github.io/quizmaster/)
 [![Language](https://img.shields.io/badge/Stack-Vanilla_JS_•_CSS3-orange.svg)](js/)
 [![AI Powered](https://img.shields.io/badge/Gemini_AI-3.5_Flash_Lite-purple.svg)](https://aistudio.google.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -17,7 +17,7 @@
 ### Mở ứng dụng ngay:
 Bấm vào nút bên dưới 👇   
   
-[![](https://img.shields.io/badge/Trải_nghiệm_ngay_QuizMaster_Web-Bản_Mới_Nhất-blue?style=for-the-badge&logo=googlechrome)](https://tozn607.github.io/quizmaster-web/)
+[![](https://img.shields.io/badge/Trải_nghiệm_ngay_Quýtz_Web-Bản_Mới_Nhất-orange?style=for-the-badge&logo=googlechrome)](https://tozn607.github.io/quizmaster/)
 
 > **Toàn bộ dữ liệu, đề thi và API Key được xử lý trực tiếp trên trình duyệt của bạn thông, hoàn toàn không phụ thuộc vào máy chủ trung gian và đảm bảo quyền riêng tư.**
 
@@ -29,10 +29,10 @@ Nhấn vào đây: **[Hướng dẫn Sử dụng Chi tiết](User_guide.md)**
 
 ## Tổng quan & Tính năng Nổi bật
 
-**QuizMaster Web** là phiên bản web hoàn chỉnh được phát triển thuần bằng **HTML5**, **Vanilla JavaScript** và **CSS3 Modern Glass**, không cần máy chủ backend. Ứng dụng kết nối với mô hình AI **Gemini 3.5 Flash Lite** từ Google AI Studio giúp sinh viên, học sinh và giáo viên tự động quét tài liệu bài giảng (PDF, Word `.docx`, TXT, Zip Bundle) để tạo ra các bộ đề thi trắc nghiệm chất lượng cao.
+**Quýtz Web** là phiên bản web hoàn chỉnh được phát triển thuần bằng **HTML5**, **Vanilla JavaScript** và **CSS3 Modern Glass**, không cần máy chủ backend. Ứng dụng kết nối với mô hình AI **Gemini 3.5 Flash Lite** từ Google AI Studio giúp sinh viên, học sinh và giáo viên tự động quét tài liệu bài giảng (PDF, Word `.docx`, TXT, Zip Bundle) để tạo ra các bộ đề thi trắc nghiệm chất lượng cao.
 
 ### Về trách nhiệm sử dụng AI tạo sinh (Generative AI):
-- **QuizMaster Web** được hỗ trợ biên soạn mã nguồn bằng model AI tạo sinh **Gemini 3.7 Flash**. Việc chỉnh sửa và kiểm nghiệm mã nguồn đều do con người (tác giả [@tozn607](https://github.com/tozn607)) thực hiện.
+- **Quýtz Web** được hỗ trợ biên soạn mã nguồn bằng model AI tạo sinh **Gemini 3.7 Flash**. Việc chỉnh sửa và kiểm nghiệm mã nguồn đều do con người (tác giả [@tozn607](https://github.com/tozn607)) thực hiện.
 - **Điều quan trọng nhất**, với vai trò là một sinh viên đang trong quá trình học tập, tác giả tin rằng tất cả các nội dung do AI tạo ra đều **mang tính chất tham khảo và cần được kiểm nghiệm bởi người sử dụng** để đảm bảo tính chính xác và phù hợp. Tác giả không chịu trách nhiệm về các sai sót có thể xảy ra khi người dùng sử dụng các nội dung do AI tạo ra.
 
 ### Các Tính năng Nổi bật:

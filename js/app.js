@@ -651,7 +651,7 @@ class QuizMasterApp {
 
     this.activeModal = "import";
     this.modalState = {
-      activeTab: isTHPT ? "thpt" : (isLL ? "lang" : "gemini"),
+      activeTab: isTHPT ? "ai-gen-thpt" : (isLL ? "ai-gen-lang" : "gemini"),
       selectedFileName: "",
       selectedFileContent: "",
       quizTitle: "",
@@ -1081,6 +1081,181 @@ class QuizMasterApp {
     if (pct) pct.textContent = `${percent}%`;
   }
 
+  // AI Generation Handlers
+  async handleLanguageAIGen() {
+    const project = this.getSelectedProject();
+    if (project.projectType !== "languageLearning") {
+      this.showToast("error", i18n.t("onlyInLLProjectNotice"));
+      return;
+    }
+
+    // Get mode from modalState (set by radio buttons in UI)
+    const mode = this.modalState.langAIMode || "thpt";
+
+    // Set defaults based on mode
+    let questionCount = 10;
+    let questionTypes = ["reading", "listening", "lexical"]; // Default balanced set
+
+    if (mode === "ielts") {
+      questionCount = 40; // IELTS standard
+      // For IELTS, focus on reading and listening as they are the main multiple choice components
+      questionTypes = ["reading", "listening"];
+    } else if (mode === "thpt") {
+      questionCount = 10; // THPT default
+      // For THPT English, use balanced distribution
+      questionTypes = ["reading", "listening", "lexical"];
+    }
+
+    const cefrLevel = this.modalState.langAICEFR || "ALL";
+    const topic = this.modalState.langAITopic || "";
+    const difficulty = this.modalState.langAIDifficulty || "medium";
+
+    if (!storage.settings.apiKey) {
+      this.showToast("error", "Vui lòng cấu hình Google AI Studio API Key trong Cài đặt.");
+      this.openSettingsModal();
+      return;
+    }
+
+    logger.action("Bắt đầu tạo đề thi Ngoại ngữ bằng AI", {
+      questionCount,
+      questionTypes,
+      cefrLevel,
+      topic,
+      difficulty,
+      mode
+    });
+
+    this.modalState.isScanning = true;
+    this.modalState.scanProgress = 10;
+    this.modalState.scanStatusText = "Đang chuẩn bị tạo đề thi bằng AI...";
+    this.render();
+
+    try {
+      const result = await geminiService.generateLanguageExamFromPrompt({
+        questionCount,
+        questionTypes,
+        cefrLevel,
+        topic,
+        difficulty,
+        mode,
+        apiKey: storage.settings.apiKey,
+        onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
+      });
+
+      if (!result.questions || result.questions.length === 0) {
+        throw new Error("Không thể tạo câu hỏi nào từ yêu cầu của bạn.");
+      }
+
+      const newQuiz = createQuiz({
+        title: this.modalState.quizTitle || `Đề thi Ngoại ngữ AI ${new Date().toLocaleDateString()}`,
+        questions: result.questions,
+        vocabularies: result.vocabularies || [],
+        quizType: "languageLearning",
+        targetCEFR: cefrLevel,
+        durationMinutes: result.detectedDurationMinutes,
+        isPreMade: true
+      });
+
+      storage.addQuiz(project.id, newQuiz);
+      telemetry.trackAiFeature("questions_generated", result.questions.length);
+      logger.info("Tạo đề Ngoại ngữ bằng AI thành công", {
+        questionsCount: result.questions.length,
+        vocabsCount: result.vocabularies?.length || 0
+      });
+      this.showToast("success", `Đã tạo thành công ${result.questions.length} câu hỏi & ${result.vocabularies?.length || 0} thẻ từ vựng CEFR!`);
+      this.closeModal();
+    } catch (e) {
+      logger.error("Lỗi khi tạo đề thi Ngoại ngữ bằng AI", { error: e.message });
+      this.modalState.isScanning = false;
+      this.showToast("error", `Lỗi tạo đề bằng AI: ${e.message}`);
+      this.render();
+    }
+  }
+
+  async handleTHPTAIGen() {
+    const project = this.getSelectedProject();
+    if (!project) return;
+
+    if (!storage.settings.apiKey) {
+      this.showToast("error", "Vui lòng cấu hình Google AI Studio API Key trong Cài đặt.");
+      this.openSettingsModal();
+      return;
+    }
+
+    // Validate inputs
+    const part1Count = parseInt(document.getElementById("input-thpt-ai-part1-count")?.value || "8");
+    const part2Count = parseInt(document.getElementById("input-thpt-ai-part2-count")?.value || "4");
+    const part3Count = parseInt(document.getElementById("input-thpt-ai-part3-count")?.value || "4");
+    const subject = this.modalState.thptAISubject || "toan";
+
+    if (isNaN(part1Count) || part1Count < 0 || part1Count > 20) {
+      this.showToast("error", "Vui lòng nhập số lượng câu Part I từ 0 đến 20");
+      return;
+    }
+
+    if (isNaN(part2Count) || part2Count < 0 || part2Count > 10) {
+      this.showToast("error", "Vui lòng nhập số lượng câu Part II từ 0 đến 10");
+      return;
+    }
+
+    if (isNaN(part3Count) || part3Count < 0 || part3Count > 10) {
+      this.showToast("error", "Vui lòng nhập số lượng câu Part III từ 0 đến 10");
+      return;
+    }
+
+    const topics = this.modalState.thptAITopics || "";
+    const difficulty = this.modalState.thptAIDifficulty || "medium";
+
+    logger.action("Bắt đầu tạo đề thi THPT Quốc gia bằng AI", {
+      part1Count,
+      part2Count,
+      part3Count,
+      subject,
+      topics,
+      difficulty
+    });
+
+    this.modalState.isScanning = true;
+    this.modalState.scanProgress = 10;
+    this.modalState.scanStatusText = "Đang chuẩn bị tạo đề thi THPT bằng AI...";
+    this.render();
+
+    try {
+      const questions = await geminiService.generateTHPTQuizFromPrompt({
+        part1Count,
+        part2Count,
+        part3Count,
+        subject,
+        topics,
+        difficulty,
+        apiKey: storage.settings.apiKey,
+        onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
+      });
+
+      if (!questions || questions.length === 0) {
+        throw new Error("Không thể tạo câu hỏi nào từ yêu cầu của bạn.");
+      }
+
+      const newQuiz = createQuiz({
+        title: this.modalState.quizTitle || `Đề thi THPT Quốc gia AI ${new Date().toLocaleDateString()}`,
+        questions,
+        quizType: "thptQuocGia",
+        isPreMade: true
+      });
+
+      storage.addQuiz(project.id, newQuiz);
+      telemetry.trackAiFeature("questions_generated", questions.length);
+      logger.info("Tạo đề thi THPT bằng AI thành công", { questionsCount: questions.length });
+      this.showToast("success", `Đã tạo thành công ${questions.length} câu hỏi theo cấu trúc THPT Quốc gia (3 Phần)!`);
+      this.closeModal();
+    } catch (e) {
+      logger.error("Lỗi khi tạo đề thi THPT bằng AI", { error: e.message });
+      this.modalState.isScanning = false;
+      this.showToast("error", `Lỗi tạo đề bằng AI: ${e.message}`);
+      this.render();
+    }
+  }
+
   async handlePremadeImport(file) {
     try {
       const quiz = await documentParser.extractQuizFromFile(file);
@@ -1357,6 +1532,8 @@ class QuizMasterApp {
         onStartTHPTScan: () => this.handleTHPTScan(),
         onStartGeminiScan: () => this.handleGeminiScan(),
         onStartLanguageScan: () => this.handleLanguageScan(),
+        onStartLanguageAIGen: () => this.handleLanguageAIGen(),
+        onStartTHPTAIGen: () => this.handleTHPTAIGen(),
         onUpdateView: () => this.render()
       });
     } else if (this.activeModal === "settings") {
@@ -1968,9 +2145,13 @@ class QuizMasterApp {
 
 // Bootstrap Application
 if (typeof window !== "undefined") {
-  window.addEventListener("DOMContentLoaded", () => {
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", () => {
+      window.quizMasterApp = new QuizMasterApp();
+    });
+  } else {
     window.quizMasterApp = new QuizMasterApp();
-  });
+  }
 }
 
 function escapeHtml(text) {

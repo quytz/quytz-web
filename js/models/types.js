@@ -37,6 +37,18 @@ export const LANGUAGE_SKILLS = {
   general: { id: "general", name: "Tổng hợp", icon: "doc.text" }
 };
 
+export const THPT_SUBJECTS = [
+  { id: "toan", name: "Toán", needsDiagrams: true, needsFormulas: true, defaultPart1: 10, defaultPart2: 4, defaultPart3: 4 },
+  { id: "ly", name: "Vật lý", needsDiagrams: true, needsFormulas: true, defaultPart1: 10, defaultPart2: 4, defaultPart3: 4 },
+  { id: "hoa", name: "Hóa học", needsDiagrams: true, needsFormulas: true, defaultPart1: 10, defaultPart2: 4, defaultPart3: 4 },
+  { id: "sinh", name: "Sinh học", needsDiagrams: true, needsFormulas: false, defaultPart1: 10, defaultPart2: 4, defaultPart3: 4 },
+  { id: "dia", name: "Địa lý", needsDiagrams: true, needsFormulas: false, defaultPart1: 10, defaultPart2: 4, defaultPart3: 4 },
+  { id: "su", name: "Lịch sử", needsDiagrams: true, needsFormulas: false, defaultPart1: 8, defaultPart2: 4, defaultPart3: 4 },
+  { id: "gdcd", name: "Giáo dục công dân", needsDiagrams: false, needsFormulas: false, defaultPart1: 8, defaultPart2: 4, defaultPart3: 4 },
+  { id: "tin", name: "Tin học", needsDiagrams: false, needsFormulas: false, defaultPart1: 8, defaultPart2: 4, defaultPart3: 4 },
+  { id: "congnghe", name: "Công nghệ", needsDiagrams: true, needsFormulas: false, defaultPart1: 8, defaultPart2: 4, defaultPart3: 4 }
+];
+
 export function generateUUID() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();

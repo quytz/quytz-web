@@ -3,7 +3,7 @@
  */
 export const DICTIONARIES = {
   vi: {
-    appName: "QuizMaster",
+    appName: "Quýtz",
     appTagline: "Ứng dụng Ôn tập & Tạo Đề thi Trắc nghiệm",
     projects: "Danh sách Dự án",
     noProjects: "Chưa có dự án nào",
@@ -119,7 +119,7 @@ export const DICTIONARIES = {
     roundCompleted: "Hoàn thành Vòng Học Thẻ ghi nhớ!",
     studyAgain: "Học lại từ đầu (Tất cả các thẻ)",
     continueNextRound: "Tiếp tục học Vòng tiếp theo",
-    welcomeTitle: "Chào mừng đến với QuizMaster!",
+    welcomeTitle: "Chào mừng đến với Quýtz!",
     welcomeSubtitle: "Ứng dụng tự học trắc nghiệm & tạo bộ đề thông minh bằng Gemini AI trên Web",
     startSetupBtn: "Bắt đầu Cấu hình",
     setupStep1: "1. Chào mừng",
@@ -132,7 +132,7 @@ export const DICTIONARIES = {
     setupGuideTitle: "Tóm tắt Hướng dẫn Sử dụng Quick Start",
     setupFinishTitle: "Cấu hình Thành công!",
     setupFinishSubtitle: "Bạn đã sẵn sàng để tạo và làm bộ đề thi trắc nghiệm đầu tiên.",
-    enterAppBtn: "Vào sử dụng QuizMaster ngay",
+    enterAppBtn: "Vào sử dụng Quýtz ngay",
     getApiKeyFromStudio: "Lấy API Key từ Google AI Studio",
     testingKey: "Đang kiểm tra...",
     btnBack: "Quay lại",
@@ -173,6 +173,7 @@ export const DICTIONARIES = {
     langLearningDesc: "Quét và phân tích chuyên sâu đề thi ngoại ngữ (Đề THPT Quốc gia, IELTS, TOEIC, bài đọc hiểu, ngữ pháp, phát âm và từ vựng).",
     cefrSelectorLabel: "Khung trình độ CEFR trích xuất từ vựng:",
     startLangScanBtn: "Bắt đầu Quét Đề Ngoại Ngữ",
+createExamWithAI: "Tạo đề bằng AI",
     readingPassageSectionTitle: "BÀI ĐỌC HIỂU (READING PASSAGE)",
     vocabFlashcardsHeader: "Thẻ Từ Vựng theo CEFR",
     vocabTargetCEFR: "Trình độ CEFR:",

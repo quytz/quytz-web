@@ -4,7 +4,7 @@
  * Exclusively uses Gemini 3.5 Flash Lite
  */
 import { APP_CONFIG } from "../config.js";
-import { createQuestion, createQuestionOption, createSubItem, createVocabularyCard } from "../models/types.js";
+import { createQuestion, createQuestionOption, createSubItem, createVocabularyCard, THPT_SUBJECTS } from "../models/types.js";
 import { documentParser } from "./document-parser.js";
 
 function restoreImageTokens(text) {
@@ -1231,6 +1231,263 @@ ${documentText}`;
       throw new Error("Không thể phân tích định dạng câu hỏi THPT từ AI. Vui lòng thử lại.");
     }
   }
+
+  // AI Generation Functions (without document input)
+
+  async generateLanguageExamFromPrompt({
+    questionCount,
+    questionTypes,
+    cefrLevel,
+    topic,
+    difficulty,
+    apiKey,
+    onProgress = null
+  }) {
+    const key = (apiKey || "").trim();
+    if (!key) {
+      throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi tạo đề.");
+    }
+
+    if (onProgress) onProgress(15, "Đang chuẩn bị tạo đề thi Ngoại ngữ bằng AI...");
+
+    const cleanedTopic = (topic || "").trim();
+    const questionTypesStr = questionTypes.join(", ");
+    const difficultyStr = difficulty === "easy" ? "dễ" : difficulty === "medium" ? "trung bình" : "khó";
+
+    let promptText = `Bạn là chuyên gia ngôn ngữ và biên soạn đề thi tiếng Anh theo chuẩn quốc tế.
+YÊU CẦU TẠO ĐỀ THI:
+- Tạo ${questionCount} câu hỏi trắc nghiệm tiếng Anh
+- Loại câu hỏi: ${questionTypesStr}
+- Trình độ CEFR: ${cefrLevel === "ALL" ? "tất cả các级 (A1-C2)" : cefrLevel}
+- Chủ đề/chương: ${cleanedTopic || "ngẫu nhiên, tổng hợp"}
+- Mức độ khó: ${difficultyStr}
+- Ngôn ngữ: Toàn bộ đề thi phải là TIẾNG ANH
+- Định dạng: Trắc nghiệm 4 lựa chọn (A, B, C, D) với một đáp án đúng
+
+${cefrLevel === "ALL"
+  ? "Hãy phân bố câu hỏi rộng khắp các mức CEFR từ A1 đến C2 phù hợp với số lượng câu hỏi."
+  : `Hãy tập trung vào mức CEFR ${cefrLevel} và có thể bao gồm các mức gần kề.`}
+
+YÊU CẦU NGÔN NGỮ BẮT BUỘC: Viết BẮT BUỘC TOÀN BỘ câu hỏi, các phương án lựa chọn và phần giải thích bằng TIẾNG ANH.
+
+CRITICAL TEXT INTEGRITY & WORD ORDER RULES:
+1. PRESERVE NATURAL SENTENCE WORD ORDER: Write clear, grammatically sound, and natural sentences. Never scramble or invert word order.
+2. CHOICE LENGTH EQUALIZATION: All 4 choices (A, B, C, D) MUST be of equal length, depth, and detail. DO NOT make the correct choice noticeably longer or more complex than the distractors.
+3. PLAUSIBLE DISTRACTORS: All wrong choices must be realistic and plausible.
+4. CORRECT ANSWER SHUFFLING: Randomly distribute correct answers across A, B, C, D.
+5. Correct Answer Indexing: Set "correctAnswerIndex" as a 0-BASED integer (0 for A, 1 for B, 2 for C, 3 for D).
+
+Target Output JSON Schema:
+Return ONLY a valid JSON array of question objects without markdown code blocks:
+[
+  {
+    "text": "Question text...",
+    "options": [
+      {"label": "A", "text": "Option A..."},
+      {"label": "B", "text": "Option B..."},
+      {"label": "C", "text": "Option C..."},
+      {"label": "D", "text": "Option D..."}
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Detailed educational explanation..."
+  }
+]`;
+
+    if (onProgress) onProgress(30, "Đang giao tiếp với Gemini AI để tạo câu hỏi...");
+
+    const payload = {
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 16384,
+        responseMimeType: "application/json"
+      }
+    };
+
+    if (onProgress) onProgress(50, "Đang đợi phản hồi từ Gemini AI...");
+
+    const data = await this.callGeminiAPI(payload, apiKey);
+    const questions = this.parseQuestionsFromGeminiResponse(data, true); // true = shuffle options
+
+    if (onProgress) onProgress(90, "Đang xử lý và validating câu hỏi...");
+
+    // Extract vocabulary from generated questions for language learning mode
+    const vocabularies = this.extractVocabularyFromQuestions(questions);
+
+    if (onProgress) onProgress(98, "Đang hoàn tất bộ đề thi Ngoại ngữ...");
+
+    return {
+      questions,
+      vocabularies,
+      detectedDurationMinutes: null // Not applicable for AI-generated
+    };
+  }
+
+  async generateTHPTQuizFromPrompt({
+    part1Count,
+    part2Count,
+    part3Count,
+    subject,
+    topics,
+    difficulty,
+    apiKey,
+    onProgress = null
+  }) {
+    const key = (apiKey || "").trim();
+    if (!key) {
+      throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi tạo đề.");
+    }
+
+    if (onProgress) onProgress(15, "Đang chuẩn bị tạo đề thi THPT Quốc gia bằng AI...");
+
+    const cleanedTopics = (topics || "").trim();
+    const difficultyStr = difficulty === "easy" ? "dễ" : difficulty === "medium" ? "trung bình" : "khó";
+
+    // Subject-specific enhancements for diagram/formula requests
+    let subjectEnhancement = "";
+    const subjectInfo = THPT_SUBJECTS.find(s => s.id === subject) || THPT_SUBJECTS[0];
+    if (subjectInfo.needsDiagrams) {
+      subjectEnhancement += "- YÊU CẦU ĐẶC BIỆT: Mô tả ngắn gọn nội dung hình ảnh, đồ thị, sơ đồ, hoặc hình học TRỰC TIẾP TRONG trường 'text' khi cần thiết để minh họa câu hỏi. Ví dụ: '(Hình: tam giác vuông ABC với góc B = 90°)' hoặc '(Đồ thị: hàm số y = x^2 - 4x + 3)'. ";
+    }
+    if (subjectInfo.needsFormulas) {
+      subjectEnhancement += "- CÔNG THỨC TOÁN, VẬT LÝ, HÓA HỌC: Giữ nguyên ký hiệu LaTeX trong dấu $...$ cho các công thức toán học, vật lý, hóa học. Ví dụ: $E = mc^2$, $a^2 + b^2 = c^2$, $CH_4 + 2O_2 \rightarrow CO_2 + 2H_2O$. ";
+    }
+
+    let promptText = `Bạn là chuyên gia khảo thí và biên soạn đề thi tốt nghiệp THPT Quốc gia theo cấu trúc 3 phần chuẩn của Bộ Giáo dục & Đào tạo.
+YÊU CẦU TẠO ĐỀ THI:
+- Môn thi: ${subject}
+- PHẦN I: Trắc nghiệm 4 lựa chọn (0.25đ/câu): ${part1Count} câu
+- PHẦN II: Trắc nghiệm Đúng/Sai 4 ý (1.0đ/câu): ${part2Count} câu
+- PHẦN III: Trắc nghiệm trả lời ngắn (0.25đ/câu): ${part3Count} câu
+- Chủ đề/chương: ${cleanedTopics || "ngẫu nhiên, tổng hợp theo chương trình THPT"}
+- Mức độ khó: ${difficultyStr}
+- Tuân thủ đúng chuẩn đánh giá của MOET (Bộ GD&ĐT)
+${subjectEnhancement}
+
+QUY TẮC BẮT BUỘC VỀ TRÍCH XUẤT VÀ CHỐNG TẠO CÂU HỎI RÁC/GIẢ:
+1. CHỈ TẠO CÂU HỎI THẬT: Tạo ra các câu hỏi có tính giáo dục thực sự, không phải câu hỏi umieszcz.
+2. TUYỆT ĐỐI KHÔNG TỰ BỊA ĐẶT / TẠO CÂU HỎI GIẢ HOẶC PLACEHOLDER.
+3. CÔNG THỨC TOÁN VÀ KÝ HIỆU: TUYỆT ĐỐI GIỮ NGUYÊN toàn bộ chuỗi LaTeX nguyên văn trong dấu $...$ — KHÔNG được sửa đổi, dịch hay viết lại công thức.
+4. BẢNG DỮ LIỆU / BẢNG SỐ LIỆU / BẢNG BIẾN THIÊN: Giữ nguyên và định dạng dưới dạng bảng Markdown chuẩn.
+5. BẢO TOÀN THỤT ĐẦU DÒNG VÀ ĐỊNH DẠNG CODE: Đối với các đoạn mã nguồn, BẮT BUỘC giữ nguyên 100% khoảng trắng thụt lề đầu dòng.
+6. HÌNH ẢNH MINH HỌA VÀ ĐỒ THỊ: Nếu cần, mô tả ngắn gọn nội dung hình ảnh TRỰC TIẾP TRONG trường "text".
+7. CÔNG THỨC VẬT LÝ & HÓA HỌC: Giữ nguyên ký hiệu hạt nhân, phân số, số mũ và chỉ số dưới.
+8. TỰ ĐỘNG GHÉP VÀ CHUẨN HÓA TIẾNG VIỆT: Nếu chữ bị tách rời dấu, BẮT BUỘC ghép lại thành từ tiếng Việt chuẩn.
+
+CẤU TRÚC 3 PHẦN BẮT BUỘC:
+1. PHẦN I: Trắc nghiệm nhiều lựa chọn (chọn 1 trong 4 phương án A, B, C, D).
+   - "part": "part1"
+   - "questionType": "multipleChoice"
+   - "text": "Nội dung câu hỏi..."
+   - "options": [{"label": "A", "text": "..."}, {"label": "B", "text": "..."}, {"label": "C", "text": "..."}, {"label": "D", "text": "..."}]
+   - "correctAnswerIndex": 0 đến 3 (0=A, 1=B, 2=C, 3=D)
+   - "pointValue": 0.25
+   - "explanation": "Giải thích chi tiết phương pháp giải..."
+
+2. PHẦN II: Trắc nghiệm Đúng / Sai (mỗi câu gồm 4 ý khẳng định a, b, c, d).
+   - "part": "part2"
+   - "questionType": "trueFalseGroup"
+   - "text": "Nội dung câu hỏi dẫn..."
+   - "subItems": [
+       {"label": "a", "text": "Khẳng định a...", "isCorrect": true hoặc false},
+       {"label": "b", "text": "Khẳng định b...", "isCorrect": true hoặc false},
+       {"label": "c", "text": "Khẳng định c...", "isCorrect": true hoặc false},
+       {"label": "d", "text": "Khẳng định d...", "isCorrect": true hoặc false}
+     ]
+   - "pointValue": 1.0
+
+3. PHẦN III: Trắc nghiệm trả lời ngắn (tự điền kết quả / giá trị số).
+   - "part": "part3"
+   - "questionType": "shortAnswer"
+   - "text": "Nội dung câu hỏi yêu cầu tính toán..."
+   - "shortAnswer": "Đáp án chính xác (ví dụ: 12.5, -4, 2/3)"
+   - "acceptedAnswers": ["12.5", "12,5"] (nhận dạng cả dấu chấm và dấu phẩy)
+   - "pointValue": 0.25
+
+Target Output JSON Schema:
+Trả về DUY NHẤT một mảng JSON hợp lệ chứa các câu hỏi theo schema trên (không dùng markdown code blocks).
+
+Nội dung hướng dẫn chi tiết: Hãy tạo đề thi THPT Quốc gia dựa trên kiến thức của bạn về các chủ đề: ${cleanedTopics || "tổng hợp theo chương trình THPT"}.
+`;
+
+    if (onProgress) onProgress(30, "Đang giao tiếp với Gemini AI để tạo câu hỏi...");
+
+    const payload = {
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 16384,
+        responseMimeType: "application/json"
+      }
+    };
+
+    if (onProgress) onProgress(50, "Đang đợi phản hồi từ Gemini AI...");
+
+    const data = await this.callGeminiAPI(payload, apiKey);
+    const questions = this.parseTHPTQuestionsFromGeminiResponse(data); // Parse THPT questions
+
+    if (onProgress) onProgress(90, "Đang xử lý và validating câu hỏi...");
+
+    if (onProgress) onProgress(98, "Đang hoàn tất bộ đề thi THPT Quốc gia...");
+
+    return questions;
+  }
+
+  // Helper method to extract vocabulary from generated questions (for language learning mode)
+  extractVocabularyFromQuestions(questions) {
+    const vocabularies = [];
+    const wordSet = new Set();
+
+    // Extract potential vocabulary words from question text and options
+    const extractWordsFromText = (text) => {
+      if (!text) return [];
+      // Match English words (3+ characters)
+      const wordMatches = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+      return wordMatches.filter(word =>
+        !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'any', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'].includes(word)
+      );
+    };
+
+    questions.forEach(q => {
+      // Extract from question text
+      const wordsFromText = extractWordsFromText(q.text);
+      wordsFromText.forEach(word => {
+        if (!wordSet.has(word)) {
+          wordSet.add(word);
+          vocabularies.push({
+            word: word,
+            wordType: "", // Would need POS tagging for accuracy
+            phonetic: "",
+            vietnameseMeaning: "", // Would need translation
+            exampleSentence: "",
+            cefrLevel: "B1" // Default, would need proper assessment
+          });
+        }
+      });
+
+      // Extract from options
+      q.options.forEach(option => {
+        const wordsFromOption = extractWordsFromText(option.text);
+        wordsFromOption.forEach(word => {
+          if (!wordSet.has(word)) {
+            wordSet.add(word);
+            vocabularies.push({
+              word: word,
+              wordType: "",
+              phonetic: "",
+              vietnameseMeaning: "",
+              exampleSentence: "",
+              cefrLevel: "B1"
+            });
+          }
+        });
+      });
+    });
+
+    // Limit to reasonable number
+    return vocabularies.slice(0, 20);
+  }
+
 }
 
 export const geminiService = new GeminiAPIService();

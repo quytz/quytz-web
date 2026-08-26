@@ -41,8 +41,8 @@ export const EVENING_GREETINGS = [
   { emoji: "🌙", text: "Chào buổi tối! Đèn sách ban đêm luôn mang lại điểm cao 🌙" },
   { emoji: "🦉", text: "Cú đêm học bài! Quyết tâm không thua đứa bạn cùng lớp 🦉" },
   { emoji: "🚀", text: "Tối mát mẻ, làm vài đề luyện tập rồi thư giãn nào 🚀" },
-  { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày QuizMaster! 💖" },
-  { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng QuizMaster tuổi trẻ thăng hoa ✨" },
+  { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày Quýtz! 💖" },
+  { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng Quýtz tuổi trẻ thăng hoa ✨" },
   { emoji: "🍵", text: "Tối thanh bình, nhâm nhi tách trà ôn lại kiến thức vàng! 🍵" },
   { emoji: "🎵", text: "Bật chút nhạc lofi nhẹ nhàng và chinh phục bài học tối nay! 🎵" }
 ];
@@ -63,8 +63,8 @@ export const TIMELESS_GREETINGS = [
   { emoji: "😜", text: "Chạm vào tôi làm chi? Đi làm bài trắc nghiệm ngay đi! 😜" },
   { emoji: "🛸", text: "Luyện 1 đề hôm nay, mai sau thành tài năng vũ trụ! 🛸" },
   { emoji: "⚽", text: "Người ta mê bóng đá, tôi mê bóng dáng bạn đang cày bài tập! ⚽" },
-  { emoji: "🌟", text: "Học giỏi không phải do may mắn, mà do chăm bấm QuizMaster mỗi ngày! 🌟" },
-  { emoji: "💎", text: "Kiến thức là kho báu, và QuizMaster là chiếc chìa khóa vạn năng! 💎" },
+  { emoji: "🌟", text: "Học giỏi không phải do may mắn, mà do chăm bấm Quýtz mỗi ngày! 🌟" },
+  { emoji: "💎", text: "Kiến thức là kho báu, và Quýtz là chiếc chìa khóa vạn năng! 💎" },
   { emoji: "🏆", text: "Cố thêm một chút mỗi ngày, thành công lớn sẽ tự gõ cửa! 🏆" },
   { emoji: "🧩", text: "Mỗi câu hỏi là một mảnh ghép, ghép đủ là thành cao thủ! 🧩" }
 ];
@@ -110,7 +110,7 @@ export function renderSidebar(selectedProjectId, appState) {
     <aside class="app-sidebar ${isOpen ? 'sidebar-open' : ''}" id="app-sidebar">
       <div class="sidebar-header">
         <div class="brand-row">
-          <img src="assets/AppIcon.png" alt="QuizMaster Icon" class="brand-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%231f7ae8\\' width=\\'100\\' height=\\'100\\' rx=\\'22\\'/><text fill=\\'white\\' font-size=\\'45\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' x=\\'50\\' y=\\'64\\' text-anchor=\\'middle\\'>QM</text></svg>'">
+          <img src="assets/AppIcon.png" alt="Quýtz Icon" class="brand-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%23fa5a0e\\' width=\\'100\\' height=\\'100\\' rx=\\'22\\'/><text fill=\\'white\\' font-size=\\'45\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' x=\\'50\\' y=\\'64\\' text-anchor=\\'middle\\'>QZ</text></svg>'">
           <div class="brand-info">
             <div class="brand-title">${i18n.t("appName")}</div>
             <div class="brand-subtitle">${i18n.t("projects")}</div>
@@ -186,7 +186,7 @@ export function renderSidebar(selectedProjectId, appState) {
 
         <!-- Easter Egg Footer -->
         <div class="app-easter-egg-footer" id="app-easter-egg-footer" title="Chạm 2 lần để xem điều bất ngờ!">
-          QuizMaster ${APP_CONFIG.version} © 2026 | Made in Vietnam
+          Quýtz ${APP_CONFIG.version} © 2026 | Made in Vietnam
         </div>
       </div>
     </aside>
@@ -289,8 +289,8 @@ function getTimeGreeting(hour) {
     const opts = [
       { emoji: "🌙", text: "Chào buổi tối! Đèn sách ban đêm luôn mang lại điểm cao 🌙" },
       { emoji: "🦉", text: "Cú đêm học bài! Quyết tâm không thua đứa bạn cùng lớp 🦉" },
-      { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày QuizMaster! 💖" },
-      { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng QuizMaster tuổi trẻ thăng hoa ✨" }
+      { emoji: "💖", text: "Đường vào tim ai lắm lối, nhưng đường tới điểm 10 chỉ có cày Quýtz! 💖" },
+      { emoji: "✨", text: "Học không chơi đánh rơi tuổi trẻ, học cùng Quýtz tuổi trẻ thăng hoa ✨" }
     ];
     return opts[hour % opts.length];
   } else {

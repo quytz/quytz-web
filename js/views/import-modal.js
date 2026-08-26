@@ -2,7 +2,7 @@
  * QuizMaster Web - Document Import & Gemini Scanner Modal Component
  */
 import { i18n } from "../localization/i18n.js";
-import { CEFR_LEVELS } from "../models/types.js";
+import { CEFR_LEVELS, THPT_SUBJECTS } from "../models/types.js";
 import { renderSF } from "../components/icons.js";
 
 export function renderImportModal(project, modalState) {
@@ -10,8 +10,8 @@ export function renderImportModal(project, modalState) {
   const isTHPT = project.projectType === "thptQuocGia";
 
   let defaultTab = "gemini";
-  if (isLLProject) defaultTab = "lang";
-  if (isTHPT) defaultTab = "thpt";
+  if (isLLProject) defaultTab = "ai-gen-lang"; // AI generation as default for Language Learning
+  if (isTHPT) defaultTab = "ai-gen-thpt"; // AI generation as default for THPT
 
   const activeTab = modalState.activeTab || defaultTab;
   const isScanning = modalState.isScanning;
@@ -46,18 +46,29 @@ export function renderImportModal(project, modalState) {
         <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-card); display: flex; gap: 8px;">
           <div class="segmented-control" style="width: 100%;">
             ${isTHPT ? `
+              <!-- AI Generation Tab (Primary for THPT) -->
+              <button class="segment-btn ${activeTab === 'ai-gen-thpt' ? 'active' : ''}" id="tab-btn-ai-gen-thpt" style="flex: 1;">
+                Tạo đề bằng AI
+              </button>
+              <!-- THPT Scanning Tab (Secondary with warning) -->
               <button class="segment-btn ${activeTab === 'thpt' ? 'active' : ''}" id="tab-btn-thpt" style="flex: 1;">
                 Quét Đề THPT Quốc gia (3 Phần) <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
               </button>
             ` : ''}
 
             ${!isTHPT && !isLLProject ? `
+              <!-- General mode: only Gemini AI and Premade tabs -->
               <button class="segment-btn ${activeTab === 'gemini' ? 'active' : ''}" id="tab-btn-gemini" style="flex: 1;">
                 Quét Tài liệu Gemini AI
               </button>
             ` : ''}
 
             ${isLLProject ? `
+              <!-- AI Generation Tab (Primary for Language Learning) -->
+              <button class="segment-btn ${activeTab === 'ai-gen-lang' ? 'active' : ''}" id="tab-btn-ai-gen-lang" style="flex: 1;">
+                Tạo đề bằng AI
+              </button>
+              <!-- Language Scanning Tab (Secondary with warning) -->
               <button class="segment-btn ${activeTab === 'lang' ? 'active' : ''}" id="tab-btn-lang" style="flex: 1;">
                 Quét Đề Ngoại ngữ & CEFR <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
               </button>
@@ -93,9 +104,11 @@ export function renderImportModal(project, modalState) {
               </div>
             </div>
           ` : `
-            ${activeTab === 'thpt' ? renderTHPTGeminiTab(project, modalState) : ''}
+            ${activeTab === 'ai-gen-thpt' ? renderTHPTAIGenTab(project, modalState) : ''}
+            ${activeTab === 'thpt' ? renderTHPTGeminiTabWithWarning(project, modalState) : ''}
             ${activeTab === 'gemini' ? renderGeneralGeminiTab(project, modalState) : ''}
-            ${activeTab === 'lang' ? renderLanguageExamTab(project, modalState) : ''}
+            ${activeTab === 'ai-gen-lang' ? renderLanguageAIGenTab(project, modalState) : ''}
+            ${activeTab === 'lang' ? renderLanguageExamTabWithWarning(project, modalState) : ''}
             ${activeTab === 'premade' ? renderPremadeTab(project, modalState) : ''}
           `}
         </div>
@@ -117,6 +130,16 @@ export function renderImportModal(project, modalState) {
             ${activeTab === 'lang' && isLLProject ? `
               <button class="btn btn-primary btn-purple" id="btn-start-lang-scan">
                 ${renderSF("sparkles", { size: "14px" })} ${i18n.t("startLangScanBtn")}
+              </button>
+            ` : ''}
+            ${activeTab === 'ai-gen-lang' && isLLProject ? `
+              <button class="btn btn-primary btn-purple" id="btn-start-lang-ai-scan">
+                ${renderSF("sparkles", { size: "14px" })} ${i18n.t("createExamWithAI")}
+              </button>
+            ` : ''}
+            ${activeTab === 'ai-gen-thpt' && isTHPT ? `
+              <button class="btn btn-primary btn-purple" id="btn-start-thpt-ai-scan">
+                ${renderSF("sparkles", { size: "14px" })} ${i18n.t("createExamWithAI")}
               </button>
             ` : ''}
           </div>
@@ -335,7 +358,7 @@ function renderPremadeTab(project, modalState) {
           ${i18n.t("selectQuizFilePrompt")}
         </div>
         <p style="font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: 16px;">
-          Hỗ trợ tệp Zip Bundle (.zip) hoặc tệp JSON (.json) được xuất từ QuizMaster
+          Hỗ trợ tệp Zip Bundle (.zip) hoặc tệp JSON (.json) được xuất từ Quýtz
         </p>
 
         <input type="file" id="file-premade-input" accept=".zip,.json" style="display: none;">
@@ -343,6 +366,225 @@ function renderPremadeTab(project, modalState) {
           ${i18n.t("selectQuizBtn")}
         </button>
       </div>
+    </div>
+  `;
+}
+
+// AI Generation Tabs
+
+// Language Learning Modes
+const LANGUAGE_MODES = [
+  { id: "thpt", name: "THPT Quốc gia", description: "Đề thi THPT môn Tiếng Anh theo chuẩn MOET" },
+  { id: "ielts", name: "IELTS", description: "Đề thi IELTS Academic" }
+];
+
+function renderLanguageAIGenTab(project, modalState) {
+  const mode = modalState.langAIMode || "thpt";
+  const modeInfo = LANGUAGE_MODES.find(m => m.id === mode) || LANGUAGE_MODES[0];
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- Info Banner -->
+      <div class="glass-card">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); text-align: center; padding: 16px;">
+          Tạo đề thi ngoại ngữ bằng AI mà không cần tải lên tài liệu. Chỉ cần mô tả yêu cầu và AI sẽ tạo ra bộ đề thi phù hợp.
+        </div>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          CHỌN LOẠI ĐỀ THI:
+        </label>
+        <div style="display: flex; gap: 12px;">
+          ${LANGUAGE_MODES.map(mode => `
+            <label class="custom-radio">
+              <input type="radio" name="lang-ai-mode" value="${mode.id}" ${modalState.langAIMode === mode.id ? 'checked' : ''}>
+              <span style="font-size: var(--text-sm);">${mode.name}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 8px;">
+          ${modeInfo.description}
+        </div>
+      </div>
+
+      <!-- CEFR Level -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          TRÌNH ĐỘ CEFR:
+        </label>
+        <select class="form-select" id="select-lang-ai-cefr">
+          ${Object.values(CEFR_LEVELS).map(lvl => `
+            <option value="${lvl.id}" ${modalState.langAICEFR === lvl.id ? 'selected' : ''}>${lvl.label}</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <!-- Topic/Theme -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          CHỦ ĐỀ / CHỦ NGHĨA:
+        </label>
+        <textarea class="form-textarea" id="textarea-lang-ai-topic" placeholder="Nhập chủ đề, chương hoặc mô tả ngắn gọn về nội dung muốn tạo đề thi..." rows="3">${escapeHtml(modalState.langAITopic || '')}</textarea>
+      </div>
+
+      <!-- Difficulty Level -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          MỤC ĐỘ KHÓ:
+        </label>
+        <div style="display: flex; gap: 12px;">
+          <label class="custom-radio">
+            <input type="radio" name="lang-ai-difficulty" value="easy" ${modalState.langAIDifficulty === 'easy' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Dễ</span>
+          </label>
+          <label class="custom-radio">
+            <input type="radio" name="lang-ai-difficulty" value="medium" ${modalState.langAIDifficulty === 'medium' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Trung bình</span>
+          </label>
+          <label class="custom-radio">
+            <input type="radio" name="lang-ai-difficulty" value="hard" ${modalState.langAIDifficulty === 'hard' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Khó</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTHPTAIGenTab(project, modalState) {
+  const subject = modalState.thptAISubject || "toan";
+  const subjectInfo = THPT_SUBJECTS.find(s => s.id === subject) || THPT_SUBJECTS[0];
+
+  // Set default values based on subject if not already set
+  const part1Count = modalState.thptAIPart1Count !== undefined ? modalState.thptAIPart1Count : subjectInfo.defaultPart1 || 8;
+  const part2Count = modalState.thptAIPart2Count !== undefined ? modalState.thptAIPart2Count : subjectInfo.defaultPart2 || 4;
+  const part3Count = modalState.thptAIPart3Count !== undefined ? modalState.thptAIPart3Count : subjectInfo.defaultPart3 || 4;
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- Info Banner -->
+      <div class="glass-card">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); text-align: center; padding: 16px;">
+          Tạo đề thi THPT Quốc gia (3 phần) bằng AI mà không cần tải lên tài liệu. Chỉ cần mô tả chủ đề và AI sẽ tạo ra bộ đề thi theo chuẩn MOET.
+        </div>
+      </div>
+
+      <!-- Subject Selector -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          MÔN THI:
+        </label>
+        <select class="form-select" id="select-thpt-ai-subject">
+          ${THPT_SUBJECTS.map(s => `
+            <option value="${s.id}" ${subject === s.id ? 'selected' : ''}>${s.name}</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <!-- Part I: Multiple Choice -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (0.25đ/câu):
+        </label>
+        <input type="number" min="0" max="20" class="form-input" id="input-thpt-ai-part1-count" value="${part1Count}">
+        <span style="font-size: var(--text-xs); color: var(--text-tertiary);">Theo quy định MOET: ${subjectInfo.defaultPart1 || 8} câu</span>
+      </div>
+
+      <!-- Part II: True/False -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          PHẦN II: ĐỪNG / SAI 4 Ý (1.0đ/câu):
+        </label>
+        <input type="number" min="0" max="10" class="form-input" id="input-thpt-ai-part2-count" value="${part2Count}">
+        <span style="font-size: var(--text-xs); color: var(--text-tertiary);">Theo quy định MOET: ${subjectInfo.defaultPart2 || 4} câu</span>
+      </div>
+
+      <!-- Part III: Short Answer -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          PHẦN III: TRẢ LỜI NGẮN (0.25đ/câu):
+        </label>
+        <input type="number" min="0" max="10" class="form-input" id="input-thpt-ai-part3-count" value="${part3Count}">
+        <span style="font-size: var(--text-xs); color: var(--text-tertiary);">Theo quy định MOET: ${subjectInfo.defaultPart3 || 4} câu</span>
+      </div>
+
+      <!-- Topics/Chapters -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          CHƯƠNG / CHỦ ĐỀ (TÙY CHỌN):
+        </label>
+        <textarea class="form-textarea" id="textarea-thpt-ai-topics" placeholder="Nhập các chương, chủ đề muốn xuất đề (để trống để AI隨機選取)..." rows="3">${escapeHtml(modalState.thptAITopics || '')}</textarea>
+        <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 4px;">
+          Để trống để AI tạo đề thi ngẫu nhiên theo estánd MOET
+        </p>
+      </div>
+
+      <!-- Difficulty Level -->
+      <div class="glass-card">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+          MỤC ĐỘ KHÓ:
+        </label>
+        <div style="display: flex; gap: 12px;">
+          <label class="custom-radio">
+            <input type="radio" name="thpt-ai-difficulty" value="easy" ${modalState.thptAIDifficulty === 'easy' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Dễ</span>
+          </label>
+          <label class="custom-radio">
+            <input type="radio" name="thpt-ai-difficulty" value="medium" ${modalState.thptAIDifficulty === 'medium' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Trung bình</span>
+          </label>
+          <label class="custom-radio">
+            <input type="radio" name="thpt-ai-difficulty" value="hard" ${modalState.thptAIDifficulty === 'hard' ? 'checked' : ''}>
+            <span style="font-size: var(--text-sm);">Khó</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Updated Scanning Tabs with Warnings
+
+function renderLanguageExamTabWithWarning(project, modalState) {
+  return `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- Warning Banner -->
+      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 20px;">🚧</span>
+        <div>
+          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
+            CẢNH BÁO: CHỨC NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
+            Chế độ Quét Đề thi Ngoại ngữ & CEFR đang trong giai đoạn phát triển và thử nghiệm. Tính năng này yêu cầu tài liệu là đề thi ngoại ngữ có cấu trúc rõ ràng và có thể không ổn định.
+          </div>
+        </div>
+      </div>
+
+      ${renderLanguageExamTab(project, modalState)}
+    </div>
+  `;
+}
+
+function renderTHPTGeminiTabWithWarning(project, modalState) {
+  return `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- Warning Banner -->
+      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 20px;">🚧</span>
+        <div>
+          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
+            CẢNH BÁO: CHỨC NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
+            Chế độ Quét Đề thi THPT Quốc gia (3 Phần) đang trong giai đoạn phát triển và thử nghiệm. Việc bóc tách công thức toán phức tạp và hình vẽ từ file tài liệu có thể chưa hoàn hảo và cần được kiểm tra lại trong Trình chỉnh sửa đề thi.
+          </div>
+        </div>
+      </div>
+
+      ${renderTHPTGeminiTab(project, modalState)}
     </div>
   `;
 }
@@ -367,6 +609,13 @@ export function bindImportModalEvents(modalState, handlers) {
 
   const tabPremade = document.getElementById("tab-btn-premade");
   if (tabPremade) tabPremade.onclick = () => handlers.onSwitchTab("premade");
+
+  // AI Generation Tab buttons
+  const tabAIGenLang = document.getElementById("tab-btn-ai-gen-lang");
+  if (tabAIGenLang) tabAIGenLang.onclick = () => handlers.onSwitchTab("ai-gen-lang");
+
+  const tabAIGenTHPT = document.getElementById("tab-btn-ai-gen-thpt");
+  if (tabAIGenTHPT) tabAIGenTHPT.onclick = () => handlers.onSwitchTab("ai-gen-thpt");
 
   // THPT File Input
   const browseTHPT = document.getElementById("btn-browse-thpt");
@@ -452,6 +701,81 @@ export function bindImportModalEvents(modalState, handlers) {
     cefrSelect.onchange = (e) => { modalState.targetCEFR = e.target.value; };
   }
 
+  // Language AI Generation Inputs
+  const langAIModeRadios = document.getElementsByName("lang-ai-mode");
+  langAIModeRadios.forEach(radio => {
+    radio.onchange = (e) => { modalState.langAIMode = e.target.value; };
+  });
+
+  const langAICEFRSelect = document.getElementById("select-lang-ai-cefr");
+  if (langAICEFRSelect) {
+    langAICEFRSelect.onchange = (e) => { modalState.langAICEFR = e.target.value; };
+  }
+
+  const langAITopicInput = document.getElementById("textarea-lang-ai-topic");
+  if (langAITopicInput) {
+    langAITopicInput.oninput = (e) => { modalState.langAITopic = e.target.value; };
+  }
+
+  const langAIDifficultyRadios = document.getElementsByName("lang-ai-difficulty");
+  langAIDifficultyRadios.forEach(radio => {
+    radio.onchange = (e) => { modalState.langAIDifficulty = e.target.value; };
+  });
+
+  // THPT AI Generation Inputs
+  const thptAISubjectSelect = document.getElementById("select-thpt-ai-subject");
+  if (thptAISubjectSelect) {
+    thptAISubjectSelect.onchange = (e) => {
+      modalState.thptAISubject = e.target.value;
+      // Update part counts based on subject selection
+      const subjectInfo = THPT_SUBJECTS.find(s => s.id === e.target.value) || THPT_SUBJECTS[0];
+      const part1Input = document.getElementById("input-thpt-ai-part1-count");
+      const part2Input = document.getElementById("input-thpt-ai-part2-count");
+      const part3Input = document.getElementById("input-thpt-ai-part3-count");
+
+      // Only update if inputs haven't been manually changed (value equals default)
+      if (part1Input && part1Input.value == (modalState.thptAIPart1Count || 8)) {
+        part1Input.value = subjectInfo.defaultPart1 || 8;
+        modalState.thptAIPart1Count = subjectInfo.defaultPart1 || 8;
+      }
+      if (part2Input && part2Input.value == (modalState.thptAIPart2Count || 4)) {
+        part2Input.value = subjectInfo.defaultPart2 || 4;
+        modalState.thptAIPart2Count = subjectInfo.defaultPart2 || 4;
+      }
+      if (part3Input && part3Input.value == (modalState.thptAIPart3Count || 4)) {
+        part3Input.value = subjectInfo.defaultPart3 || 4;
+        modalState.thptAIPart3Count = subjectInfo.defaultPart3 || 4;
+      }
+
+      handlers.onUpdateView();
+    };
+  }
+
+  const thptAIPart1CountInput = document.getElementById("input-thpt-ai-part1-count");
+  if (thptAIPart1CountInput) {
+    thptAIPart1CountInput.oninput = (e) => { modalState.thptAIPart1Count = parseInt(e.target.value) || 8; };
+  }
+
+  const thptAIPart2CountInput = document.getElementById("input-thpt-ai-part2-count");
+  if (thptAIPart2CountInput) {
+    thptAIPart2CountInput.oninput = (e) => { modalState.thptAIPart2Count = parseInt(e.target.value) || 4; };
+  }
+
+  const thptAIPart3CountInput = document.getElementById("input-thpt-ai-part3-count");
+  if (thptAIPart3CountInput) {
+    thptAIPart3CountInput.oninput = (e) => { modalState.thptAIPart3Count = parseInt(e.target.value) || 4; };
+  }
+
+  const thptAITopicsInput = document.getElementById("textarea-thpt-ai-topics");
+  if (thptAITopicsInput) {
+    thptAITopicsInput.oninput = (e) => { modalState.thptAITopics = e.target.value; };
+  }
+
+  const thptAIDifficultyRadios = document.getElementsByName("thpt-ai-difficulty");
+  thptAIDifficultyRadios.forEach(radio => {
+    radio.onchange = (e) => { modalState.thptAIDifficulty = e.target.value; };
+  });
+
   // Scan Actions
   const thptScanBtn = document.getElementById("btn-start-thpt-scan");
   if (thptScanBtn) thptScanBtn.onclick = () => handlers.onStartTHPTScan();
@@ -461,6 +785,13 @@ export function bindImportModalEvents(modalState, handlers) {
 
   const langScanBtn = document.getElementById("btn-start-lang-scan");
   if (langScanBtn) langScanBtn.onclick = () => handlers.onStartLanguageScan();
+
+  // AI Generation Actions
+  const langAIGenBtn = document.getElementById("btn-start-lang-ai-scan");
+  if (langAIGenBtn) langAIGenBtn.onclick = () => handlers.onStartLanguageAIGen();
+
+  const thptAIGenBtn = document.getElementById("btn-start-thpt-ai-scan");
+  if (thptAIGenBtn) thptAIGenBtn.onclick = () => handlers.onStartTHPTAIGen();
 }
 
 function escapeHtml(text) {
