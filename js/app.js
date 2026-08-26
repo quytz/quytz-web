@@ -656,7 +656,6 @@ class QuizMasterApp {
       selectedFileContent: "",
       quizTitle: "",
       isCreateMultipleChoice: false, // UNTICKED BY DEFAULT
-      aiLanguage: storage.settings.language || "vi",
       depthMode: "normal",
       targetCEFR: "ALL",
       isScanning: false
@@ -671,7 +670,7 @@ class QuizMasterApp {
       theme: storage.settings.theme,
       fontSize: storage.settings.fontSize,
       uiScale: storage.settings.uiScale,
-      language: storage.settings.language,
+      language: "vi",
       isTestingKey: false,
       keyValidationResult: null
     };
@@ -684,7 +683,7 @@ class QuizMasterApp {
       step: 1,
       apiKey: storage.settings.apiKey,
       theme: storage.settings.theme,
-      language: storage.settings.language,
+      language: "vi",
       isTestingKey: false,
       keyValidationResult: null
     };
@@ -903,18 +902,14 @@ class QuizMasterApp {
     this.render();
 
     try {
-      const selectedAiLang = this.modalState.aiLanguage || storage.settings.language || "vi";
       const questions = await geminiService.generateQuiz({
         documentText: this.modalState.selectedFileContent,
         isCreateMultipleChoice: this.modalState.isCreateMultipleChoice,
         apiKey: storage.settings.apiKey,
-        language: selectedAiLang,
+        language: "vi",
         depthMode: this.modalState.depthMode,
         onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
-
-      storage.settings.language = selectedAiLang;
-      storage.saveSettings();
 
       if (!questions || questions.length === 0) {
         throw new Error("Không tìm thấy hoặc không tạo được câu hỏi nào từ tài liệu.");
@@ -1110,7 +1105,7 @@ class QuizMasterApp {
         question: this.modalState.question,
         userQuery: this.modalState.userQuery,
         apiKey: storage.settings.apiKey,
-        language: storage.settings.language
+        language: "vi"
       });
 
       telemetry.trackAiFeature("explanations_asked", 1);
@@ -1375,9 +1370,9 @@ class QuizMasterApp {
             theme: this.modalState.theme,
             fontSize: this.modalState.fontSize,
             uiScale: this.modalState.uiScale,
-            language: this.modalState.language
+            language: "vi"
           });
-          i18n.setLanguage(this.modalState.language);
+          i18n.setLanguage("vi");
           this.showToast("success", i18n.t("saveSettings"));
           this.closeModal();
         },
@@ -1442,10 +1437,10 @@ class QuizMasterApp {
           storage.saveSettings({
             apiKey: this.modalState.apiKey,
             theme: this.modalState.theme,
-            language: this.modalState.language,
+            language: "vi",
             hasCompletedFirstTimeSetup: true
           });
-          i18n.setLanguage(this.modalState.language);
+          i18n.setLanguage("vi");
           this.showToast("success", "Cấu hình thành công!");
           this.closeModal();
         },

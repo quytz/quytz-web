@@ -20,8 +20,8 @@ Khi truy cập **QuizMaster Web** lần đầu tiên trên trình duyệt, ứng
    - Dán API Key vào ô nhập liệu và nhấn nút **"Kiểm tra API Key"** (khi kết nối thành công, ứng dụng sẽ hiển thị thông báo màu xanh `✓ API Key hợp lệ`).
    - Nhấn **"Tiếp tục ➔"**.
 
-3. **Bước 3: Tùy chỉnh Giao diện, Ngôn ngữ & Hướng dẫn Nhanh**
-   - Chọn **Ngôn ngữ** (Tiếng Việt / English) và **Chủ đề** (Sáng / Tối / Tự động theo hệ thống).
+3. **Bước 3: Tùy chỉnh Giao diện & Hướng dẫn Nhanh**
+   - Chọn **Chủ đề giao diện** (Sáng / Tối / Tự động theo hệ thống).
    - Xem qua tóm tắt các phím tắt và thao tác nhanh để tiện sử dụng trên máy tính.
 
 4. **Bước 4: Hoàn tất Cấu hình**
@@ -36,8 +36,7 @@ Khi truy cập **QuizMaster Web** lần đầu tiên trên trình duyệt, ứng
    2. Nhấn vào biểu tượng **Cài đặt (⚙️)** ở đầu thanh bên (Sidebar).
    3. Nếu cần lấy mã mới, bấm nút **"Lấy API Key từ Google AI Studio ↗"**, tạo và sao chép mã dán vào ô **"Google AI Studio Key (Gemini API)"**.
    4. Nhấn **"Kiểm tra API Key"** để chắc chắn hệ thống phản hồi tốt (hiển thị thông báo màu xanh `✓ API Key hợp lệ`).
-   5. Tùy chỉnh Chủ đề giao diện (Sáng / Tối / Tự động) và Ngôn ngữ ứng dụng (Tiếng Việt / English).
-      - *💡 Lưu ý: Khi chuyển ngôn ngữ ứng dụng sang Tiếng Anh, Gemini AI cũng sẽ tự động biên soạn câu hỏi, phương án và giải thích bằng Tiếng Anh.*
+   5. Tùy chỉnh Chủ đề giao diện (Sáng / Tối / Tự động).
 </details>
 
 ### Lưu ý về Lưu trữ & Quyền riêng tư trên Trình duyệt:

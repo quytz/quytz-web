@@ -125,9 +125,7 @@ class GeminiAPIService {
     language,
     depthMode
   }) {
-    const targetLangInstruction = language === "en"
-      ? "STRICT LANGUAGE REQUIREMENT: Write ALL questions, options, and explanations in ENGLISH."
-      : "YÊU CẦU NGÔN NGỮ BẮT BUỘC: Viết BẮT BUỘC TOÀN BỘ câu hỏi, các phương án lựa chọn và phần giải thích bằng TIẾNG VIỆT.";
+    const targetLangInstruction = "YÊU CẦU NGÔN NGỮ BẮT BUỘC: Viết BẮT BUỘC TOÀN BỘ câu hỏi, các phương án lựa chọn và phần giải thích bằng TIẾNG VIỆT.";
 
     let depthInstruction = "";
     if (depthMode === "core") {
@@ -391,11 +389,11 @@ ${documentText}`;
     }
 
     const optionsText = question.options.map(o => `${o.label}. ${o.text}`).join("\n");
-    const targetLang = language === "en" ? "ENGLISH" : "VIETNAMESE";
+    const targetLang = "VIETNAMESE";
 
     const promptText = `You are an expert academic tutor. A student is asking for a detailed explanation regarding the following multiple-choice question.
 
-Language Requirement: Respond in ${targetLang}.
+Language Requirement: Respond exclusively in ${targetLang} (Tiếng Việt).
 
 Question: ${question.text}
 Options:
