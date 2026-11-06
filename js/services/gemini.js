@@ -6,6 +6,7 @@
 import { APP_CONFIG } from "../config.js";
 import { createQuestion, createQuestionOption, createSubItem, createVocabularyCard, THPT_SUBJECTS } from "../models/types.js";
 import { documentParser } from "./document-parser.js";
+import { storage } from "./storage.js";
 
 function restoreImageTokens(text) {
   if (!text) return "";
@@ -26,16 +27,125 @@ function restoreImageTokens(text) {
   });
 }
 
-class GeminiAPIService {
-  constructor() {
-    this.model = "gemini-3.5-flash-lite";
+function cleanRawVocabText(text) {
+  if (!text) return "";
+  let clean = text.trim();
+  if (clean.includes("{\\rtf") || clean.startsWith("{\\")) {
+    clean = clean.replace(/\{\\\*[\s\S]*?\}/g, "");
+    clean = clean.replace(/\{\\(?:fonttbl|colortbl|stylesheet|info)[\s\S]*?\}/gi, "");
+    clean = clean.replace(/\\(?:par|line)\b/gi, "\n");
+    clean = clean.replace(/\\([\{\}\\])/g, "$1");
+    clean = clean.replace(/\\\w+\d*\s?/g, " ");
+    clean = clean.replace(/[{}]/g, " ");
+  }
+  return clean.trim();
+}
+
+function extractVocabListItems(rawText) {
+  const text = cleanRawVocabText(rawText);
+  if (!text || !text.trim()) return [];
+
+  const bulletOrNumberedRegex = /^[\s*\-•\d]+[\.\)\:\s\-]\s*/;
+  const posPattern = /\s*\(((?:adj|adv|noun|n|verb|v|phr\s*v|phrase|prep|idiom|collocation|a|vt|vi|pron|conj|int|exp))\)\s*/gi;
+
+  // Case 1: Continuous single-line or inline text with parenthetical POS tags (e.g. "amazing (adj) army-like (adj) ...")
+  if (!text.includes("\n") && !text.includes(";") && posPattern.test(text)) {
+    const items = [];
+    const pattern = /([^\(\)]+?)\s*\(((?:adj|adv|noun|n|verb|v|phr\s*v|phrase|prep|idiom|collocation|a|vt|vi|pron|conj|int|exp))\)/gi;
+    let match;
+    let lastIndex = 0;
+    while ((match = pattern.exec(text)) !== null) {
+      let rawChunk = match[1].trim();
+      const pos = match[2].trim().toLowerCase();
+      
+      const words = rawChunk.split(/\s+/).filter(Boolean);
+      if (words.length > 2) {
+        const mainWord = words[words.length - 1];
+        const precedingPhrase = words.slice(0, -1).join(" ");
+        items.push({ word: precedingPhrase, meaning: "", wordType: "" });
+        items.push({ word: mainWord, meaning: "", wordType: pos });
+      } else if (words.length === 2 && (pos === "adj" || pos === "v")) {
+        const isCompound = /^(coral|ice|sea|rain|solar|climate|global|public|long|short|well|ill)\b/i.test(rawChunk);
+        if (isCompound) {
+          items.push({ word: rawChunk, meaning: "", wordType: pos });
+        } else {
+          items.push({ word: words[0], meaning: "", wordType: "" });
+          items.push({ word: words[1], meaning: "", wordType: pos });
+        }
+      } else {
+        items.push({ word: rawChunk, meaning: "", wordType: pos });
+      }
+      lastIndex = pattern.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      const remaining = text.substring(lastIndex).trim();
+      if (remaining) {
+        items.push({ word: remaining, meaning: "", wordType: "" });
+      }
+    }
+    if (items.length > 0) return items;
   }
 
-  async validateAPIKey(apiKey) {
+  const lines = text.split(/[\n;]+/).map(l => l.trim()).filter(Boolean);
+  const words = [];
+
+  for (const line of lines) {
+    const cleanedLine = line.replace(bulletOrNumberedRegex, "").trim();
+    if (!cleanedLine) continue;
+
+    const defMatch = cleanedLine.match(/^([a-zA-Z\s\-\'\/\(\)]+?)(?:\s*[:\-\–\—\=\>\→]\s*|\s*\[.*?\]\s*)(.+)$/);
+    if (defMatch && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(defMatch[1].trim())) {
+      const term = defMatch[1].trim();
+      if (term) {
+        words.push({ word: term, meaning: defMatch[2].trim() });
+        continue;
+      }
+    }
+
+    if (cleanedLine.includes(",")) {
+      const items = cleanedLine.split(",").map(i => i.trim()).filter(Boolean);
+      items.forEach(item => {
+        const itemClean = item.replace(bulletOrNumberedRegex, "").trim();
+        if (itemClean && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(itemClean)) {
+          words.push({ word: itemClean, meaning: "" });
+        }
+      });
+      continue;
+    }
+
+    if (lines.length === 1 && cleanedLine.split(/\s+/).length > 2 && !cleanedLine.includes(":") && !cleanedLine.includes("-")) {
+      const spaceWords = cleanedLine.split(/\s+/).filter(Boolean);
+      spaceWords.forEach(w => {
+        if (w && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(w)) {
+          words.push({ word: w, meaning: "" });
+        }
+      });
+      continue;
+    }
+
+    words.push({ word: cleanedLine, meaning: "" });
+  }
+
+  return words;
+}
+
+class GeminiAPIService {
+  constructor() {
+    this.model = APP_CONFIG.defaultModel || "gemini-3.5-flash-lite";
+  }
+
+  getModel(overrideModel = null) {
+    if (overrideModel) return overrideModel;
+    return storage?.settings?.model || APP_CONFIG.defaultModel || "gemini-3.5-flash-lite";
+  }
+
+  async validateAPIKey(apiKey, model = null) {
     const key = (apiKey || "").trim();
     if (!key) return false;
+    const activeModel = this.getModel(model);
+    this.model = activeModel;
 
-    const url = `${APP_CONFIG.geminiBaseUrl}/${this.model}:generateContent?key=${key}`;
+    const url = `${APP_CONFIG.geminiBaseUrl}/${activeModel}:generateContent?key=${key}`;
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -46,17 +156,20 @@ class GeminiAPIService {
       });
       if (res.ok) return true;
     } catch (e) {
-      console.warn(`Validate API key failed for ${this.model}:`, e);
+      console.warn(`Validate API key failed for ${activeModel}:`, e);
     }
     return false;
   }
 
   async generateQuiz({
     documentText,
+    answerText = "",
     isCreateMultipleChoice = false,
     apiKey,
     language = "vi",
     depthMode = "normal",
+    images = [],
+    model = null,
     onProgress = null
   }) {
     const key = (apiKey || "").trim();
@@ -64,13 +177,19 @@ class GeminiAPIService {
       throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi quét.");
     }
 
-    const cleanedText = documentText.trim();
-    if (!cleanedText) return [];
+    const cleanedText = (documentText || "").trim();
+    const hasImages = Array.isArray(images) && images.length > 0;
+    if (!cleanedText && !hasImages) return [];
 
     if (onProgress) onProgress(15, "Đang phân tích cấu trúc tài liệu...");
 
+    let effectiveAnswerText = (answerText || "").trim();
+    if (!effectiveAnswerText && !isCreateMultipleChoice) {
+      effectiveAnswerText = this.extractTrailingAnswerBlock(cleanedText);
+    }
+
     const chunkSize = 13000;
-    if (cleanedText.length > chunkSize) {
+    if (cleanedText.length > chunkSize && !hasImages) {
       const chunks = this.splitDocumentIntoChunks(cleanedText, chunkSize);
       let allQuestions = [];
       const seenTexts = new Set();
@@ -83,10 +202,13 @@ class GeminiAPIService {
         try {
           const chunkQuestions = await this.generateQuizSingleBatch({
             documentText: chunk,
+            answerText: effectiveAnswerText,
             isCreateMultipleChoice,
             apiKey: key,
             language,
-            depthMode
+            depthMode,
+            images: [],
+            model
           });
           for (const q of chunkQuestions) {
             const normalized = q.text.toLowerCase().trim();
@@ -109,10 +231,13 @@ class GeminiAPIService {
     if (onProgress) onProgress(45, "Gemini đang trích xuất câu hỏi trắc nghiệm...");
     const res = await this.generateQuizSingleBatch({
       documentText: cleanedText,
+      answerText: effectiveAnswerText,
       isCreateMultipleChoice,
       apiKey: key,
       language,
-      depthMode
+      depthMode,
+      images,
+      model
     });
     if (onProgress) onProgress(98, "Đang hoàn tất bộ câu hỏi...");
     return res;
@@ -120,10 +245,13 @@ class GeminiAPIService {
 
   async generateQuizSingleBatch({
     documentText,
+    answerText = "",
     isCreateMultipleChoice,
     apiKey,
     language,
-    depthMode
+    depthMode,
+    images = [],
+    model = null
   }) {
     const targetLangInstruction = "YÊU CẦU NGÔN NGỮ BẮT BUỘC: Viết BẮT BUỘC TOÀN BỘ câu hỏi, các phương án lựa chọn và phần giải thích bằng TIẾNG VIỆT.";
 
@@ -169,9 +297,21 @@ Return ONLY a valid JSON array of question objects without markdown code blocks:
 Document Content:
 ${documentText}`;
     } else {
+      const answerPrompt = answerText && answerText.trim()
+        ? `
+OFFICIAL ANSWER KEY FILE CONTENT:
+--------------------------------------------------------------------------------
+${answerText.trim()}
+--------------------------------------------------------------------------------
+CRITICAL ANSWER KEY RULES:
+- Use this official answer key to accurately determine "correctAnswerIndex" (0 for A, 1 for B, 2 for C, 3 for D) for each question.
+- Do NOT convert answer keys into quiz questions.`
+        : "";
+
       promptText = `You are an expert document OCR quiz extractor. Extract ALL real, pre-existing questions, answer options (A, B, C, D), correct answer indexes (0-based integer), and explanations found in the document.
 
 ${targetLangInstruction}
+${answerPrompt}
 
 CRITICAL EXTRACTION & ANTI-HALLUCINATION RULES:
 1. MANDATORY REAL QUESTION EXTRACTION: Extract ALL questions present in the document from beginning to end.
@@ -203,8 +343,20 @@ Document Content:
 ${documentText}`;
     }
 
+    const parts = [{ text: promptText }];
+    if (images && images.length > 0) {
+      images.forEach(imgData => {
+        parts.push({
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: imgData.split(",")[1]
+          }
+        });
+      });
+    }
+
     const payload = {
-      contents: [{ parts: [{ text: promptText }] }],
+      contents: [{ parts }],
       generationConfig: {
         temperature: isCreateMultipleChoice ? 0.3 : 0.1,
         maxOutputTokens: 16384,
@@ -212,14 +364,30 @@ ${documentText}`;
       }
     };
 
-    const data = await this.callGeminiAPI(payload, apiKey);
+    const data = await this.callGeminiAPI(payload, apiKey, model);
     return this.parseQuestionsFromGeminiResponse(data, isCreateMultipleChoice);
+  }
+
+  extractTrailingAnswerBlock(text) {
+    if (!text) return "";
+    const keyMatch = text.match(/\n+(?:(?:BẢNG\s+)?ĐÁP\s+ÁN|ANSWER\s+KEY|HƯỚNG\s+DẪN\s+CHẤM|KEY\s*:|KEYS\s*:|ĐÁP\s+SỐ)[\s\S]+$/i);
+    if (keyMatch && keyMatch[0].length > 20) {
+      return keyMatch[0].trim();
+    }
+    const trailingLettersMatch = text.match(/(?:\n\s*[A-D]\s*){10,}$/i);
+    if (trailingLettersMatch) {
+      return trailingLettersMatch[0].trim();
+    }
+    return "";
   }
 
   async generateLanguageExam({
     documentText,
+    answerText = "",
     targetCEFR = "ALL",
     apiKey,
+    images = [],
+    model = null,
     onProgress = null
   }) {
     const key = (apiKey || "").trim();
@@ -227,13 +395,19 @@ ${documentText}`;
       throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi quét.");
     }
 
-    const cleanedText = documentText.trim();
-    if (!cleanedText) return { questions: [], vocabularies: [], detectedDurationMinutes: null };
+    const cleanedText = (documentText || "").trim();
+    const hasImages = Array.isArray(images) && images.length > 0;
+    if (!cleanedText && !hasImages) return { questions: [], vocabularies: [], detectedDurationMinutes: null };
 
     if (onProgress) onProgress(15, "Đang phân tích cấu trúc đề thi ngoại ngữ...");
 
-    const chunkSize = 13000;
-    if (cleanedText.length > chunkSize) {
+    let effectiveAnswerText = (answerText || "").trim();
+    if (!effectiveAnswerText) {
+      effectiveAnswerText = this.extractTrailingAnswerBlock(cleanedText);
+    }
+
+    const chunkSize = 24000;
+    if (cleanedText.length > chunkSize && !hasImages) {
       const chunks = this.splitDocumentIntoChunks(cleanedText, chunkSize);
       let allQuestions = [];
       let allVocabs = [];
@@ -249,8 +423,11 @@ ${documentText}`;
         try {
           const res = await this.generateLanguageExamSingleBatch({
             documentText: chunk,
+            answerText: effectiveAnswerText,
             targetCEFR,
-            apiKey: key
+            apiKey: key,
+            images: [],
+            model
           });
           if (!detectedDuration) detectedDuration = res.detectedDurationMinutes;
           for (const q of res.questions) {
@@ -287,50 +464,99 @@ ${documentText}`;
     if (onProgress) onProgress(45, "Gemini đang quét đề thi và tạo thẻ từ vựng...");
     const res = await this.generateLanguageExamSingleBatch({
       documentText: cleanedText,
+      answerText: effectiveAnswerText,
       targetCEFR,
-      apiKey: key
+      apiKey: key,
+      images,
+      model
     });
     if (onProgress) onProgress(98, "Đang hoàn tất bộ đề thi ngoại ngữ...");
     return res;
   }
 
-  async generateLanguageExamSingleBatch({ documentText, targetCEFR, apiKey }) {
+  async generateLanguageExamSingleBatch({ documentText, answerText = "", targetCEFR, apiKey, images = [], model = null }) {
     const cefrFilter = targetCEFR === "ALL"
-      ? "Extract vocabulary words across CEFR levels (A1 to C2) found in the test."
-      : `Focus vocabulary extraction on words around CEFR level ${targetCEFR} or higher.`;
+      ? "Extract high-yield vocabulary words, idioms, and collocations across all CEFR levels (A1 to C2) found in the test."
+      : `Focus vocabulary extraction on high-yield words, idioms, and collocations around CEFR level ${targetCEFR} or higher.`;
 
-    const promptText = `You are a master English linguistics professor and exam parser specializing in Vietnamese National High School Graduation Exams ("Đề thi tốt nghiệp THPT môn Tiếng Anh"), IELTS, and CEFR-aligned standardized language tests.
+    const answerSectionPrompt = answerText && answerText.trim()
+      ? `
+OFFICIAL SEPARATE ANSWER KEY FILE CONTENT:
+--------------------------------------------------------------------------------
+${answerText.trim()}
+--------------------------------------------------------------------------------
+CRITICAL OFFICIAL ANSWER KEY MAPPING INSTRUCTIONS:
+1. The user has provided an OFFICIAL ANSWER KEY above for this exam.
+2. You MUST cross-reference each question in the test document with this official answer key to set "correctAnswerIndex" (0 for A, 1 for B, 2 for C, 3 for D) with 100% accuracy.
+3. Carefully match section headers (e.g., Section A Listening, Section B Lexical & Grammar, Section C Reading, PHẦN TRẮC NGHIỆM, Part 1, Part 2) and question numbers (1, 2, 3... or 31, 32...).
+4. If the answer key document contains official explanations, grammatical notes, or audio scripts (transcripts), extract them into the "explanation" field of the corresponding questions.
+5. NEVER generate answer key rows or answer listings as quiz questions.`
+      : `
+ANSWER DETECTION INSTRUCTIONS:
+1. CHECK FOR EMBEDDED OR TRAILING ANSWER KEYS: Many Vietnamese English exams place the answer key at the very bottom or end of the document (under "ĐÁP ÁN", "ANSWER KEY", "HƯỚNG DẪN CHẤM", or as a sequence of letters A, B, C, D). If present, cross-reference them to set "correctAnswerIndex" accurately.
+2. DO NOT treat the answer key list, grading scale, or scoring rubric as exam questions.
+3. If no answer key is present for a question, accurately solve the question using your expert knowledge of English grammar, vocabulary, collocations, phonetics, and reading comprehension.`;
 
-Analyze the provided document text and perform two tasks in a single JSON response:
+    const promptText = `You are a master English linguistics professor and specialized exam parser for Vietnamese High School Graduation Exams ("Đề thi tốt nghiệp THPT môn Tiếng Anh"), Provincial & National Excellent Student Exams ("Đề thi Học Sinh Giỏi (HSG) THPT môn Tiếng Anh"), IELTS, and CEFR standardized tests.
 
-CRITICAL ACCURACY & WORD ORDER RULES:
-1. PRESERVE ORIGINAL WORD ORDER: Maintain the exact natural word sequence and grammatical structure for all questions, reading passages, and options. Do not scramble words.
-2. EXTRACT ALL QUESTIONS IN THE PROVIDED CHUNK: Do not omit or truncate any question.
-3. PRESERVE OPTION ORDER: Keep options (A, B, C, D) in their exact original sequence.
+Analyze the provided exam document and generate a comprehensive JSON response containing:
+1. Structured multiple-choice questions ("questions")
+2. High-yield vocabulary, idioms & collocations flashcard deck ("vocabularies")
+3. Detected exam duration ("durationMinutes")
 
-TASK 1: Extract all Exam Questions into structured sections:
-- Detect if the document states an allotted exam time (e.g. "Thời gian làm bài: 50 phút", "Time allowed: 60 minutes"). If found, set "durationMinutes" to that integer. If not found, set "durationMinutes" to null.
-- Identify the skill of each question: "reading" (Reading comprehension / Đọc hiểu), "listening" (Nghe hiểu), "lexical" (Grammar, Vocabulary, Pronunciation, Stress / Ngữ âm, Trọng âm, Tìm lỗi sai, Điền từ vào đoạn văn / Cloze test), or "general".
+CRITICAL ACCURACY & INTEGRITY RULES:
+1. PRESERVE ORIGINAL WORD ORDER & SEQUENCE: Maintain exact phrasing, natural word sequence, and grammatical structure for all questions, reading passages, and options. Do not scramble words.
+2. PRESERVE OPTION ORDER: Keep options (A, B, C, D) in their exact original sequence.
+3. EXTRACT ALL QUESTIONS IN THE PROVIDED CHUNK: Do not omit or truncate any valid question.
+
+TASK 1: Extract all Exam Questions into structured format:
+- TIME DETECTION: Detect if the document states an allotted exam time (e.g. "Thời gian làm bài: 50 phút", "Time allowed: 60 minutes", "180 phút"). If found, set "durationMinutes" to that integer. If not found, set "durationMinutes" to null.
+- QUESTION SKILLS & SUBTOPICS:
+  * "skill": Assign one of:
+    - "lexical": Grammar, Vocabulary, Word formation, Phrasal verbs, Idioms, Collocations, Pronunciation, Stress, Finding errors, or Cloze test (điền từ vào đoạn văn).
+    - "reading": Reading comprehension passages and related questions.
+    - "listening": Listening comprehension questions.
+    - "general": General language questions.
+  * "subTopic": Provide a clear Vietnamese label, e.g.:
+    - "Phát âm" (Pronunciation)
+    - "Trọng âm" (Stress)
+    - "Ngữ pháp & Từ vựng" (Lexical & Grammar)
+    - "Từ đồng nghĩa" (Closest meaning) / "Từ trái nghĩa" (Opposite meaning)
+    - "Tìm lỗi sai" (Error identification)
+    - "Điền từ vào đoạn văn" (Cloze test)
+    - "Đọc hiểu" (Reading comprehension)
+    - "Nghe hiểu" (Listening comprehension)
+
+- CRITICAL RULE FOR PHONETICS & TARGET MARKINGS:
+  * Pronunciation & Stress questions test specific sounds or stress positions.
+  * Underlined letters or words in the source document are marked with <u>...</u>, [underlined], or **bold**.
+  * You MUST preserve and display these target markings in the options and question prompt (e.g. "A. <u>ob</u>stacle", "B. <u>ob</u>scure", or "opposed in meaning to the underlined word **inevitable**").
+  * For stress questions, ensure the root words are clearly given in options A, B, C, D.
+
 - CRITICAL RULE FOR READING & CLOZE TEST PASSAGES:
-  * If a group of questions belongs to a Reading passage or a Cloze test passage (điền từ vào đoạn văn), extract the FULL passage text and attach it to the "readingPassage" field of EVERY question belonging to that passage.
-  * For each individual question belonging to a Reading/Cloze passage, DO NOT REPEAT the passage in "text". Instead, set "text" strictly to the specific question prompt, blank reference or instruction. KEEP THE QUESTION BOX CLEAN AND SHORT!
-- TARGET MARKINGS & UNDERLINES IN LEXICAL QUESTIONS:
-  * Many lexical questions in Vietnamese exams target specific underlined, bolded, or opposite/closest meaning words.
-  * You MUST preserve and format target words with Markdown **bold**, _italics_, or [underlined] brackets in both "text" and "options".
-- Preserve all IPA pronunciation symbols, phonetic slashes (e.g. /ə/, /ɪ/, /eɪ/), and Vietnamese explanations faithfully without character corruption.
-- Set "correctAnswerIndex" as a 0-based integer (0 for A, 1 for B, 2 for C, 3 for D).
+  * If questions belong to a Reading passage or a Cloze test (điền từ đoạn văn), extract the FULL passage text into the "readingPassage" field of EVERY question belonging to that passage.
+  * For Cloze tests, keep the numbered blanks (e.g. (1), (2) or [1], [2]) intact in the "readingPassage".
+  * For each individual question belonging to a Reading/Cloze passage, DO NOT REPEAT the passage in "text". Keep "text" strictly to the specific question prompt, line reference, or blank number (e.g. "Question 31: Chọn từ thích hợp điền vào vị trí (1):", "What is the passage mainly about?").
 
-TASK 2: Extract a High-Yield Vocabulary, Idioms & Phrasal Verbs Deck from the exam for flashcard study:
+- EXPLANATION REQUIREMENT:
+  * Provide a detailed, pedagogically sound explanation in Vietnamese ("explanation") for EVERY question:
+    - Explain WHY the correct option is right (cite the grammatical rule, collocation, idiom meaning, IPA phonetic contrast e.g. /s/ vs /z/, or quote the exact sentence from the reading passage).
+    - Explain why other distractors are incorrect if helpful.
+
+${answerSectionPrompt}
+
+TASK 2: Extract a High-Yield Vocabulary, Idioms & Collocations Deck for flashcard study:
 - ${cefrFilter}
-- IN ADDITION TO INDIVIDUAL WORDS, YOU MUST SYSTEMATICALLY EXTRACT:
-  * Idiomatic expressions with "wordType": "idiom"
-  * Phrasal verbs & Collocations with "wordType": "phr v" or "collocation"
-  * Advanced / Key vocabulary words
-- For each target item, provide:
+- Extract 10 to 30 top high-yield items from this exam section, including:
+  * Advanced or distinctive vocabulary words
+  * Idiomatic expressions ("wordType": "idiom")
+  * Phrasal verbs ("wordType": "phr v")
+  * Fixed collocations ("wordType": "collocation")
+- For each item, provide:
   1. "word": Root word, phrase, idiom, or phrasal verb
-  2. "wordType": Part of speech or category in short notation (e.g. "n", "v", "adj", "adv", "idiom", "phr v")
+  2. "wordType": Part of speech or category (e.g. "n", "v", "adj", "adv", "idiom", "phr v", "collocation")
   3. "phonetic": Accurate IPA pronunciation with slashes (e.g. "/ˌʌn.dɚˈmɑɪn/")
-  4. "vietnameseMeaning": Clear, concise Vietnamese translation
+  4. "vietnameseMeaning": Clear, accurate Vietnamese translation
   5. "exampleSentence": An illustrative English example sentence where the target word/phrase is in bold **target**
   6. "cefrLevel": Estimated CEFR level string: "A1", "A2", "B1", "B2", "C1", or "C2"
 
@@ -348,10 +574,10 @@ Return ONLY a valid JSON object matching this schema:
         {"label": "D", "text": "Option D..."}
       ],
       "correctAnswerIndex": 0,
-      "explanation": "Detailed explanation...",
-      "skill": "reading",
-      "subTopic": "Đọc hiểu",
-      "readingPassage": "Full reading passage text here..."
+      "explanation": "Chi tiết giải thích bằng Tiếng Việt...",
+      "skill": "lexical",
+      "subTopic": "Phát âm",
+      "readingPassage": null
     }
   ],
   "vocabularies": [
@@ -369,8 +595,20 @@ Return ONLY a valid JSON object matching this schema:
 Document Content:
 ${documentText}`;
 
+    const parts = [{ text: promptText }];
+    if (images && images.length > 0) {
+      images.forEach(imgData => {
+        parts.push({
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: imgData.split(",")[1]
+          }
+        });
+      });
+    }
+
     const payload = {
-      contents: [{ parts: [{ text: promptText }] }],
+      contents: [{ parts }],
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: 16384,
@@ -378,7 +616,7 @@ ${documentText}`;
       }
     };
 
-    const data = await this.callGeminiAPI(payload, apiKey);
+    const data = await this.callGeminiAPI(payload, apiKey, model);
     return this.parseLanguageExamFromGeminiResponse(data);
   }
 
@@ -426,8 +664,10 @@ Instructions for Tutor Response:
     return candidate;
   }
 
-  async callGeminiAPI(payload, apiKey) {
-    const url = `${APP_CONFIG.geminiBaseUrl}/${this.model}:generateContent?key=${apiKey}`;
+  async callGeminiAPI(payload, apiKey, model = null) {
+    const activeModel = this.getModel(model);
+    this.model = activeModel;
+    const url = `${APP_CONFIG.geminiBaseUrl}/${activeModel}:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -436,7 +676,7 @@ Instructions for Tutor Response:
 
     if (!response.ok) {
       const errBody = await response.text();
-      throw new Error(`HTTP ${response.status} (${this.model}): ${errBody}`);
+      throw new Error(`HTTP ${response.status} (${activeModel}): ${errBody}`);
     }
 
     return await response.json();
@@ -448,7 +688,7 @@ Instructions for Tutor Response:
     const lines = text.split("\n");
     const chunks = [];
     let currentChunk = "";
-    const questionRegex = /^(?:câu|question|bài|q)\s*\d+[\.:\s]/i;
+    const questionRegex = /^(?:(?:\d+[\.:\)\s])|(?:(?:câu|question|bài|q)\s*\d+[\.:\s]))/i;
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -482,8 +722,20 @@ Instructions for Tutor Response:
     try {
       return JSON.parse(clean);
     } catch (e) {
-      // Find array bounds
+      const firstBrace = clean.indexOf("{");
       const firstBracket = clean.indexOf("[");
+
+      // If starts as an object or { appears before [
+      if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+        const lastBrace = clean.lastIndexOf("}");
+        if (lastBrace > firstBrace) {
+          try {
+            return JSON.parse(clean.substring(firstBrace, lastBrace + 1));
+          } catch (eObj) {}
+        }
+      }
+
+      // Find array bounds
       if (firstBracket !== -1) {
         const lastBracket = clean.lastIndexOf("]");
         if (lastBracket > firstBracket) {
@@ -505,8 +757,7 @@ Instructions for Tutor Response:
         }
       }
 
-      // Find object bounds
-      const firstBrace = clean.indexOf("{");
+      // Find object bounds fallback
       if (firstBrace !== -1) {
         const lastBrace = clean.lastIndexOf("}");
         if (lastBrace > firstBrace) {
@@ -554,14 +805,82 @@ Instructions for Tutor Response:
       if (/^nội\s+dung\s+câu\s+hỏi\s+(?:số\s+)?\d+/i.test(qText)) continue;
 
       let rawOptions = [];
-      if (Array.isArray(item.options)) {
-        item.options.forEach((opt, idx) => {
-          let text = typeof opt === "string" ? opt : (opt.text || opt.content || opt.option || "");
-          if (text.length >= 2 && text[1] === ".") {
-            text = text.substring(2).trim();
+      const opts = item.options || item.choices || item.answers || item.optionsList || item.optionList || [];
+      if (Array.isArray(opts)) {
+        opts.forEach((opt, idx) => {
+          let text = "";
+          if (typeof opt === "string") {
+            text = opt;
+          } else if (typeof opt === "object" && opt !== null) {
+            text = opt.text || opt.content || opt.option || opt.value || opt.label || "";
+            // If opt is single-key object like {"A": "a - b - c - d"}
+            if (!text) {
+              const keys = Object.keys(opt);
+              if (keys.length === 1 && typeof opt[keys[0]] === "string") {
+                text = opt[keys[0]];
+              } else {
+                const val = Object.values(opt).find(v => typeof v === "string" && v.length > 0);
+                if (val) text = val;
+              }
+            }
           }
-          rawOptions.push(createQuestionOption(labels[idx] || `${idx + 1}`, text));
+          if (typeof text === "string") {
+            // Strip leading "A. ", "B) ", "(A) ", "A: " but NEVER strip arrangement choices like "a - b - c - d"
+            if (/^[A-F\d][\.\:\)]\s+/i.test(text)) {
+              text = text.replace(/^[A-F\d][\.\:\)]\s+/i, '').trim();
+            } else if (/^\([A-F\d]\)\s*/i.test(text)) {
+              text = text.replace(/^\([A-F\d]\)\s*/i, '').trim();
+            }
+          }
+          if (text) {
+            rawOptions.push(createQuestionOption(labels[idx] || `${idx + 1}`, text));
+          }
         });
+      } else if (typeof opts === "object" && opts !== null) {
+        Object.entries(opts).forEach(([k, v], idx) => {
+          let text = typeof v === "string" ? v : (v.text || v.content || v.option || v.value || "");
+          if (typeof text === "string") {
+            if (/^[A-F\d][\.\:\)]\s+/i.test(text)) {
+              text = text.replace(/^[A-F\d][\.\:\)]\s+/i, '').trim();
+            } else if (/^\([A-F\d]\)\s*/i.test(text)) {
+              text = text.replace(/^\([A-F\d]\)\s*/i, '').trim();
+            }
+          }
+          if (text) {
+            rawOptions.push(createQuestionOption(labels[idx] || k.toUpperCase(), text));
+          }
+        });
+      }
+
+      // Check top-level item keys: item.A, item.B, item.C, item.D or item.optionA, item.optionB
+      if (rawOptions.length === 0) {
+        labels.slice(0, 4).forEach(letter => {
+          const val = item[letter] || item[letter.toLowerCase()] || item[`option${letter}`] || item[`option_${letter}`] || item[`option_${letter.toLowerCase()}`];
+          if (val && typeof val === "string") {
+            let text = val.trim();
+            if (/^[A-F\d][\.\:\)]\s+/i.test(text)) {
+              text = text.replace(/^[A-F\d][\.\:\)]\s+/i, '').trim();
+            } else if (/^\([A-F\d]\)\s*/i.test(text)) {
+              text = text.replace(/^\([A-F\d]\)\s*/i, '').trim();
+            }
+            if (text) {
+              rawOptions.push(createQuestionOption(letter, text));
+            }
+          }
+        });
+      }
+
+      // Check if options are embedded directly in item.text (e.g. "Question...\nA. a - b - c - d\nB. b - a - d - c")
+      let cleanQText = restoreImageTokens(qText).trim();
+      if (rawOptions.length === 0 && cleanQText) {
+        const optMatches = [...cleanQText.matchAll(/(?:^|\n)\s*([A-D])[\.\:\)]\s*([^\n]+)/gi)];
+        if (optMatches.length >= 2) {
+          optMatches.forEach(m => {
+            rawOptions.push(createQuestionOption(m[1].toUpperCase(), m[2].trim()));
+          });
+          // Strip embedded options from question prompt
+          cleanQText = cleanQText.replace(/(?:\n\s*[A-D][\.\:\)][^\n]+)+$/i, '').trim();
+        }
       }
 
       // If extracting pre-existing questions and all options are empty, skip dummy question
@@ -610,14 +929,31 @@ Instructions for Tutor Response:
         if (finalCorrectIndex === -1) finalCorrectIndex = 0;
       }
 
+      const rawReadingPassage = restoreImageTokens(item.readingPassage || "").trim();
+
+      // Deduplicate passage from question prompt if passage is already present in readingPassage
+      if (rawReadingPassage && rawReadingPassage.length > 20) {
+        if (cleanQText === rawReadingPassage) {
+          cleanQText = "Chọn phương án đúng nhất theo bài đọc / đoạn văn:";
+        } else if (cleanQText.includes(rawReadingPassage)) {
+          cleanQText = cleanQText.replace(rawReadingPassage, "").trim();
+        } else {
+          // Check if cleanQText contains a long prefix of passage text ending with "Question X:" or "Choose..."
+          const qMatch = cleanQText.match(/\n+((?:Question\s+\d+|Câu\s+\d+|Choose\s+|Select\s+|According\s+to\s+|The\s+word\s+|What\s+|Which\s+|In\s+paragraph)[\s\S]+)$/i);
+          if (qMatch && cleanQText.length - qMatch[1].length > 60) {
+            cleanQText = qMatch[1].trim();
+          }
+        }
+      }
+
       questions.push(createQuestion({
-        text: restoreImageTokens(qText),
+        text: cleanQText || "Chọn phương án đúng nhất:",
         options: finalOptions.map(opt => ({ ...opt, text: restoreImageTokens(opt.text) })),
         correctAnswerIndex: finalCorrectIndex,
         explanation: restoreImageTokens(item.explanation || item.explain || item.detail || ""),
         skill: item.skill || null,
         subTopic: item.subTopic || null,
-        readingPassage: restoreImageTokens(item.readingPassage || "") || null
+        readingPassage: rawReadingPassage || null
       }));
     }
 
@@ -672,7 +1008,7 @@ Instructions for Tutor Response:
     }
   }
 
-  parseLanguageExamFromGeminiResponse(data) {
+  parseLanguageExamFromGeminiResponse(data, originalVocabList = "") {
     const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!candidateText) {
       throw new Error("Không thể đọc phản hồi từ Gemini AI.");
@@ -686,19 +1022,35 @@ Instructions for Tutor Response:
     const questions = this.parseQuestionsFromGeminiResponse(data, false);
     const vocabularies = [];
 
-    const rawVocabs = parsed.vocabularies || parsed.vocabulary || [];
+    const rawVocabs = parsed.vocabularies || parsed.vocabulary || parsed.vocab || parsed.words || parsed.flashcards || [];
     if (Array.isArray(rawVocabs)) {
       rawVocabs.forEach(v => {
-        if (v.word && v.word.trim()) {
+        const wordStr = typeof v === "string" ? v : (v.word || v.term || v.vocabulary || "");
+        if (wordStr && wordStr.trim()) {
           vocabularies.push(createVocabularyCard({
-            word: v.word.trim(),
-            wordType: v.wordType || "",
-            phonetic: v.phonetic || "",
-            vietnameseMeaning: v.vietnameseMeaning || "",
-            exampleSentence: v.exampleSentence || "",
-            cefrLevel: (v.cefrLevel || "B1").toUpperCase()
+            word: wordStr.trim(),
+            wordType: (typeof v === "object" ? v.wordType || v.type || v.partOfSpeech : "") || "n",
+            phonetic: (typeof v === "object" ? v.phonetic || v.ipa || v.pronunciation : "") || "",
+            vietnameseMeaning: (typeof v === "object" ? v.vietnameseMeaning || v.meaning || v.definition || v.vietnamese : "") || "",
+            exampleSentence: (typeof v === "object" ? v.exampleSentence || v.example || v.sentence : "") || "",
+            cefrLevel: (typeof v === "object" ? (v.cefrLevel || v.level || "B1") : "B1").toUpperCase()
           }));
         }
+      });
+    }
+
+    // Auto-fallback: If no vocabularies returned, construct cards from original input
+    if (vocabularies.length === 0 && originalVocabList) {
+      const items = extractVocabListItems(originalVocabList);
+      items.forEach(it => {
+        vocabularies.push(createVocabularyCard({
+          word: it.word,
+          wordType: "n",
+          phonetic: "",
+          vietnameseMeaning: it.meaning || "",
+          exampleSentence: `Practice using the word **${it.word}**.`,
+          cefrLevel: "B1"
+        }));
       });
     }
 
@@ -711,6 +1063,7 @@ Instructions for Tutor Response:
 
   async generateTHPTQuiz({
     documentText,
+    answerText = "",
     apiKey,
     images = [],
     onProgress = null
@@ -724,6 +1077,11 @@ Instructions for Tutor Response:
     if (!cleanedText && images.length === 0) return [];
 
     this.currentScanUsedTokens = new Set();
+
+    let effectiveAnswerText = (answerText || "").trim();
+    if (!effectiveAnswerText) {
+      effectiveAnswerText = this.extractTrailingAnswerBlock(cleanedText);
+    }
 
     if (onProgress) onProgress(15, "Đang phân tích cấu trúc 3 phần đề thi THPT...");
 
@@ -755,6 +1113,7 @@ Instructions for Tutor Response:
               const chunkQuestions = await this.generateTHPTSectionBatch({
                 sectionPart: sec.part,
                 documentText: sc,
+                answerText: effectiveAnswerText,
                 apiKey: key,
                 images: images
               });
@@ -766,6 +1125,7 @@ Instructions for Tutor Response:
             const secQuestions = await this.generateTHPTSectionBatch({
               sectionPart: sec.part,
               documentText: sec.text,
+              answerText: effectiveAnswerText,
               apiKey: key,
               images: images
             });
@@ -898,7 +1258,7 @@ Instructions for Tutor Response:
     return sections.length > 0 ? sections : null;
   }
 
-  async generateTHPTSectionBatch({ sectionPart, documentText, apiKey, images = [] }) {
+  async generateTHPTSectionBatch({ sectionPart, documentText, answerText = "", apiKey, images = [] }) {
     let sectionInstruction = "";
     let schemaExample = "";
 
@@ -978,9 +1338,14 @@ YÊU CẦU BẮT BUỘC CHO PHẦN I:
       ? `7. HÌNH ẢNH MINH HỌA VÀ ĐỒ THỊ: Tài liệu được cung cấp dưới dạng ảnh (${images.length} trang). Nếu một câu hỏi có hình vẽ/đồ thị, hãy MÔ TẢ ngắn gọn nội dung hình ảnh đó TRỰC TIẾP TRONG trường "text" (ví dụ: "(Hình: hình lăng trụ đứng ABC.A'B'C' với AB=AC=BC=2)"). KHÔNG dùng ký hiệu [IMG_N]. KHÔNG bỏ trống hình ảnh.`
       : `7. HÌNH ẢNH MINH HỌA VÀ ĐỒ THỊ: Nếu câu hỏi có ký hiệu [IMG_N] (ví dụ [IMG_1], [IMG_2]), hãy sao chép CHÍNH XÁC ký hiệu đó vào trường "text". TUYỆT ĐỐI KHÔNG thay đổi hay rút gọn ký hiệu (phải có dấu gạch dưới: [IMG_1] không phải [IMG1]).`;
 
+    const answerRule = answerText && answerText.trim()
+      ? `\nBẢNG ĐÁP ÁN ĐÍNH KÈM TỪ FILE ĐÁP ÁN RIÊNG:\n${answerText.trim()}\n-> Hãy đối soát với bảng đáp án này để điền chính xác đáp án/khẳng định đúng sai cho phần thi tương ứng.\n`
+      : "";
+
     const promptText = `Bạn là chuyên gia khảo thí và biên soạn đề thi tốt nghiệp THPT Quốc gia theo cấu trúc chuẩn của Bộ Giáo dục & Đào tạo.
 
 ${sectionInstruction}
+${answerRule}
 
 QUY TẮC BẮT BUỘC VỀ TRÍCH XUẤT VÀ CHỐNG TẠO CÂU HỎI RÁC/GIẢ:
 1. CHỈ TRÍCH XUẤT CÂU HỎI THẬT: Trích xuất đầy đủ tất cả các câu hỏi CÓ ĐỀ BÀI trong tài liệu (từ Câu 1 đến câu cuối cùng của phần tương ứng). TUYỆT ĐỐI KHÔNG BỎ SÓT CÂU HỎI.
@@ -1235,11 +1600,12 @@ ${documentText}`;
   // AI Generation Functions (without document input)
 
   async generateLanguageExamFromPrompt({
-    questionCount,
-    questionTypes,
-    cefrLevel,
-    topic,
-    difficulty,
+    mode = "thpt",
+    vocabList = "",
+    questionCount = 15,
+    cefrLevel = "ALL",
+    topic = "",
+    difficulty = "medium",
     apiKey,
     onProgress = null
   }) {
@@ -1248,79 +1614,530 @@ ${documentText}`;
       throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi tạo đề.");
     }
 
+    const cleanedTopic = (topic || "").trim();
+
+    // Delegate IELTS Academic mode to dedicated 3-Passage, 40-question Cambridge generator
+    if (mode === "ielts") {
+      return await this.generateIELTSAcademicExam({
+        topic: cleanedTopic,
+        difficulty,
+        apiKey: key,
+        onProgress
+      });
+    }
+
     if (onProgress) onProgress(15, "Đang chuẩn bị tạo đề thi Ngoại ngữ bằng AI...");
 
-    const cleanedTopic = (topic || "").trim();
-    const questionTypesStr = questionTypes.join(", ");
     const difficultyStr = difficulty === "easy" ? "dễ" : difficulty === "medium" ? "trung bình" : "khó";
+    const cefrFilter = cefrLevel === "ALL"
+      ? "Tất cả các trình độ CEFR (A1 đến C2)"
+      : `Tập trung vào trình độ CEFR ${cefrLevel}`;
 
-    let promptText = `Bạn là chuyên gia ngôn ngữ và biên soạn đề thi tiếng Anh theo chuẩn quốc tế.
-YÊU CẦU TẠO ĐỀ THI:
-- Tạo ${questionCount} câu hỏi trắc nghiệm tiếng Anh
-- Loại câu hỏi: ${questionTypesStr}
-- Trình độ CEFR: ${cefrLevel === "ALL" ? "tất cả các级 (A1-C2)" : cefrLevel}
-- Chủ đề/chương: ${cleanedTopic || "ngẫu nhiên, tổng hợp"}
-- Mức độ khó: ${difficultyStr}
-- Ngôn ngữ: Toàn bộ đề thi phải là TIẾNG ANH
-- Định dạng: Trắc nghiệm 4 lựa chọn (A, B, C, D) với một đáp án đúng
+    const targetQuestions = mode === "thpt"
+      ? 40
+      : (mode === "vocab"
+        ? (questionCount || Math.max(2, extractVocabListItems(vocabList).length * 2))
+        : (questionCount || 15));
 
-${cefrLevel === "ALL"
-  ? "Hãy phân bố câu hỏi rộng khắp các mức CEFR từ A1 đến C2 phù hợp với số lượng câu hỏi."
-  : `Hãy tập trung vào mức CEFR ${cefrLevel} và có thể bao gồm các mức gần kề.`}
+    let promptText = "";
 
-YÊU CẦU NGÔN NGỮ BẮT BUỘC: Viết BẮT BUỘC TOÀN BỘ câu hỏi, các phương án lựa chọn và phần giải thích bằng TIẾNG ANH.
+    if (mode === "vocab") {
+      // MODE 3: ÔN TẬP TỪ VỰNG (VOCABULARY REVIEW / MASTERY)
+      const wordItems = extractVocabListItems(vocabList);
+      const vocabCount = wordItems.length || 1;
+      const wordNames = wordItems.map(w => w.word).join(", ");
 
-CRITICAL TEXT INTEGRITY & WORD ORDER RULES:
-1. PRESERVE NATURAL SENTENCE WORD ORDER: Write clear, grammatically sound, and natural sentences. Never scramble or invert word order.
-2. CHOICE LENGTH EQUALIZATION: All 4 choices (A, B, C, D) MUST be of equal length, depth, and detail. DO NOT make the correct choice noticeably longer or more complex than the distractors.
-3. PLAUSIBLE DISTRACTORS: All wrong choices must be realistic and plausible.
-4. CORRECT ANSWER SHUFFLING: Randomly distribute correct answers across A, B, C, D.
-5. Correct Answer Indexing: Set "correctAnswerIndex" as a 0-BASED integer (0 for A, 1 for B, 2 for C, 3 for D).
+      const contextInstruction = cleanedTopic
+        ? `- ĐỊNH HƯỚNG CHỦ ĐỀ / NGỮ CẢNH: Tạo các câu hỏi xoay quanh chủ đề "${cleanedTopic}".`
+        : `- ĐỊNH HƯỚNG NGỮ CẢNH: TỰ NHIÊN VÀ BÁM SÁT BẢN CHẤT CỦA TỪNG TỪ VỰNG: Tạo các câu hỏi với ngữ cảnh tự nhiên, chân thực và phổ biến nhất của chính từ vựng đó (đời sống, học thuật, công việc, giao tiếp...). Bám sát chính xác nghĩa gốc, sắc thái từ và các collocation chuẩn mực của từng từ vựng mà không gượng ép vào bất kỳ chủ đề đơn lẻ nào.`;
 
-Target Output JSON Schema:
-Return ONLY a valid JSON array of question objects without markdown code blocks:
-[
-  {
-    "text": "Question text...",
-    "options": [
-      {"label": "A", "text": "Option A..."},
-      {"label": "B", "text": "Option B..."},
-      {"label": "C", "text": "Option C..."},
-      {"label": "D", "text": "Option D..."}
-    ],
-    "correctAnswerIndex": 0,
-    "explanation": "Detailed educational explanation..."
-  }
-]`;
+      promptText = `Bạn là chuyên gia ngôn ngữ học và sư phạm tiếng Anh hàng đầu.
+Nhiệm vụ của bạn là tạo một BỘ ĐỀ THI ÔN TẬP TỪ VỰNG & BỘ THẺ FLASHCARD 3D CHUYÊN SÂU với ĐÚNG CHÍNH XÁC ${targetQuestions} CÂU HỎI TRẮC NGHIỆM dựa trên danh sách từ vựng được người dùng cung cấp dưới đây:
 
-    if (onProgress) onProgress(30, "Đang giao tiếp với Gemini AI để tạo câu hỏi...");
+DANH SÁCH ${vocabCount} TỪ VỰNG ĐẦU VÀO:
+"""
+${vocabList}
+"""
+
+YÊU CẦU BẮT BUỘC (2 NHIỆM VỤ TRONG CÙNG 1 JSON):
+
+NHIỆM VỤ 1: TẠO ĐỦ ĐÚNG CHÍNH XÁC ${targetQuestions} CÂU HỎI TRẮC NGHIỆM NGỮ CẢNH ĐA DẠNG:
+- Số lượng: BẮT BUỘC TẠO ĐỦ ĐÚNG ${targetQuestions} CÂU HỎI TRẮC NGHIỆM trong mảng "questions" (từ câu 1 đến câu ${targetQuestions}). Tuyệt đối không được tạo ít hơn ${targetQuestions} câu, không được chỉ tạo 2-3 câu ví dụ.
+- Mục đích: Giúp người học ghi nhớ sâu sắc các từ vựng trong danh sách (${wordNames}), hiểu đúng ngữ cảnh, collocation, giới từ đi kèm, từ đồng nghĩa/trái nghĩa và sắc thái nghĩa.
+${contextInstruction}
+- Tần suất xuất hiện: Hãy phân bố câu hỏi sao cho mỗi từ vựng trong danh sách xuất hiện lặp lại đều đặn trong ${targetQuestions} câu hỏi với các dạng bài và ngữ cảnh khác nhau:
+  1. Contextual Gap-filling: Điền từ thích hợp vào chỗ trống trong một câu ngữ cảnh giàu thông tin thực tế.
+  2. Closest in Meaning / Synonym: Tìm từ/cụm từ đồng nghĩa với từ mục tiêu trong câu.
+  3. Opposite in Meaning / Antonym: Tìm từ/cụm từ trái nghĩa với từ mục tiêu.
+  4. Collocation & Preposition Usage: Kiểm tra cụm từ cố định hoặc giới từ đi kèm với từ vựng.
+  5. Sentence Nuance & Definition: Chọn câu sử dụng từ vựng đúng ngữ cảnh nhất hoặc giải thích đúng nghĩa của từ trong ngữ cảnh.
+- Mức độ khó: ${difficultyStr}.
+- Đặt "skill": "lexical", "subTopic": "Ôn tập từ vựng".
+- GIẢI THÍCH CHI TIẾT (BẮT BUỘC BẰNG TIẾNG VIỆT):
+  * Giải thích rõ ràng nghĩa của từ cần chọn, dịch câu tiếng Anh sang tiếng Việt.
+  * Phân tích tại sao đáp án đúng là chính xác và giải thích ngắn gọn các đáp án sai/gây nhiễu để người học mở rộng vốn từ.
+
+NHIỆM VỤ 2: TẠO BỘ THẺ TỪ VỰNG FLASHCARD CEFR CHO 100% CÁC TỪ TRONG DANH SÁCH:
+- Trích xuất toàn bộ các từ/cụm từ (${wordNames}) vào mảng "vocabularies".
+- Với mỗi từ vựng, cung cấp đầy đủ và chuẩn xác:
+  1. "word": Từ gốc hoặc cụm từ/thành ngữ/phrasal verb
+  2. "wordType": Loại từ viết tắt ("n", "v", "adj", "adv", "phr v", "idiom", "collocation")
+  3. "phonetic": Phiên âm quốc tế IPA chuẩn xác đặt trong dấu gạch chéo (ví dụ: "/ˌre.zɪˈli.ənt/", "/ˈmɪt.ɪ.ɡeɪt/")
+  4. "vietnameseMeaning": Nghĩa tiếng Việt chuẩn, súc tích, dễ nhớ
+  5. "exampleSentence": Câu ví dụ tiếng Anh tự nhiên, thực tế và in đậm từ mục tiêu bằng Markdown (ví dụ: "Local communities need to be **resilient** against natural disasters.")
+  6. "cefrLevel": Cấp độ CEFR ước tính ("A1", "A2", "B1", "B2", "C1", "C2")
+
+QUY TẮC CÂU HỎI & ĐÁP ÁN:
+- Cân bằng độ dài 4 phương án A, B, C, D (không để đáp án đúng dài hơn bất thường).
+- Đảo ngẫu nhiên vị trí đáp án đúng qua các chữ cái A, B, C, D.
+- "correctAnswerIndex": Số nguyên 0-based (0=A, 1=B, 2=C, 3=D).`;
+
+    } else {
+      // MODE 1: THPT QUỐC GIA (TIẾNG ANH) - CHUẨN BỘ GIÁO DỤC & ĐÀO TẠO (40 CÂU - 50 PHÚT)
+      promptText = `Bạn là chuyên gia khảo thí và biên soạn đề thi tốt nghiệp THPT Quốc gia môn Tiếng Anh theo ma trận chuẩn của Bộ Giáo dục & Đào tạo.
+Nhiệm vụ của bạn là biên soạn một BỘ ĐỀ THI TỐT NGHIỆP THPT TIẾNG ANH CHUẨN HOÀN CHỈNH gồm ĐÚNG CHÍNH XÁC 40 CÂU HỎI TRẮC NGHIỆM (thời gian làm bài: 50 phút) kèm BỘ THẺ TỪ VỰNG FLASHCARD CEFR.
+
+YÊU CẦU ĐỀ THI:
+- Số lượng: BẮT BUỘC TẠO ĐỦ ĐÚNG 40 câu hỏi trắc nghiệm trong mảng "questions" (từ Câu 1 đến Câu 40). Tuyệt đối không dừng lại ở câu 30 hay rút ngắn.
+- Trình độ: Chuẩn tốt nghiệp THPT (tương đương Bậc 3/6 KNLNNVN / CEFR B1), Mức độ khó: ${difficultyStr}.
+${cleanedTopic ? `- Chủ đề định hướng: ${cleanedTopic}` : "- Chủ đề: Đa dạng, bám sát chương trình THPT và các vấn đề đương đại (môi trường, công nghệ, giáo dục, đời sống xã hội...)"}
+
+QUY TẮC QUAN TRỌNG VỀ ĐOẠN VĂN & CÂU HỎI (BẮT BUỘC TUÂN THỦ):
+1. TRƯỜNG "readingPassage":
+   - Chứa TOÀN BỘ nội dung bài đọc / thông báo / quảng cáo / đoạn văn.
+   - Đối với các phần đọc điền (Thông báo, Cloze test, Điền khuyết câu): BẮT BUỘC dùng ký hiệu chỗ trống dạng **(1) _______**, **(2) _______**, **(7) _______**... TUYỆT ĐỐI KHÔNG ĐƯỢC để lộ đáp án sẵn trong readingPassage!
+   - Sử dụng định dạng Markdown trong bài đọc:
+     * In đậm các từ vựng mục tiêu cần hỏi nghĩa bằng **word** (ví dụ: **resilient**, **mitigate**).
+     * In đậm các đại từ quy chiếu cần hỏi bằng **it**, **they**, **this**.
+     * Đặt các vị trí điền câu dạng **[A]**, **[B]**, **[C]**, **[D]** cho câu hỏi chèn câu vào đoạn văn.
+2. TRƯỜNG "text" CỦA CÂU HỎI:
+   - CHỈ CHỨA DUY NHẤT câu hỏi / yêu cầu (ví dụ: "Choose the best option to fill in blank (1).", "The word **resilient** in paragraph 2 is closest in meaning to:", "According to paragraph 3, which statement is TRUE?").
+   - TUYỆT ĐỐI KHÔNG lặp lại toàn bộ bài đọc hay thông báo trong trường "text"!
+3. PHẦN SẮP XẾP HỘI THOẠI & VĂN BẢN (Câu 13 - 17):
+   - Trường "text" liệt kê các câu với ký hiệu chữ cái: "a. ...\\nb. ...\\nc. ...\\nd. ...".
+   - 4 phương án options là các chuỗi thứ tự: "a - b - c - d", "b - a - d - c", "c - a - d - b", "d - c - b - a".
+
+MA TRẬN CẤU TRÚC ĐỀ THI THPT TIẾNG ANH 40 CÂU (BẮT BUỘC TUÂN THỦ CHÍNH XÁC TỪNG PHẦN):
+1. PHẦN 1: ĐỌC ĐIỀN THÔNG BÁO / QUẢNG CÁO (ANNOUNCEMENT / ADVERTISEMENT) - 6 CÂU (Câu 1 - 6):
+   - Viết 1 hoặc 2 đoạn thông báo/quảng cáo ngắn (70 - 120 từ) chứa các chỗ trống **(1) _______** đến **(6) _______**. Gán nội dung thông báo vào trường "readingPassage" của cả 6 câu.
+   - Kiểm tra: Từ loại/Phân từ, Trật tự từ, Rút gọn MĐQH, Giới từ, Collocations, Động từ nguyên mẫu có "to".
+   - "skill": "lexical", "subTopic": "Đọc điền thông báo/quảng cáo".
+2. PHẦN 2: ĐỌC ĐIỀN TỪ RỜI VÀO ĐOẠN VĂN (CLOZE TEST) - 6 CÂU (Câu 7 - 12):
+   - Viết 1 đoạn văn ngắn (120 - 180 từ) chứa các chỗ trống **(7) _______** đến **(12) _______**. Gán đoạn văn vào trường "readingPassage" của cả 6 câu.
+   - Kiểm tra: Lượng từ (quantifiers), Cụm động từ (phrasal verbs), Cụm giới từ, Từ vựng theo ngữ cảnh.
+   - "skill": "lexical", "subTopic": "Đọc điền từ vào đoạn văn".
+3. PHẦN 3: SẮP XẾP ĐOẠN HỘI THOẠI / LÁ THƯ / ĐOẠN VĂN - 5 CÂU (Câu 13 - 17):
+   - Câu hỏi sắp xếp trật tự các câu đối thoại, lá thư hoặc đoạn văn để tạo thành văn bản hoàn chỉnh có nghĩa.
+   - "skill": "reading", "subTopic": "Sắp xếp hội thoại & văn bản".
+4. PHẦN 4: ĐỌC ĐIỀN KHUYẾT CÂU VÀO ĐOẠN VĂN - 5 CÂU (Câu 18 - 22):
+   - Viết 1 đoạn văn chứa các chỗ trống **(18) _______** đến **(22) _______** và chọn mệnh đề/câu thích hợp điền vào (Câu bị động, Mệnh đề quan hệ, Ngữ cảnh liên kết). Gán đoạn văn vào "readingPassage".
+   - "skill": "reading", "subTopic": "Đọc điền khuyết câu".
+5. PHẦN 5: BÀI ĐỌC HIỂU 1 (8 CÂU) - (Câu 23 - 30):
+   - Viết 1 bài đọc hiểu học thuật (250 - 350 từ). Gán toàn bộ bài đọc vào trường "readingPassage" của TẤT CẢ các câu từ 23 đến 30.
+   - Các câu hỏi: Thông tin chi tiết, Từ gần nghĩa, Từ trái nghĩa, Từ quy chiếu (reference), Paraphrasing, TRUE / NOT TRUE, Thông tin theo đoạn.
+   - "skill": "reading", "subTopic": "Đọc hiểu bài 1".
+6. PHẦN 6: BÀI ĐỌC HIỂU 2 (10 CÂU) - (Câu 31 - 40):
+   - Viết 1 bài đọc hiểu phân tích sâu (350 - 450 từ) có chèn các vị trí **[A]**, **[B]**, **[C]**, **[D]** và in đậm từ khóa. Gán toàn bộ bài đọc vào trường "readingPassage" của TẤT CẢ các câu từ 31 đến 40.
+   - Các câu hỏi: Điền câu phù hợp vào đoạn ([A]/[B]/[C]/[D]), Từ gần nghĩa, Từ quy chiếu, Thông tin chi tiết, Ý chính tác giả (Main idea), Từ trái nghĩa, TRUE / NOT TRUE, Paraphrasing, Câu hỏi suy luận (Inference).
+   - "skill": "reading", "subTopic": "Đọc hiểu bài 2".
+7. GIẢI THÍCH NGẮN GỌN & SÚC TÍCH (BẮT BUỘC BẰNG TIẾNG VIỆT):
+   - Mỗi câu giải thích súc tích trong 1-2 câu tiếng Việt (dịch nghĩa, cấu trúc ngữ pháp và lý do chọn đáp án đúng).
+8. BỘ THẺ TỪ VỰNG CEFR ĐỀ THI (FLASHCARDS):
+   - Trích xuất 15 - 20 từ vựng/collocations hay nhất trong đề thi vào mảng "vocabularies" với đầy đủ: "word", "wordType", "phonetic" (IPA chuẩn), "vietnameseMeaning", "exampleSentence" (in đậm **word**), "cefrLevel" (B1/B2/C1).`;
+    }
+
+    const fullPrompt = `${promptText}
+
+TARGET OUTPUT JSON SCHEMA:
+Trả về DUY NHẤT một JSON object hợp lệ (không chứa markdown code block ngoài JSON).
+LƯU Ý QUAN TRỌNG: Mảng "questions" BẮT BUỘC PHẢI CHỨA ĐỦ ĐÚNG ${targetQuestions} PHẦN TỬ CÂU HỎI (từ câu 1 đến câu ${targetQuestions}):
+{
+  "durationMinutes": ${mode === "ielts" ? 60 : (mode === "thpt" ? 50 : 30)},
+  "questions": [
+    {
+      "text": "Question 1 prompt text...",
+      "options": [
+        {"label": "A", "text": "Option A content..."},
+        {"label": "B", "text": "Option B content..."},
+        {"label": "C", "text": "Option C content..."},
+        {"label": "D", "text": "Option D content..."}
+      ],
+      "correctAnswerIndex": 0,
+      "explanation": "Giải thích chi tiết bằng tiếng Việt...",
+      "skill": "lexical",
+      "subTopic": "Ôn tập từ vựng",
+      "readingPassage": null
+    }
+  ],
+  "vocabularies": [
+    {
+      "word": "mitigate",
+      "wordType": "v",
+      "phonetic": "/ˈmɪt.ɪ.ɡeɪt/",
+      "vietnameseMeaning": "Làm dịu bớt, giảm nhẹ mức độ nghiêm trọng",
+      "exampleSentence": "Policies aim to **mitigate** climate change risks.",
+      "cefrLevel": "B2"
+    }
+  ]
+}`;
+
+    if (onProgress) onProgress(35, "Đang giao tiếp với Gemini AI để tạo đề thi & bộ thẻ Flashcard...");
 
     const payload = {
-      contents: [{ parts: [{ text: promptText }] }],
+      contents: [{ parts: [{ text: fullPrompt }] }],
       generationConfig: {
-        temperature: 0.3,
+        temperature: 0.35,
         maxOutputTokens: 16384,
         responseMimeType: "application/json"
       }
     };
 
-    if (onProgress) onProgress(50, "Đang đợi phản hồi từ Gemini AI...");
+    if (onProgress) onProgress(55, "Đang nhận dữ liệu đề thi và xử lý cấu trúc câu hỏi...");
 
     const data = await this.callGeminiAPI(payload, apiKey);
-    const questions = this.parseQuestionsFromGeminiResponse(data, true); // true = shuffle options
+    
+    if (onProgress) onProgress(85, "Đang phân tích bài đọc hiểu và trích xuất thẻ từ vựng CEFR...");
 
-    if (onProgress) onProgress(90, "Đang xử lý và validating câu hỏi...");
-
-    // Extract vocabulary from generated questions for language learning mode
-    const vocabularies = this.extractVocabularyFromQuestions(questions);
+    const result = this.parseLanguageExamFromGeminiResponse(data, vocabList);
 
     if (onProgress) onProgress(98, "Đang hoàn tất bộ đề thi Ngoại ngữ...");
 
+    return result;
+  }
+
+  // Dedicated Multi-Passage IELTS Academic Generator (Cambridge 17-19 Standard: 3 Essays, 40 Questions, 60 Mins)
+
+  async generateIELTSAcademicExam({
+    topic = "",
+    difficulty = "medium",
+    apiKey,
+    onProgress = null
+  }) {
+    const key = (apiKey || "").trim();
+    if (!key) {
+      throw new Error("Vui lòng cấu hình Google AI Studio API Key trong Cài đặt trước khi tạo đề.");
+    }
+
+    if (onProgress) onProgress(8, "Đang tra cứu bộ đề IELTS Forecast & cấu trúc bài thi Cambridge 17-19...");
+
+    // Step 1: Resolve 3 authentic IELTS reading themes and Cambridge styles
+    const plan = await this.resolveIELTSForecastPlan({ topic, apiKey: key });
+
+    // Step 2: Generate Passage 1 (Questions 1 - 13: 13 questions, ~700-800 words)
+    if (onProgress) onProgress(18, `Đang biên soạn Passage 1: "${plan.passage1.title}" (~750 từ, 13 câu hỏi)...`);
+    const p1 = await this.generateIELTSPassageBatch({
+      passageIndex: 1,
+      startNumber: 1,
+      questionCount: 13,
+      passagePlan: plan.passage1,
+      difficulty,
+      apiKey: key
+    });
+
+    // Step 3: Generate Passage 2 (Questions 14 - 26: 13 questions, ~800-850 words)
+    if (onProgress) onProgress(48, `Đang biên soạn Passage 2: "${plan.passage2.title}" (~800 từ, 13 câu hỏi)...`);
+    const p2 = await this.generateIELTSPassageBatch({
+      passageIndex: 2,
+      startNumber: 14,
+      questionCount: 13,
+      passagePlan: plan.passage2,
+      difficulty,
+      apiKey: key
+    });
+
+    // Step 4: Generate Passage 3 (Questions 27 - 40: 14 questions, ~850-950 words)
+    if (onProgress) onProgress(76, `Đang biên soạn Passage 3: "${plan.passage3.title}" (~850 từ, 14 câu hỏi)...`);
+    const p3 = await this.generateIELTSPassageBatch({
+      passageIndex: 3,
+      startNumber: 27,
+      questionCount: 14,
+      passagePlan: plan.passage3,
+      difficulty,
+      apiKey: key
+    });
+
+    if (onProgress) onProgress(95, "Đang hợp nhất đủ 40 câu hỏi và tổng hợp bộ thẻ từ vựng AWL Flashcards...");
+
+    // Merge questions from all 3 passages
+    const allQuestions = [
+      ...(p1.questions || []),
+      ...(p2.questions || []),
+      ...(p3.questions || [])
+    ];
+
+    // Deduplicate and combine vocabularies
+    const vocabMap = new Map();
+    [...(p1.vocabularies || []), ...(p2.vocabularies || []), ...(p3.vocabularies || [])].forEach(v => {
+      const wKey = (v.word || "").trim().toLowerCase();
+      if (wKey && !vocabMap.has(wKey)) {
+        vocabMap.set(wKey, v);
+      }
+    });
+
+    if (onProgress) onProgress(100, "Hoàn tất bộ đề thi IELTS Academic Reading!");
+
     return {
-      questions,
-      vocabularies,
-      detectedDurationMinutes: null // Not applicable for AI-generated
+      questions: allQuestions,
+      vocabularies: Array.from(vocabMap.values()),
+      detectedDurationMinutes: 60
     };
+  }
+
+  async resolveIELTSForecastPlan({ topic = "", apiKey }) {
+    const cleaned = (topic || "").trim();
+
+    // Curated bank of authentic Cambridge 17-19 / Recent Actual Test Forecast themes
+    const curatedThemes = [
+      {
+        passage1: {
+          title: "The Subterranean Water Engineering of Ancient Arid Civilizations",
+          theme: "Ancient Persian qanats and Nazca puquios, subterranean aqueduct surveying, hydrological preservation and desert survival techniques",
+          sourceStyle: "Smithsonian Magazine / BBC History (Descriptive, historical, chronological)"
+        },
+        passage2: {
+          title: "Acoustic Ecology: Mapping Anthropogenic Ocean Noise and Cetacean Disruption",
+          theme: "Bioacoustic research on marine mammals, cargo vessel acoustic frequencies, echolocation masking, and deep-sea acoustic recording arrays",
+          sourceStyle: "Nature / Scientific American (Empirical methodology, laboratory & field findings, environmental data)"
+        },
+        passage3: {
+          title: "The Architecture of Intuition: Algorithmic versus Human Cognitive Agency",
+          theme: "Cognitive psychology, dual-process theory (System 1 & System 2), predictive algorithmic decision-making, epistemic trust and human autonomy",
+          sourceStyle: "The Economist / Mind & Language (Philosophical debate, abstract discursive reasoning, authorial stance)"
+        }
+      },
+      {
+        passage1: {
+          title: "Biomimetic Architecture: Termite Mound Ventilation in Structural Design",
+          theme: "Mick Pearce's Eastgate Centre in Zimbabwe, passive macro-porous thermoregulation, natural diurnal temperature damping in architecture",
+          sourceStyle: "National Geographic (Descriptive factual case study)"
+        },
+        passage2: {
+          title: "Deep-Sea Bioluminescence and Chemosynthetic Ecosystems",
+          theme: "Hydrothermal vents, enzymatic luciferin-luciferase mechanisms, adaptations to extreme oceanic baric pressures, biotechnology applications of green fluorescent proteins",
+          sourceStyle: "New Scientist (Analytical academic research)"
+        },
+        passage3: {
+          title: "The Linguistic Relativity Debate in the Era of Artificial Intelligence",
+          theme: "Sapir-Whorf hypothesis, linguistic determinism vs Chomskyan universal grammar, semantic spaces in multilingual LLMs, and cross-cultural conceptualization",
+          sourceStyle: "Journal of Cognitive Linguistics (Theoretical critique, nuanced academic dispute)"
+        }
+      },
+      {
+        passage1: {
+          title: "The LiDAR Drone Revolution and High-Altitude Medieval Cities",
+          theme: "Discovery of high-altitude Silk Road urban centers (Tugunbulak & Tashbulak) in the Pamir Mountains, drone LiDAR 3D topography and nomadic metallurgy",
+          sourceStyle: "Archaeology Magazine (Fieldwork narrative, historical archaeology)"
+        },
+        passage2: {
+          title: "Urban Rewilding and the Miyawaki Micro-Forest Model in Post-Industrial Megacities",
+          theme: "Akira Miyawaki dense multi-tiered afforestation, rapid indigenous canopy development, urban heat island mitigation, urban biodiversity metrics",
+          sourceStyle: "Ecological Applications (Data-driven environmental study)"
+        },
+        passage3: {
+          title: "The Paradox of Abundance: Choice Overload and Contemporary Decision Heuristics",
+          theme: "Barry Schwartz's choice overload, satisficers vs maximizers, opportunity cost rumination, cognitive exhaustion, and welfare in consumption societies",
+          sourceStyle: "The Economist (Complex discursive synthesis and critique)"
+        }
+      }
+    ];
+
+    const chosenFallback = curatedThemes[Math.floor(Math.random() * curatedThemes.length)];
+
+    if (!cleaned || cleaned.startsWith("Tự động")) {
+      try {
+        const prompt = `Bạn là chuyên gia nghiên cứu đề thi IELTS Academic quốc tế (Cambridge IELTS 17, 18, 19).
+Hãy lập kế hoạch 3 bài đọc học thuật hoàn chỉnh bám sát bộ đề dự đoán mới nhất (IELTS Forecast 2024 - 2026):
+- Passage 1: Khoa học thường thức, lịch sử tự nhiên hoặc kỹ thuật cổ đại (văn phong mô tả thực tế, ~700-800 từ).
+- Passage 2: Nghiên cứu thực nghiệm, công nghệ sinh thái, hải dương học hoặc tâm lý học (văn phong phân tích học thuật, ~800-850 từ).
+- Passage 3: Triết học nhận thức, ngôn ngữ học, trí tuệ nhân tạo hoặc kinh tế học hành vi (văn phong tranh luận đa chiều, ~850-950 từ).
+
+Trả về DUY NHẤT một JSON hợp lệ:
+{
+  "passage1": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."},
+  "passage2": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."},
+  "passage3": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."}
+}`;
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
+        };
+        const res = await this.callGeminiAPI(payload, apiKey);
+        const parsed = this.extractValidJSONData(res.candidates?.[0]?.content?.parts?.[0]?.text);
+        if (parsed?.passage1?.title && parsed?.passage2?.title && parsed?.passage3?.title) {
+          return parsed;
+        }
+      } catch (e) {
+        console.warn("Auto-forecast resolution fallback to curated set:", e);
+      }
+      return chosenFallback;
+    }
+
+    // User specified a custom theme
+    try {
+      const prompt = `Chủ đề được yêu cầu: "${cleaned}".
+Hãy thiết kế 3 bài đọc IELTS Academic (Passage 1, 2, 3) theo chuẩn Cambridge IELTS khai thác 3 khía cạnh học thuật chuyên sâu:
+- Passage 1: Nguồn gốc, lịch sử, bối cảnh thực tế (~750 từ, văn phong BBC History / National Geographic).
+- Passage 2: Nghiên cứu thực nghiệm, công nghệ, dữ liệu khoa học (~800 từ, văn phong New Scientist / Nature).
+- Passage 3: Tranh luận học thuật, triết học, phản biện đa chiều (~850 từ, văn phong The Economist).
+
+Trả về DUY NHẤT JSON:
+{
+  "passage1": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."},
+  "passage2": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."},
+  "passage3": {"title": "Tiêu đề tiếng Anh...", "theme": "...", "sourceStyle": "..."}
+}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.5 }
+      };
+      const res = await this.callGeminiAPI(payload, apiKey);
+      const parsed = this.extractValidJSONData(res.candidates?.[0]?.content?.parts?.[0]?.text);
+      if (parsed?.passage1?.title && parsed?.passage2?.title && parsed?.passage3?.title) {
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Custom topic plan fallback:", e);
+    }
+
+    return {
+      passage1: { title: `${cleaned}: Historical Foundations and Practical Discoveries`, theme: cleaned, sourceStyle: "BBC History" },
+      passage2: { title: `${cleaned}: Empirical Investigations and Technological Breakthroughs`, theme: cleaned, sourceStyle: "Nature" },
+      passage3: { title: `${cleaned}: Theoretical Complexities and Future Paradigms`, theme: cleaned, sourceStyle: "The Economist" }
+    };
+  }
+
+  async generateIELTSPassageBatch({
+    passageIndex,
+    startNumber,
+    questionCount,
+    passagePlan,
+    difficulty,
+    apiKey
+  }) {
+    const endNumber = startNumber + questionCount - 1;
+    const difficultyStr = difficulty === "easy" ? "dễ" : difficulty === "medium" ? "trung bình" : "khó";
+
+    let wordCountRange = "";
+    let questionTypesInstruction = "";
+
+    if (passageIndex === 1) {
+      wordCountRange = "700 đến 800 từ";
+      questionTypesInstruction = `CẤU TRÚC BỘ CÂU HỎI PASSAGE 1 (ĐÚNG ${questionCount} CÂU HỎI TỪ CÂU ${startNumber} ĐẾN CÂU ${endNumber}):
+1. CÂU ${startNumber} ĐẾN CÂU ${startNumber + 5} (6 CÂU): TRUE / FALSE / NOT GIVEN
+   - Kiểm tra thông tin thực tế được nêu trong bài đọc.
+   - BẮT BUỘC có 4 phương án trắc nghiệm:
+     "options": [
+       {"label": "A", "text": "True"},
+       {"label": "B", "text": "False"},
+       {"label": "C", "text": "Not Given"},
+       {"label": "D", "text": "N/A"}
+     ]
+2. CÂU ${startNumber + 6} ĐẾN CÂU ${endNumber} (7 CÂU): MULTIPLE CHOICE 4 LỰA CHỌN & FACTUAL DETAIL
+   - Trắc nghiệm 4 lựa chọn (A, B, C, D) kiểm tra chi tiết, nguyên nhân - kết quả, cụm từ theo ngữ cảnh bài đọc.`;
+    } else if (passageIndex === 2) {
+      wordCountRange = "750 đến 850 từ";
+      questionTypesInstruction = `CẤU TRÚC BỘ CÂU HỎI PASSAGE 2 (ĐÚNG ${questionCount} CÂU HỎI TỪ CÂU ${startNumber} ĐẾN CÂU ${endNumber}):
+1. CÂU ${startNumber} ĐẾN CÂU ${startNumber + 5} (6 CÂU): MATCHING INFORMATION / HEADINGS TO PARAGRAPHS
+   - Dạng bài: "Which paragraph contains the following information?" hoặc "Which paragraph discusses...?".
+   - 4 phương án là các đoạn văn: A. Paragraph A, B. Paragraph B, C. Paragraph C, D. Paragraph D...
+2. CÂU ${startNumber + 6} ĐẾN CÂU ${endNumber} (7 CÂU): SUMMARY COMPLETION & ACADEMIC VOCABULARY IN CONTEXT
+   - Trắc nghiệm 4 lựa chọn (A, B, C, D) hoàn thành tóm tắt hoặc kiểm tra từ vựng học thuật AWL theo ngữ cảnh bài đọc.`;
+    } else {
+      wordCountRange = "800 đến 950 từ";
+      questionTypesInstruction = `CẤU TRÚC BỘ CÂU HỎI PASSAGE 3 (ĐÚNG ${questionCount} CÂU HỎI TỪ CÂU ${startNumber} ĐẾN CÂU ${endNumber}):
+1. CÂU ${startNumber} ĐẾN CÂU ${startNumber + 6} (7 CÂU): YES / NO / NOT GIVEN
+   - Kiểm tra quan điểm, khẳng định hoặc lập trường của tác giả (Claims or Views of the Writer).
+   - 4 phương án trắc nghiệm:
+     "options": [
+       {"label": "A", "text": "Yes"},
+       {"label": "B", "text": "No"},
+       {"label": "C", "text": "Not Given"},
+       {"label": "D", "text": "N/A"}
+     ]
+2. CÂU ${startNumber + 7} ĐẾN CÂU ${endNumber} (7 CÂU): ADVANCED MULTIPLE CHOICE & INFERENCE
+   - Trắc nghiệm 4 lựa chọn (A, B, C, D) kiểm tra khả năng suy luận (Inference), mục đích của tác giả (Writer's purpose), hoặc kết luận trọng tâm (Main conclusion).`;
+    }
+
+    const promptText = `Bạn là giám khảo và chuyên gia khảo thí Cambridge IELTS Academic quốc tế.
+Nhiệm vụ của bạn là biên soạn TOÀN DIỆN PHẦN THI IELTS READING - PASSAGE ${passageIndex} chuẩn khảo thí quốc tế tương đương sách Cambridge IELTS 17, 18, 19.
+
+THÔNG TIN BÀI ĐỌC PASSAGE ${passageIndex}:
+- Tiêu đề bài đọc: ${passagePlan.title}
+- Chủ đề chuyên sâu: ${passagePlan.theme}
+- Phong cách văn phong: ${passagePlan.sourceStyle}
+- Độ khó mục tiêu: ${difficultyStr} (IELTS Band 6.5 - 8.5+)
+
+YÊU CẦU BẮT BUỘC VỀ BÀI ĐỌC (ACADEMIC ESSAY):
+1. ĐỘ DÀI VÀ CHẤT LƯỢNG HỌC THUẬT:
+   - Bài đọc BẮT BUỘC PHẢI DÀI ĐẦY ĐỦ TỪ ${wordCountRange} tiếng Anh học thuật phong phú, mạch lạc và giàu chi tiết.
+   - TUYỆT ĐỐI KHÔNG viết tóm tắt ngắn, KHÔNG cắt xén 1-2 đoạn.
+2. BẮT BUỘC ĐÁNH KÝ HIỆU CHỮ CÁI ĐẦU MỖI ĐOẠN VĂN:
+   - Chia bài đọc thành 5 đến 8 đoạn văn hoàn chỉnh.
+   - Đặt ký hiệu ở đầu mỗi đoạn:
+     **[Paragraph A]** ...
+     **[Paragraph B]** ...
+     **[Paragraph C]** ...
+     **[Paragraph D]** ...
+     **[Paragraph E]** ...
+     **[Paragraph F]** ...
+3. GÁN VÀO TRƯỜNG "readingPassage":
+   - BẮT BUỘC gán TOÀN BỘ bài đọc hoàn chỉnh này vào trường "readingPassage" của TẤT CẢ ${questionCount} câu hỏi!
+
+${questionTypesInstruction}
+
+QUY TẮC CÂU HỎI VÀ ĐÁP ÁN:
+- Số lượng: BẮT BUỘC TẠO ĐỦ ĐÚNG ${questionCount} CÂU HỎI TRẮC NGHIỆM (từ Câu ${startNumber} đến Câu ${endNumber}).
+- Trường "text": Chỉ chứa câu hỏi hoặc mệnh đề cần kiểm tra, TUYỆT ĐỐI KHÔNG lặp lại bài đọc trong trường "text".
+- Đáp án đúng "correctAnswerIndex": Số nguyên 0-based (0=A, 1=B, 2=C, 3=D). Cân bằng phương án đúng A, B, C, D.
+- GIẢI THÍCH CHI TIẾT BẰNG TIẾNG VIỆT (BẮT BUỘC):
+  * Trích dẫn câu/đoạn bằng chứng trong bài đọc (ví dụ: "Dẫn chứng ở Đoạn B: '...'").
+  * Dịch câu dẫn chứng sang tiếng Việt và giải thích cặn kẽ tại sao chọn đáp án đó (và tại sao các phương án khác sai hoặc Not Given).
+
+BỘ THẺ TỪ VỰNG HỌC THUẬT ACADEMIC WORD LIST (FLASHCARDS):
+- Trích xuất 6 - 8 từ vựng/collocations học thuật hay nhất trong bài đọc vào mảng "vocabularies" với đầy đủ: "word", "wordType", "phonetic" (IPA chuẩn), "vietnameseMeaning", "exampleSentence" (in đậm **word**), "cefrLevel" ("B2", "C1", "C2").
+
+TARGET OUTPUT JSON SCHEMA:
+Trả về DUY NHẤT một JSON object hợp lệ:
+{
+  "questions": [
+    {
+      "text": "Question prompt...",
+      "options": [
+        {"label": "A", "text": "Option A..."},
+        {"label": "B", "text": "Option B..."},
+        {"label": "C", "text": "Option C..."},
+        {"label": "D", "text": "Option D..."}
+      ],
+      "correctAnswerIndex": 0,
+      "explanation": "Dẫn chứng ở Đoạn B: '...' -> Giải thích chi tiết bằng tiếng Việt...",
+      "skill": "reading",
+      "subTopic": "IELTS Passage ${passageIndex}",
+      "readingPassage": "Full text of the essay with [Paragraph A], [Paragraph B]..."
+    }
+  ],
+  "vocabularies": [
+    {
+      "word": "mitigate",
+      "wordType": "v",
+      "phonetic": "/ˈmɪt.ɪ.ɡeɪt/",
+      "vietnameseMeaning": "Làm giảm nhẹ, giảm bớt tác hại",
+      "exampleSentence": "Scientists are researching methods to **mitigate** ocean acidification.",
+      "cefrLevel": "C1"
+    }
+  ]
+}`;
+
+    const payload = {
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.35,
+        maxOutputTokens: 16384,
+        responseMimeType: "application/json"
+      }
+    };
+
+    const data = await this.callGeminiAPI(payload, apiKey);
+    return this.parseLanguageExamFromGeminiResponse(data);
   }
 
   async generateTHPTQuizFromPrompt({

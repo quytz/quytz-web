@@ -481,17 +481,62 @@
    5. Reading Passage Pane
    -------------------------------------------------------------------------- */
 .reading-pane {
-  width: 380px;
+  width: var(--reading-pane-width, 420px);
   min-width: 280px;
-  max-width: 480px;
+  max-width: min(85vw, 1100px);
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all var(--transition-normal);
+  position: relative;
+  transition: width var(--transition-normal);
   z-index: 110;
   flex-shrink: 0;
+}
+
+.reading-pane.is-resizing {
+  transition: none !important;
+  user-select: none;
+}
+
+.reading-pane-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 125;
+  transition: background 0.15s ease;
+}
+
+.reading-pane-resizer:hover,
+.reading-pane-resizer.active {
+  background: rgba(122, 92, 204, 0.2);
+}
+
+.reading-pane-resizer-handle {
+  width: 3px;
+  height: 40px;
+  border-radius: 3px;
+  background: var(--border-strong);
+  transition: background 0.15s ease, height 0.15s ease;
+}
+
+.reading-pane-resizer:hover .reading-pane-resizer-handle,
+.reading-pane-resizer.active .reading-pane-resizer-handle {
+  background: var(--color-deep-purple);
+  height: 60px;
+}
+
+body.reading-resizing-active {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .reading-pane-header {
@@ -523,32 +568,106 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+.reading-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.15rem;
+  color: var(--reading-text-color, var(--text-primary));
+  background: var(--reading-bg-color, transparent);
+  transition: background 0.2s ease, color 0.2s ease;
+  font-weight: 400;
+}
+
 .reading-content-scroll,
 .reading-content-scroll p,
 .reading-content-scroll span,
 .reading-content-scroll div,
 .reading-content-scroll li,
-.reading-content-scroll strong,
 .reading-content-scroll em {
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
 }
 
+.reading-content-scroll strong,
+.reading-content-scroll b {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: 800 !important;
+  color: var(--reading-bold-color, #5a3ba8) !important;
+  background: var(--reading-bold-bg, rgba(122, 92, 204, 0.12));
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-decoration: underline 1.5px solid var(--reading-bold-color, #5a3ba8);
+  text-underline-offset: 3px;
+}
+
+.reading-blank-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background: var(--reading-blank-bg, rgba(99, 102, 241, 0.14));
+  color: var(--reading-bold-color, #4338ca);
+  font-weight: 800 !important;
+  border: 1.5px dashed var(--reading-bold-color, #4338ca);
+  letter-spacing: 0.5px;
+  font-family: inherit;
+}
+
+.reading-insertion-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 0 3px;
+  border-radius: 4px;
+  background: var(--reading-badge-bg, rgba(245, 158, 11, 0.15));
+  color: var(--reading-badge-color, #d97706);
+  font-weight: 800 !important;
+  border: 1.5px solid var(--reading-badge-color, #d97706);
+  font-family: inherit;
+}
+
+.reading-paragraph-marker {
+  display: inline-block;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Reading Box Themes */
 .reading-theme-sepia {
   --reading-bg-color: #f5eedc;
-  --reading-text-color: #42331f;
+  --reading-text-color: #3b2a14;
+  --reading-bold-color: #9c2a0c;
+  --reading-bold-bg: rgba(156, 42, 12, 0.14);
+  --reading-blank-bg: rgba(156, 42, 12, 0.15);
+  --reading-badge-color: #854d0e;
+  --reading-badge-bg: rgba(133, 77, 14, 0.15);
 }
 
 .reading-theme-paper {
   --reading-bg-color: #fdfdf8;
-  --reading-text-color: #1f1f24;
+  --reading-text-color: #1a1a20;
+  --reading-bold-color: #4338ca;
+  --reading-bold-bg: rgba(67, 56, 202, 0.1);
+  --reading-blank-bg: rgba(67, 56, 202, 0.12);
+  --reading-badge-color: #b45309;
+  --reading-badge-bg: rgba(180, 83, 9, 0.12);
 }
 
 .reading-theme-slate {
-  --reading-bg-color: #242933;
-  --reading-text-color: #ebf0f7;
+  --reading-bg-color: #1e232d;
+  --reading-text-color: #e2e8f0;
+  --reading-bold-color: #c4b5fd;
+  --reading-bold-bg: rgba(196, 181, 253, 0.18);
+  --reading-blank-bg: rgba(196, 181, 253, 0.2);
+  --reading-badge-color: #fbbf24;
+  --reading-badge-bg: rgba(251, 191, 36, 0.2);
 }
 
 /* --------------------------------------------------------------------------

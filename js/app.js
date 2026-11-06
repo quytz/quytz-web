@@ -22,7 +22,7 @@ import { renderExamView, bindExamEvents } from "./views/exam.js";
 import { renderFlashcardView, bindFlashcardEvents } from "./views/flashcard.js";
 import { renderReviewModal, bindReviewEvents } from "./views/review.js";
 import { renderQuizEditorModal, bindQuizEditorEvents } from "./views/editor.js";
-import { renderImportModal, bindImportModalEvents } from "./views/import-modal.js";
+import { renderImportModal, bindImportModalEvents, countVocabItems } from "./views/import-modal.js";
 import { renderAskGeminiModal, bindAskGeminiEvents } from "./views/ask-gemini.js";
 import { renderSettingsModal, bindSettingsEvents } from "./views/settings.js";
 import { renderSetupWizardModal, bindSetupWizardEvents } from "./views/setup-wizard.js";
@@ -56,19 +56,29 @@ class QuizMasterApp {
   }
 
   init() {
-    // Apply Settings
-    i18n.setLanguage(storage.settings.language || "vi");
-    storage.applyThemeAndScale();
+    try {
+      // Apply Settings
+      i18n.setLanguage(storage.settings.language || "vi");
+      storage.applyThemeAndScale();
 
-    // Always show splash screen for 2 seconds when website is opened
-    setTimeout(() => {
-      // Check if First-Time Setup Wizard is needed
-      if (!storage.settings.hasCompletedFirstTimeSetup) {
-        this.openSetupWizard();
-      }
+      // Brief splash delay for smooth bootstrap transition
+      setTimeout(() => {
+        try {
+          // Check if First-Time Setup Wizard is needed
+          if (!storage.settings.hasCompletedFirstTimeSetup) {
+            this.openSetupWizard();
+          }
 
+          this.render();
+        } catch (err) {
+          console.error("Error during initial render:", err);
+          this.render();
+        }
+      }, 800);
+    } catch (initErr) {
+      console.error("Fatal initialization error:", initErr);
       this.render();
-    }, 2000);
+    }
   }
 
   // Toast System
@@ -350,11 +360,13 @@ class QuizMasterApp {
     const quiz = project.quizzes.find(q => q.id === quizId);
     if (!quiz) return;
 
+    const initialDuration = quiz.durationMinutes || (quiz.quizType === "languageLearning" || project.projectType === "thptQuocGia" ? 50 : 45);
+
     this.activeModal = "examTimer";
     this.modalState = {
       quizId: quizId,
-      selectedDuration: 45,
-      customMinutes: 45,
+      selectedDuration: initialDuration,
+      customMinutes: initialDuration,
       isUnlimited: false
     };
     this.render();
@@ -651,14 +663,25 @@ class QuizMasterApp {
 
     this.activeModal = "import";
     this.modalState = {
+      model: storage.settings.model || APP_CONFIG.defaultModel,
       activeTab: isTHPT ? "ai-gen-thpt" : (isLL ? "ai-gen-lang" : "gemini"),
       selectedFileName: "",
       selectedFileContent: "",
+      selectedAnswerFile: null,
+      selectedAnswerFileName: "",
+      selectedAnswerContent: "",
       quizTitle: "",
       isCreateMultipleChoice: false, // UNTICKED BY DEFAULT
       depthMode: "normal",
       targetCEFR: "ALL",
-      isScanning: false
+      isScanning: false,
+      langAIMode: "thpt",
+      langAIVocabList: "",
+      langAIVocabMultiplier: 2,
+      langAIQuestionCount: 20,
+      langAICEFR: "ALL",
+      langAIDifficulty: "medium",
+      langAITopic: ""
     };
     this.render();
   }
@@ -667,6 +690,7 @@ class QuizMasterApp {
     this.activeModal = "settings";
     this.modalState = {
       apiKey: storage.settings.apiKey,
+      model: storage.settings.model || APP_CONFIG.defaultModel,
       theme: storage.settings.theme,
       fontSize: storage.settings.fontSize,
       uiScale: storage.settings.uiScale,
@@ -682,6 +706,7 @@ class QuizMasterApp {
     this.modalState = {
       step: 1,
       apiKey: storage.settings.apiKey,
+      model: storage.settings.model || APP_CONFIG.defaultModel,
       theme: storage.settings.theme,
       language: "vi",
       isTestingKey: false,
@@ -900,14 +925,29 @@ class QuizMasterApp {
     this.modalState.scanProgress = 10;
     this.modalState.scanStatusText = "Đang chuẩn bị quét tài liệu...";
     this.render();
+    this.startScanProgressTicker(12, 88, 2, 700);
 
     try {
+      const fileName = (this.modalState.selectedFile?.name || "").toLowerCase();
+      let images = [];
+      if (fileName.endsWith(".pdf") && this.modalState.selectedFile) {
+        this.updateScanProgress(15, "Đang trích xuất ảnh các trang từ PDF...");
+        try {
+          images = await documentParser.extractPdfAsImages(this.modalState.selectedFile, 1.5);
+        } catch (imgErr) {
+          console.warn("Could not extract PDF page images for Gemini Vision:", imgErr);
+        }
+      }
+
       const questions = await geminiService.generateQuiz({
         documentText: this.modalState.selectedFileContent,
+        answerText: this.modalState.selectedAnswerContent,
         isCreateMultipleChoice: this.modalState.isCreateMultipleChoice,
         apiKey: storage.settings.apiKey,
         language: "vi",
         depthMode: this.modalState.depthMode,
+        images,
+        model: this.modalState.model || storage.settings.model,
         onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
@@ -915,6 +955,7 @@ class QuizMasterApp {
         throw new Error("Không tìm thấy hoặc không tạo được câu hỏi nào từ tài liệu.");
       }
 
+      this.updateScanProgress(100, "Hoàn tất xử lý đề thi!");
       const newQuiz = createQuiz({
         title: this.modalState.quizTitle || this.modalState.selectedFileName.replace(/\.[^/.]+$/, "") || "Bộ đề thi Gemini AI",
         questions,
@@ -931,6 +972,8 @@ class QuizMasterApp {
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét AI: ${e.message}`);
       this.render();
+    } finally {
+      this.stopScanProgressTicker();
     }
   }
 
@@ -961,12 +1004,27 @@ class QuizMasterApp {
     this.modalState.scanProgress = 10;
     this.modalState.scanStatusText = "Đang chuẩn bị quét đề thi ngoại ngữ...";
     this.render();
+    this.startScanProgressTicker(12, 88, 2, 700);
 
     try {
+      const fileName = (this.modalState.selectedFile?.name || "").toLowerCase();
+      let images = [];
+      if (fileName.endsWith(".pdf") && this.modalState.selectedFile) {
+        this.updateScanProgress(15, "Đang trích xuất ảnh các trang từ PDF...");
+        try {
+          images = await documentParser.extractPdfAsImages(this.modalState.selectedFile, 1.5);
+        } catch (imgErr) {
+          console.warn("Could not extract PDF page images for Gemini Vision:", imgErr);
+        }
+      }
+
       const result = await geminiService.generateLanguageExam({
         documentText: this.modalState.selectedFileContent,
+        answerText: this.modalState.selectedAnswerContent,
         targetCEFR: this.modalState.targetCEFR,
         apiKey: storage.settings.apiKey,
+        images,
+        model: this.modalState.model || storage.settings.model,
         onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
@@ -974,6 +1032,7 @@ class QuizMasterApp {
         throw new Error("Không tìm thấy câu hỏi nào trong đề thi.");
       }
 
+      this.updateScanProgress(100, "Hoàn tất xử lý đề thi!");
       const newQuiz = createQuiz({
         title: this.modalState.quizTitle || this.modalState.selectedFileName.replace(/\.[^/.]+$/, "") || "Đề thi Ngoại ngữ",
         questions: result.questions,
@@ -994,6 +1053,8 @@ class QuizMasterApp {
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét đề ngoại ngữ: ${e.message}`);
       this.render();
+    } finally {
+      this.stopScanProgressTicker();
     }
   }
 
@@ -1020,26 +1081,31 @@ class QuizMasterApp {
     this.modalState.scanProgress = 10;
     this.modalState.scanStatusText = "Đang chuẩn bị quét đề thi THPT Quốc gia...";
     this.render();
+    this.startScanProgressTicker(12, 88, 2, 700);
 
     try {
       let questions = [];
       const fileName = (this.modalState.selectedFile?.name || "").toLowerCase();
       
       if (fileName.endsWith(".pdf") && this.modalState.selectedFile) {
-        if (this.updateScanProgress) this.updateScanProgress(15, "Đang trích xuất ảnh độ phân giải cao từ PDF...");
+        this.updateScanProgress(15, "Đang trích xuất ảnh độ phân giải cao từ PDF...");
         const images = await documentParser.extractPdfAsImages(this.modalState.selectedFile, 2.0);
         
-        if (this.updateScanProgress) this.updateScanProgress(40, "Đang phân tích PDF bằng Google Gemini Vision (có thể mất tới 1 phút)...");
+        this.updateScanProgress(40, "Đang phân tích PDF bằng Google Gemini Vision (có thể mất tới 1 phút)...");
         questions = await geminiService.generateTHPTQuiz({
           documentText: this.modalState.selectedFileContent,
+          answerText: this.modalState.selectedAnswerContent,
           apiKey: storage.settings.apiKey,
           images: images,
+          model: this.modalState.model || storage.settings.model,
           onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
         });
       } else {
         questions = await geminiService.generateTHPTQuiz({
           documentText: this.modalState.selectedFileContent,
+          answerText: this.modalState.selectedAnswerContent,
           apiKey: storage.settings.apiKey,
+          model: this.modalState.model || storage.settings.model,
           onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
         });
       }
@@ -1048,6 +1114,7 @@ class QuizMasterApp {
         throw new Error("Không tìm thấy câu hỏi nào trong đề thi.");
       }
 
+      this.updateScanProgress(100, "Hoàn tất xử lý đề thi!");
       const newQuiz = createQuiz({
         title: this.modalState.quizTitle || this.modalState.selectedFileName.replace(/\.[^/.]+$/, "") || "Đề thi THPT Quốc gia",
         questions: questions,
@@ -1065,20 +1132,46 @@ class QuizMasterApp {
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi quét đề THPT: ${e.message}`);
       this.render();
+    } finally {
+      this.stopScanProgressTicker();
+    }
+  }
+
+  startScanProgressTicker(startPct = 15, maxPct = 90, step = 2, intervalMs = 600) {
+    if (this._scanTickerInterval) clearInterval(this._scanTickerInterval);
+    let current = startPct;
+    this.updateScanProgress(current, this.modalState?.scanStatusText);
+    this._scanTickerInterval = setInterval(() => {
+      if (!this.modalState || !this.modalState.isScanning) {
+        clearInterval(this._scanTickerInterval);
+        return;
+      }
+      if (current < maxPct) {
+        current += step;
+        if (current > maxPct) current = maxPct;
+        this.updateScanProgress(current, this.modalState.scanStatusText);
+      }
+    }, intervalMs);
+  }
+
+  stopScanProgressTicker() {
+    if (this._scanTickerInterval) {
+      clearInterval(this._scanTickerInterval);
+      this._scanTickerInterval = null;
     }
   }
 
   updateScanProgress(percent, message) {
     if (this.modalState) {
       this.modalState.scanProgress = percent;
-      this.modalState.scanStatusText = message;
+      if (message) this.modalState.scanStatusText = message;
     }
     const bar = document.getElementById("scan-progress-bar");
     const status = document.getElementById("scan-progress-status");
     const pct = document.getElementById("scan-progress-percent");
     if (bar) bar.style.width = `${percent}%`;
-    if (status) status.textContent = message;
-    if (pct) pct.textContent = `${percent}%`;
+    if (status && message) status.textContent = message;
+    if (pct) pct.textContent = `${Math.round(percent)}%`;
   }
 
   // AI Generation Handlers
@@ -1089,24 +1182,48 @@ class QuizMasterApp {
       return;
     }
 
-    // Get mode from modalState (set by radio buttons in UI)
+    // Always sync latest input values directly from DOM before processing
+    const titleInput = document.getElementById("input-lang-ai-quiz-title");
+    if (titleInput) this.modalState.quizTitle = titleInput.value;
+
+    const vocabInput = document.getElementById("textarea-lang-ai-vocab-list");
+    if (vocabInput) this.modalState.langAIVocabList = vocabInput.value;
+
+    const topicInput = document.getElementById("textarea-lang-ai-topic");
+    if (topicInput) this.modalState.langAITopic = topicInput.value;
+
     const mode = this.modalState.langAIMode || "thpt";
+    const vocabList = (this.modalState.langAIVocabList || "").trim();
 
-    // Set defaults based on mode
-    let questionCount = 10;
-    let questionTypes = ["reading", "listening", "lexical"]; // Default balanced set
-
-    if (mode === "ielts") {
-      questionCount = 40; // IELTS standard
-      // For IELTS, focus on reading and listening as they are the main multiple choice components
-      questionTypes = ["reading", "listening"];
-    } else if (mode === "thpt") {
-      questionCount = 10; // THPT default
-      // For THPT English, use balanced distribution
-      questionTypes = ["reading", "listening", "lexical"];
+    if (mode === "vocab" && !vocabList) {
+      this.showToast("error", "Vui lòng nhập hoặc dán danh sách từ vựng cần ôn tập.");
+      return;
     }
 
-    const cefrLevel = this.modalState.langAICEFR || "ALL";
+    let questionCount;
+    let cefrLevel = this.modalState.langAICEFR || "ALL";
+
+    if (mode === "vocab") {
+      const mult = this.modalState.langAIVocabMultiplier || 2;
+      const wordCount = countVocabItems(vocabList);
+      questionCount = Math.max(2, (wordCount > 0 ? wordCount : 5) * mult);
+      this.modalState.langAIQuestionCount = questionCount;
+      cefrLevel = "ALL";
+    } else if (mode === "thpt") {
+      // THPT English exam strictly follows MOET 40-question guideline
+      questionCount = 40;
+      cefrLevel = "B1";
+      this.modalState.langAIQuestionCount = 40;
+    } else if (mode === "ielts") {
+      // Official IELTS Academic Reading test strictly follows 40 questions across 3 passages
+      questionCount = 40;
+      cefrLevel = "B2-C1";
+      this.modalState.langAIQuestionCount = 40;
+    } else {
+      const defaultCount = 15;
+      questionCount = parseInt(this.modalState.langAIQuestionCount, 10) || defaultCount;
+    }
+
     const topic = this.modalState.langAITopic || "";
     const difficulty = this.modalState.langAIDifficulty || "medium";
 
@@ -1117,28 +1234,34 @@ class QuizMasterApp {
     }
 
     logger.action("Bắt đầu tạo đề thi Ngoại ngữ bằng AI", {
+      mode,
       questionCount,
-      questionTypes,
       cefrLevel,
       topic,
       difficulty,
-      mode
+      vocabCount: vocabList ? vocabList.split(/\n|,/).filter(Boolean).length : 0
     });
 
     this.modalState.isScanning = true;
     this.modalState.scanProgress = 10;
-    this.modalState.scanStatusText = "Đang chuẩn bị tạo đề thi bằng AI...";
+    this.modalState.scanStatusText = mode === "vocab"
+      ? "Đang phân tích danh sách từ vựng và thiết kế câu hỏi ngữ cảnh..."
+      : (mode === "thpt"
+        ? "Đang biên soạn đề thi THPT Tiếng Anh chuẩn 40 câu theo ma trận Bộ GD&ĐT..."
+        : "Đang biên soạn đề thi IELTS Academic Reading (3 bài đọc, 40 câu - 60 phút)...");
     this.render();
+    this.startScanProgressTicker(12, 88, 2, 700);
 
     try {
       const result = await geminiService.generateLanguageExamFromPrompt({
+        mode,
+        vocabList,
         questionCount,
-        questionTypes,
         cefrLevel,
         topic,
         difficulty,
-        mode,
         apiKey: storage.settings.apiKey,
+        model: this.modalState.model || storage.settings.model,
         onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
@@ -1146,13 +1269,19 @@ class QuizMasterApp {
         throw new Error("Không thể tạo câu hỏi nào từ yêu cầu của bạn.");
       }
 
+      this.updateScanProgress(100, "Hoàn tất tạo đề thi!");
+      let defaultTitle = `Đề thi Ngoại ngữ AI (${new Date().toLocaleDateString()})`;
+      if (mode === "vocab") defaultTitle = `Ôn tập từ vựng AI (${new Date().toLocaleDateString()})`;
+      else if (mode === "ielts") defaultTitle = `IELTS Academic Reading (${new Date().toLocaleDateString()})`;
+      else if (mode === "thpt") defaultTitle = `Đề thi Tiếng Anh THPT Quốc gia (40 câu - ${new Date().toLocaleDateString()})`;
+
       const newQuiz = createQuiz({
-        title: this.modalState.quizTitle || `Đề thi Ngoại ngữ AI ${new Date().toLocaleDateString()}`,
+        title: this.modalState.quizTitle || defaultTitle,
         questions: result.questions,
         vocabularies: result.vocabularies || [],
         quizType: "languageLearning",
-        targetCEFR: cefrLevel,
-        durationMinutes: result.detectedDurationMinutes,
+        targetCEFR: mode === "thpt" ? "B1" : (mode === "ielts" ? "B2-C1" : cefrLevel),
+        durationMinutes: mode === "thpt" ? 50 : (mode === "ielts" ? 60 : (result.detectedDurationMinutes || 30)),
         isPreMade: true
       });
 
@@ -1169,6 +1298,8 @@ class QuizMasterApp {
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi tạo đề bằng AI: ${e.message}`);
       this.render();
+    } finally {
+      this.stopScanProgressTicker();
     }
   }
 
@@ -1219,6 +1350,7 @@ class QuizMasterApp {
     this.modalState.scanProgress = 10;
     this.modalState.scanStatusText = "Đang chuẩn bị tạo đề thi THPT bằng AI...";
     this.render();
+    this.startScanProgressTicker(12, 88, 2, 700);
 
     try {
       const questions = await geminiService.generateTHPTQuizFromPrompt({
@@ -1229,6 +1361,7 @@ class QuizMasterApp {
         topics,
         difficulty,
         apiKey: storage.settings.apiKey,
+        model: this.modalState.model || storage.settings.model,
         onProgress: (pct, msg) => this.updateScanProgress(pct, msg)
       });
 
@@ -1236,6 +1369,7 @@ class QuizMasterApp {
         throw new Error("Không thể tạo câu hỏi nào từ yêu cầu của bạn.");
       }
 
+      this.updateScanProgress(100, "Hoàn tất tạo đề thi!");
       const newQuiz = createQuiz({
         title: this.modalState.quizTitle || `Đề thi THPT Quốc gia AI ${new Date().toLocaleDateString()}`,
         questions,
@@ -1253,6 +1387,8 @@ class QuizMasterApp {
       this.modalState.isScanning = false;
       this.showToast("error", `Lỗi tạo đề bằng AI: ${e.message}`);
       this.render();
+    } finally {
+      this.stopScanProgressTicker();
     }
   }
 
@@ -1280,6 +1416,7 @@ class QuizMasterApp {
         question: this.modalState.question,
         userQuery: this.modalState.userQuery,
         apiKey: storage.settings.apiKey,
+        model: storage.settings.model,
         language: "vi"
       });
 
@@ -1523,9 +1660,43 @@ class QuizMasterApp {
         onFileSelected: async (file) => {
           this.modalState.selectedFile = file;
           this.modalState.selectedFileName = file.name;
-          const ext = file.name.split(".").pop();
+          this.render();
+          const ext = file.name.split(".").pop().toLowerCase();
           telemetry.trackDocumentImport(ext);
-          this.modalState.selectedFileContent = await documentParser.extractTextFromFile(file);
+          try {
+            const content = await documentParser.extractTextFromFile(file);
+            this.modalState.selectedFileContent = content || "";
+            if (!content || !content.trim()) {
+              if (ext === "pdf") {
+                this.modalState.selectedFileContent = "(Tài liệu PDF hình ảnh - sẽ phân tích bằng Gemini AI Vision)";
+                this.showToast("info", `Đã nhận tệp ${file.name}. Hệ thống sẽ sử dụng Gemini Vision để phân tích hình ảnh các trang.`);
+              } else {
+                this.showToast("warning", `Tệp ${file.name} không chứa văn bản.`);
+              }
+            } else {
+              this.showToast("info", `Đã tải tệp: ${file.name}`);
+            }
+          } catch (err) {
+            console.error("Lỗi khi đọc tệp:", err);
+            this.showToast("error", `Lỗi đọc tệp: ${err.message}`);
+          }
+          this.render();
+        },
+        onAnswerFileSelected: async (file) => {
+          this.modalState.selectedAnswerFile = file;
+          this.modalState.selectedAnswerFileName = file.name;
+          try {
+            this.modalState.selectedAnswerContent = await documentParser.extractTextFromFile(file);
+            this.showToast("info", `Đã tải tệp đáp án: ${file.name}`);
+          } catch (err) {
+            this.showToast("error", `Lỗi đọc tệp đáp án: ${err.message}`);
+          }
+          this.render();
+        },
+        onAnswerFileRemoved: () => {
+          this.modalState.selectedAnswerFile = null;
+          this.modalState.selectedAnswerFileName = "";
+          this.modalState.selectedAnswerContent = "";
           this.render();
         },
         onPremadeFileSelected: (file) => this.handlePremadeImport(file),
@@ -1544,6 +1715,7 @@ class QuizMasterApp {
         onSave: () => {
           storage.saveSettings({
             apiKey: this.modalState.apiKey,
+            model: this.modalState.model,
             theme: this.modalState.theme,
             fontSize: this.modalState.fontSize,
             uiScale: this.modalState.uiScale,
@@ -1557,7 +1729,7 @@ class QuizMasterApp {
           this.modalState.isTestingKey = true;
           this.modalState.keyValidationResult = null;
           this.render();
-          const valid = await geminiService.validateAPIKey(this.modalState.apiKey);
+          const valid = await geminiService.validateAPIKey(this.modalState.apiKey, this.modalState.model);
           this.modalState.isTestingKey = false;
           this.modalState.keyValidationResult = valid;
           this.render();
@@ -1613,6 +1785,7 @@ class QuizMasterApp {
         onFinish: () => {
           storage.saveSettings({
             apiKey: this.modalState.apiKey,
+            model: this.modalState.model || storage.settings.model || APP_CONFIG.defaultModel,
             theme: this.modalState.theme,
             language: "vi",
             hasCompletedFirstTimeSetup: true
@@ -1949,7 +2122,7 @@ class QuizMasterApp {
                     <input type="radio" name="project-type" value="languageLearning" style="width: 18px; height: 18px; accent-color: var(--color-deep-purple);">
                     <div>
                       <div style="font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                        ${renderSF("book.closed", { size: "15px" })} <span>Dự án Học Ngoại ngữ</span> <span class="badge badge-orange" style="font-size: 9px; padding: 1px 5px;">WIP</span>
+                        ${renderSF("book.closed", { size: "15px" })} <span>Dự án Học Ngoại ngữ</span>
                       </div>
                       <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px;">
                         Đọc hiểu song song, câu hỏi ngữ âm/từ vựng và thẻ từ vựng CEFR
@@ -1960,7 +2133,7 @@ class QuizMasterApp {
                     <input type="radio" name="project-type" value="thptQuocGia" style="width: 18px; height: 18px; accent-color: var(--color-deep-purple);">
                     <div>
                       <div style="font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                        ${renderSF("graduationcap", { size: "15px" })} <span>Dự án THPT Quốc gia (3 Phần)</span> <span class="badge badge-orange" style="font-size: 9px; padding: 1px 5px;">WIP</span>
+                        ${renderSF("graduationcap", { size: "15px" })} <span>Dự án THPT Quốc gia (3 Phần)</span>
                       </div>
                       <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px;">
                         Cấu trúc 3 Phần chuẩn Bộ GD&ĐT: Phần I (4 Lựa chọn), Phần II (Đúng/Sai 4 ý), Phần III (Trả lời ngắn)
@@ -2031,6 +2204,9 @@ class QuizMasterApp {
                   </button>
                   <button class="btn ${!isUnlimited && curDuration === 45 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="45">
                     45 Phút (Chuẩn)
+                  </button>
+                  <button class="btn ${!isUnlimited && curDuration === 50 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="50">
+                    50 Phút (Chuẩn THPT)
                   </button>
                   <button class="btn ${!isUnlimited && curDuration === 60 ? 'btn-primary btn-orange' : 'btn-secondary'}" data-timer-val="60">
                     60 Phút

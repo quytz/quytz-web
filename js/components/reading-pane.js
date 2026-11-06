@@ -18,16 +18,22 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
   const fontSizeDelta = Number(state.fontSizeDelta) || 0;
   const fontSizeStyle = `calc(1.05rem + ${fontSizeDelta * 3}px)`;
   const lineSpacingStyle = `${state.lineSpacing || 1.65}`;
-  const isBold = state.isBold ? "font-weight: 600;" : "font-weight: 400;";
+  const isBold = state.isBold ? "font-weight: 500;" : "font-weight: 400;";
+  
+  const savedWidth = Number(state.width) || Number(localStorage.getItem("quiz_reading_pane_width")) || 420;
+  const isExpanded = savedWidth >= 600;
 
   return `
-    <div class="reading-pane ${themeClass}">
+    <div class="reading-pane ${themeClass}" id="reading-pane-box" style="width: ${savedWidth}px; --reading-pane-width: ${savedWidth}px;">
       <div class="reading-pane-header">
         <div style="display: flex; align-items: center; gap: 6px;">
           <span style="color: var(--color-deep-purple); font-size: 16px;">📖</span>
           <span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-deep-purple);">Đoạn văn đọc hiểu</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="btn btn-secondary btn-icon-only ${isExpanded ? 'active' : ''}" id="btn-reading-widen" title="${isExpanded ? 'Thu hẹp khung đọc (Về 380px)' : 'Mở rộng khung đọc (Lên 650px / 50%)'}" style="font-size: 11px; font-weight: 800;">
+            ${isExpanded ? '⇥⇤' : '⇤⇥'}
+          </button>
           <button class="btn btn-secondary btn-icon-only" id="btn-font-dec" title="Giảm cỡ chữ" style="font-size: 11px; font-weight: 800;">A-</button>
           <button class="btn btn-secondary btn-icon-only" id="btn-font-inc" title="Tăng cỡ chữ" style="font-size: 11px; font-weight: 800;">A+</button>
           <button class="btn btn-pill ${state.showDrawer ? 'active' : 'btn-secondary'}" id="btn-toggle-reading-drawer" style="font-size: 11px;">
@@ -38,6 +44,16 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
 
       ${state.showDrawer ? `
         <div class="reading-customizer-drawer">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary); width: 60px;">Độ rộng:</span>
+            <div class="segmented-control" style="flex: 1;">
+              <button class="segment-btn ${savedWidth <= 380 ? 'active' : ''}" data-width="380">Chuẩn</button>
+              <button class="segment-btn ${savedWidth > 380 && savedWidth <= 520 ? 'active' : ''}" data-width="500">Rộng vừa</button>
+              <button class="segment-btn ${savedWidth > 520 && savedWidth <= 720 ? 'active' : ''}" data-width="650">Rất rộng (50%)</button>
+              <button class="segment-btn ${savedWidth > 720 ? 'active' : ''}" data-width="850">Cực đại</button>
+            </div>
+          </div>
+
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary); width: 60px;">Màu nền:</span>
             <div class="segmented-control" style="flex: 1;">
@@ -60,7 +76,7 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
 
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <label class="custom-checkbox" style="font-size: var(--text-xs);">
-              <input type="checkbox" id="chk-reading-bold" ${state.isBold ? 'checked' : ''}> In đậm
+              <input type="checkbox" id="chk-reading-bold" ${state.isBold ? 'checked' : ''}> Tăng độ tương phản chữ
             </label>
             <button class="btn btn-ghost" id="btn-reading-reset" style="font-size: 11px; color: var(--color-ocean-blue);">Khôi phục mặc định</button>
           </div>
@@ -70,11 +86,28 @@ export function renderReadingPassagePane(passageText, state, onStateChange) {
       <div class="reading-content-scroll" style="font-family: ${fontFamilyStyle} !important; font-size: ${fontSizeStyle} !important; line-height: ${lineSpacingStyle} !important; ${isBold}">
         ${formatMarkdownHTML(passageText)}
       </div>
+
+      <!-- Draggable Split Resizer Bar -->
+      <div class="reading-pane-resizer" id="reading-pane-resizer" title="Kéo để điều chỉnh độ rộng khung đọc (hoặc bấm ⇤⇥)">
+        <div class="reading-pane-resizer-handle"></div>
+      </div>
     </div>
   `;
 }
 
 export function bindReadingPaneEvents(state, updateStateCallback) {
+  const widenBtn = document.getElementById("btn-reading-widen");
+  if (widenBtn) {
+    widenBtn.onclick = (e) => {
+      e.stopPropagation();
+      const curWidth = Number(state.width) || Number(localStorage.getItem("quiz_reading_pane_width")) || 420;
+      const targetWidth = curWidth >= 600 ? 380 : 650;
+      state.width = targetWidth;
+      localStorage.setItem("quiz_reading_pane_width", targetWidth);
+      updateStateCallback(state);
+    };
+  }
+
   const decBtn = document.getElementById("btn-font-dec");
   if (decBtn) {
     decBtn.onclick = (e) => {
@@ -103,6 +136,16 @@ export function bindReadingPaneEvents(state, updateStateCallback) {
       updateStateCallback(state);
     };
   }
+
+  document.querySelectorAll(".reading-customizer-drawer button[data-width]").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const targetWidth = Number(btn.dataset.width) || 420;
+      state.width = targetWidth;
+      localStorage.setItem("quiz_reading_pane_width", targetWidth);
+      updateStateCallback(state);
+    };
+  });
 
   document.querySelectorAll(".reading-customizer-drawer button[data-theme]").forEach(btn => {
     btn.onclick = (e) => {
@@ -136,8 +179,73 @@ export function bindReadingPaneEvents(state, updateStateCallback) {
       state.theme = "standard";
       state.fontFamily = "serif";
       state.isBold = false;
+      state.width = 420;
+      localStorage.setItem("quiz_reading_pane_width", 420);
       updateStateCallback(state);
     };
+  }
+
+  // Draggable Resizer Logic
+  const resizer = document.getElementById("reading-pane-resizer");
+  const paneBox = document.getElementById("reading-pane-box");
+  if (resizer && paneBox) {
+    let isDragging = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    const onMouseDown = (e) => {
+      isDragging = true;
+      startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+      startWidth = paneBox.getBoundingClientRect().width;
+      paneBox.classList.add("is-resizing");
+      resizer.classList.add("active");
+      document.body.classList.add("reading-resizing-active");
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+      window.addEventListener("touchmove", onTouchMove, { passive: false });
+      window.addEventListener("touchend", onMouseUp);
+      e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const currentX = e.clientX;
+      const delta = currentX - startX;
+      const newWidth = Math.max(280, Math.min(window.innerWidth - 320, startWidth + delta));
+      paneBox.style.width = `${newWidth}px`;
+      paneBox.style.setProperty("--reading-pane-width", `${newWidth}px`);
+    };
+
+    const onTouchMove = (e) => {
+      if (!isDragging || !e.touches || !e.touches[0]) return;
+      const currentX = e.touches[0].clientX;
+      const delta = currentX - startX;
+      const newWidth = Math.max(280, Math.min(window.innerWidth - 320, startWidth + delta));
+      paneBox.style.width = `${newWidth}px`;
+      paneBox.style.setProperty("--reading-pane-width", `${newWidth}px`);
+      e.preventDefault();
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      paneBox.classList.remove("is-resizing");
+      resizer.classList.remove("active");
+      document.body.classList.remove("reading-resizing-active");
+
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onMouseUp);
+
+      const finalWidth = Math.round(paneBox.getBoundingClientRect().width);
+      state.width = finalWidth;
+      localStorage.setItem("quiz_reading_pane_width", finalWidth);
+    };
+
+    resizer.addEventListener("mousedown", onMouseDown);
+    resizer.addEventListener("touchstart", onMouseDown, { passive: false });
   }
 }
 
@@ -244,7 +352,7 @@ function renderTableHTML(rows) {
 function safeHtmlEscape(str) {
   return str
     .replace(/&(?!(?:amp|lt|gt|quot|#39|emsp|ensp|nbsp|plusmn|times|div|infin|approx|ne|le|ge|sub|supe);)/gi, "&amp;")
-    .replace(/<(?!(?:\/?(strong|em|p|br|code|pre|div|span|table|thead|tbody|tr|th|td|a|h\d)\b))/gi, "&lt;")
+    .replace(/<(?!(?:\/?(strong|em|u|b|i|sub|sup|p|br|code|pre|div|span|table|thead|tbody|tr|th|td|a|h\d)\b))/gi, "&lt;")
     .replace(/>(?!(?:<\/?[a-z0-9]+[^>]*>))/gi, "&gt;");
 }
 
@@ -308,7 +416,7 @@ export function formatMarkdownHTML(rawText) {
   // 6. Safe HTML Escape (preserving entity names & table HTML)
   text = safeHtmlEscape(text);
 
-  // 6.5 Chemistry & Math Subscripts and Superscripts (e.g. [Cu(OH2)6]2+, H2SO4, Fe^{2+}, Fe_{2}(SO_{4})_{3})
+  // 6.5 Chemistry & Math Subscripts and Superscripts
   text = text.replace(/_\{([^}]+)\}/g, '<sub>$1</sub>');
   text = text.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>');
   text = text.replace(/([a-zA-Z\)])\{([0-9]+)\}/g, '$1<sub>$2</sub>');
@@ -316,10 +424,15 @@ export function formatMarkdownHTML(rawText) {
   text = text.replace(/([a-zA-Z\)\],])\^([0-9a-zA-Z+\-]+)(?![a-zA-Z0-9_]*<\/sup>)/g, '$1<sup>$2</sup>');
   text = text.replace(/~([^~\n]+)~/g, '<sub>$1</sub>');
 
-  // 7. Bold & Italic (using word boundaries to prevent underscores in chemistry/math from breaking)
-  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // 6.7 Format blank placeholders and sentence insertion markers
+  text = text.replace(/\*?\*?\((\d+)\)\s*_{2,}\*?\*?/g, '<span class="reading-blank-badge">($1) _______</span>');
+  text = text.replace(/\*?\*?\[([A-D])\]\*?\*?/g, '<span class="reading-insertion-badge">[$1]</span>');
+  text = text.replace(/(?:^|\n)\s*(Paragraph\s+\d+|Đoạn\s+\d+)\s*[:\.]?/gi, (m, p) => `<span class="reading-paragraph-marker">${p}:</span> `);
+
+  // 7. Bold & Italic (strictly inline to prevent entire passages from bleeding into bold)
+  text = text.replace(/\*\*([^*\n\r]+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__([^_\n\r]+?)__/g, '<strong>$1</strong>');
+  text = text.replace(/\*([^*\n\r]+?)\*/g, '<em>$1</em>');
   text = text.replace(/(^|[\s\(\[\{])_([^\s_][^_]*[^\s_])_([\s\)\]\}\.,:;!\?]|$)/g, '$1<em>$2</em>$3');
 
   // 8. Restore Placeholders
@@ -336,7 +449,7 @@ export function formatMarkdownHTML(rawText) {
     if (trimmed.startsWith("<pre>") || trimmed.startsWith("<div class=\"table-container\"") || trimmed.startsWith("<div class=\"math-block\"") || trimmed.startsWith("<div class=\"question-img-container\"")) {
       return trimmed;
     }
-    return `<div class="formatted-paragraph" style="margin-bottom: 0.65em; line-height: 1.6; white-space: pre-wrap;">${trimmed.replace(/\n/g, '<br>')}</div>`;
+    return `<div class="formatted-paragraph" style="margin-bottom: 0.75em; line-height: 1.65; white-space: pre-wrap;">${trimmed.replace(/\n/g, '<br>')}</div>`;
   }).filter(Boolean).join('');
 }
 

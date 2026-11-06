@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v2.0.2] - 2026-11-06
+
+### Added
+- **Gemini 3.8 Flash Model Support**:
+  - Added option to switch between **Gemini 3.5 Flash Lite** (fast, optimized for general questions) and **Gemini 3.8 Flash** (next-gen intelligence, deeper reasoning, advanced document understanding).
+  - Configurable in Settings and directly inside the Import Modal via an interactive AI Model selector sub-bar.
+
+### Fixed
+- **Regular Import Mode - PDF Import Fix**:
+  - Fixed an issue where importing PDF files in regular import mode did nothing because unresolved image objects hung asynchronously during PDF parsing.
+  - Added immediate UI feedback when a document is selected, alongside comprehensive error handling.
+  - Added PDF page image extraction support with Gemini Vision multimodal analysis for scanned PDFs and diagram-heavy documents.
+
+---
+
 ## [v2.0.1] - 2026-08-26
 
 ### Added & Rebranded

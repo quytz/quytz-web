@@ -12,7 +12,12 @@ class DocumentParserService {
   async extractTextFromFile(file) {
     const ext = file.name.split(".").pop().toLowerCase();
 
-    if (ext === "txt" || ext === "md" || ext === "csv" || ext === "rtf") {
+    if (ext === "rtf") {
+      const rawText = await file.text();
+      return this.cleanRtfContent(rawText);
+    }
+
+    if (ext === "txt" || ext === "md" || ext === "csv") {
       return await file.text();
     }
 
@@ -34,6 +39,20 @@ class DocumentParserService {
 
     // Default fallback
     return await file.text();
+  }
+
+  cleanRtfContent(rawRtf) {
+    if (!rawRtf) return "";
+    let text = rawRtf.trim();
+    if (text.includes("{\\rtf") || text.startsWith("{\\")) {
+      text = text.replace(/\{\\\*[\s\S]*?\}/g, "");
+      text = text.replace(/\{\\(?:fonttbl|colortbl|stylesheet|info)[\s\S]*?\}/gi, "");
+      text = text.replace(/\\(?:par|line)\b/gi, "\n");
+      text = text.replace(/\\([\{\}\\])/g, "$1");
+      text = text.replace(/\\\w+\d*\s?/g, " ");
+      text = text.replace(/[{}]/g, " ");
+    }
+    return text.trim();
   }
 
   async extractQuizFromFile(file) {
@@ -238,14 +257,30 @@ class DocumentParserService {
 
     const lines = [];
     const children = body.childNodes;
+    const numCounters = {};
 
     for (let i = 0; i < children.length; i++) {
       const node = children[i];
       const tag = this.getLocalName(node);
 
       if (tag === "p") {
-        const pText = this.parseDocxParagraph(node, imageMap, oleMap);
+        let pText = this.parseDocxParagraph(node, imageMap, oleMap);
         if (pText.trim().length > 0) {
+          // Check for list numbering in w:numPr
+          const numPrNodes = this.findMatchingNodes(node, ["numPr", "w:numPr"]);
+          if (numPrNodes.length > 0) {
+            const numIdNodes = this.findMatchingNodes(numPrNodes[0], ["numId", "w:numId"]);
+            const ilvlNodes = this.findMatchingNodes(numPrNodes[0], ["ilvl", "w:ilvl"]);
+            const numId = numIdNodes[0] ? this.getNodeAttribute(numIdNodes[0], "val") : "1";
+            const ilvl = ilvlNodes[0] ? this.getNodeAttribute(ilvlNodes[0], "val") : "0";
+            if (numId) {
+              const key = `${numId}_${ilvl}`;
+              numCounters[key] = (numCounters[key] || 0) + 1;
+              if (!/^\s*(?:\d+[\.:\)]|(?:câu|question|part|section|phần|bài)\b)/i.test(pText)) {
+                pText = `${numCounters[key]}. ${pText}`;
+              }
+            }
+          }
           lines.push(pText);
         }
       } else if (tag === "tbl") {
@@ -291,7 +326,7 @@ class DocumentParserService {
       }
     }
 
-    return result.replace(/\s+/g, ' ').trim();
+    return result.replace(/[^\S\r\n]+/g, ' ').replace(/ *\n */g, '\n').trim();
   }
 
   parseDocxRun(rNode, imageMap = {}, oleMap = {}) {
@@ -318,10 +353,17 @@ class DocumentParserService {
       }
     }
     
-    // 3. Check text nodes
-    const tNodes = this.findMatchingNodes(rNode, ["t", "w:t"]);
-    for (let i = 0; i < tNodes.length; i++) {
-      text += tNodes[i].textContent || "";
+    // 3. Check child elements inside run (t, tab, br, cr)
+    const runChildren = rNode.childNodes;
+    for (let i = 0; i < runChildren.length; i++) {
+      const childTag = this.getLocalName(runChildren[i]);
+      if (childTag === "t") {
+        text += runChildren[i].textContent || "";
+      } else if (childTag === "tab") {
+        text += "    ";
+      } else if (childTag === "br" || childTag === "cr") {
+        text += "\n";
+      }
     }
 
     // 4. Check drawings inside run (only if not an OLE equation object)
@@ -346,9 +388,39 @@ class DocumentParserService {
     if (vertAligns.length > 0) {
       const val = this.getNodeAttribute(vertAligns[0], "val");
       if (val === "superscript") {
-        return `^{${text}}`;
+        text = `^{${text}}`;
       } else if (val === "subscript") {
-        return `_{${text}}`;
+        text = `_{${text}}`;
+      }
+    }
+
+    // 6. Check formatting properties (underline, bold, italic) in rPr
+    const rPrNodes = this.findMatchingNodes(rNode, ["rPr", "w:rPr"]);
+    if (rPrNodes.length > 0) {
+      const rPr = rPrNodes[0];
+      const uNodes = this.findMatchingNodes(rPr, ["u", "w:u"]);
+      const bNodes = this.findMatchingNodes(rPr, ["b", "w:b", "bCs", "w:bCs"]);
+      const iNodes = this.findMatchingNodes(rPr, ["i", "w:i"]);
+
+      const isUnderline = uNodes.some(u => {
+        const val = this.getNodeAttribute(u, "val");
+        return val !== "none" && val !== "0";
+      });
+      const isBold = bNodes.some(b => {
+        const val = this.getNodeAttribute(b, "val");
+        return val !== "false" && val !== "0";
+      });
+      const isItalic = iNodes.some(it => {
+        const val = this.getNodeAttribute(it, "val");
+        return val !== "false" && val !== "0";
+      });
+
+      if (isUnderline && text.trim()) {
+        text = `<u>${text}</u>`;
+      } else if (isBold && text.trim()) {
+        text = `**${text}**`;
+      } else if (isItalic && text.trim()) {
+        text = `*${text}*`;
       }
     }
 
@@ -1019,10 +1091,14 @@ class DocumentParserService {
       };
 
       // Extract images embedded on this page
-      const pageImages = await this.extractImagesFromPdfPage(page);
       let pageImageText = "";
-      if (pageImages && pageImages.length > 0) {
-        pageImageText = "\n\n" + pageImages.join("\n\n") + "\n\n";
+      try {
+        const pageImages = await this.extractImagesFromPdfPage(page);
+        if (pageImages && pageImages.length > 0) {
+          pageImageText = "\n\n" + pageImages.join("\n\n") + "\n\n";
+        }
+      } catch (imgErr) {
+        console.warn("Could not extract image from PDF page:", imgErr);
       }
 
       if (isTwoCol) {
@@ -1047,44 +1123,70 @@ class DocumentParserService {
         const fn = ops.fnArray[j];
         if (typeof pdfjsLib !== "undefined" && (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintInlineImageXObject)) {
           const imgName = ops.argsArray[j][0];
-          const imgObj = await new Promise((resolve) => {
-            page.objs.get(imgName, (img) => resolve(img));
-          });
-
-          if (imgObj && imgObj.data && imgObj.width > 25 && imgObj.height > 25) {
-            const canvas = document.createElement("canvas");
-            canvas.width = imgObj.width;
-            canvas.height = imgObj.height;
-            const ctx = canvas.getContext("2d");
-            const imgData = ctx.createImageData(imgObj.width, imgObj.height);
-
-            if (imgObj.data.length === imgObj.width * imgObj.height * 4) {
-              imgData.data.set(imgObj.data);
-            } else if (imgObj.data.length === imgObj.width * imgObj.height * 3) {
-              let s = 0, d = 0;
-              while (s < imgObj.data.length) {
-                imgData.data[d++] = imgObj.data[s++];
-                imgData.data[d++] = imgObj.data[s++];
-                imgData.data[d++] = imgObj.data[s++];
-                imgData.data[d++] = 255;
-              }
-            } else if (imgObj.data.length === imgObj.width * imgObj.height) {
-              let s = 0, d = 0;
-              while (s < imgObj.data.length) {
-                const val = imgObj.data[s++];
-                imgData.data[d++] = val;
-                imgData.data[d++] = val;
-                imgData.data[d++] = val;
-                imgData.data[d++] = 255;
-              }
+          // In PDF.js, image data in page.objs / page.commonObjs is only resolved during rendering.
+          // NEVER await page.objs.get without verification, as it will hang indefinitely.
+          let imgObj = null;
+          if (page.objs && typeof page.objs.has === "function" && page.objs.has(imgName)) {
+            try {
+              imgObj = page.objs.get(imgName);
+            } catch (e) {
+              imgObj = null;
             }
-            ctx.putImageData(imgData, 0, 0);
-            const dataUri = canvas.toDataURL("image/png");
+          } else if (page.commonObjs && typeof page.commonObjs.has === "function" && page.commonObjs.has(imgName)) {
+            try {
+              imgObj = page.commonObjs.get(imgName);
+            } catch (e) {
+              imgObj = null;
+            }
+          }
 
-            const count = Object.keys(this.currentExtractedImages).length + 1;
-            const token = `[IMG_${count}]`;
-            this.currentExtractedImages[token] = dataUri;
-            tokens.push(token);
+          if (imgObj) {
+            let dataUri = null;
+            if (imgObj.bitmap) {
+              const canvas = document.createElement("canvas");
+              canvas.width = imgObj.width || imgObj.bitmap.width;
+              canvas.height = imgObj.height || imgObj.bitmap.height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(imgObj.bitmap, 0, 0);
+              dataUri = canvas.toDataURL("image/png");
+            } else if (imgObj.data && imgObj.width > 25 && imgObj.height > 25) {
+              const canvas = document.createElement("canvas");
+              canvas.width = imgObj.width;
+              canvas.height = imgObj.height;
+              const ctx = canvas.getContext("2d");
+              const imgData = ctx.createImageData(imgObj.width, imgObj.height);
+
+              if (imgObj.data.length === imgObj.width * imgObj.height * 4) {
+                imgData.data.set(imgObj.data);
+              } else if (imgObj.data.length === imgObj.width * imgObj.height * 3) {
+                let s = 0, d = 0;
+                while (s < imgObj.data.length) {
+                  imgData.data[d++] = imgObj.data[s++];
+                  imgData.data[d++] = imgObj.data[s++];
+                  imgData.data[d++] = imgObj.data[s++];
+                  imgData.data[d++] = 255;
+                }
+              } else if (imgObj.data.length === imgObj.width * imgObj.height) {
+                let s = 0, d = 0;
+                while (s < imgObj.data.length) {
+                  const val = imgObj.data[s++];
+                  imgData.data[d++] = val;
+                  imgData.data[d++] = val;
+                  imgData.data[d++] = val;
+                  imgData.data[d++] = 255;
+                }
+              }
+              ctx.putImageData(imgData, 0, 0);
+              dataUri = canvas.toDataURL("image/png");
+            }
+
+            if (dataUri) {
+              this.currentExtractedImages = this.currentExtractedImages || {};
+              const count = Object.keys(this.currentExtractedImages).length + 1;
+              const token = `[IMG_${count}]`;
+              this.currentExtractedImages[token] = dataUri;
+              tokens.push(token);
+            }
           }
         }
       }

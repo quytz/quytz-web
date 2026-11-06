@@ -29,7 +29,11 @@ class StorageService {
           raw = localStorage.getItem(APP_CONFIG.storageKeys.legacySettings);
         }
         if (raw) {
-          return JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          if (parsed && !parsed.model) {
+            parsed.model = APP_CONFIG.defaultModel;
+          }
+          return parsed;
         }
       } catch (e) {
         console.warn("Could not parse settings from localStorage:", e);
@@ -37,6 +41,7 @@ class StorageService {
     }
     return {
       apiKey: "",
+      model: APP_CONFIG.defaultModel,
       theme: "system",
       language: "vi",
       isShuffleEnabled: true,

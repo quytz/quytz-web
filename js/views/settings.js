@@ -54,16 +54,48 @@ export function renderSettingsModal(settingsState) {
             ` : ''}
           </div>
 
-          <!-- AI Model Fixed Info (Exclusively Gemini 3.5 Flash Lite) -->
-          <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
-              <div style="flex: 1 1 200px;">
-                <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">${i18n.t("modelLabel")}</div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; line-height: 1.4;">
-                  Cố định sử dụng Google Gemini 3.5 Flash Lite độc quyền cho toàn bộ tác vụ.
+          <!-- AI Model Selection (Gemini 3.5 Flash Lite vs Gemini 3.8 Flash) -->
+          <div class="glass-card" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <div>
+                <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block;">
+                  ${i18n.t("modelLabel")}
+                </label>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                  Chọn mô hình Google Gemini phục vụ phân tích, quét đề và tạo câu hỏi.
                 </div>
               </div>
-              <span class="badge badge-blue">gemini-3.5-flash-lite</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 4px;">
+              ${(APP_CONFIG.availableModels || []).map(m => {
+                const isActive = (settingsState.model || APP_CONFIG.defaultModel) === m.id;
+                return `
+                  <div class="model-option-card ${isActive ? 'active' : ''}" data-setting-model="${m.id}" style="
+                    padding: 12px 14px;
+                    border-radius: var(--radius-md);
+                    border: 1.5px solid ${isActive ? 'var(--color-deep-purple)' : 'var(--border-subtle)'};
+                    background: ${isActive ? 'rgba(122, 92, 204, 0.08)' : 'var(--bg-secondary)'};
+                    cursor: pointer;
+                    transition: all var(--transition-fast);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                  ">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="font-size: var(--text-sm); font-weight: 800; color: ${isActive ? 'var(--color-deep-purple)' : 'var(--text-primary)'};">
+                        ${m.name}
+                      </div>
+                      <span class="badge ${isActive ? 'badge-purple' : 'badge-gray'}" style="font-size: 10px; font-weight: 700;">
+                        ${m.badge}
+                      </span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.35;">
+                      ${m.description}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
             </div>
           </div>
 
@@ -180,6 +212,14 @@ export function bindSettingsEvents(settingsState, handlers) {
 
   const testBtn = document.getElementById("btn-test-api-key");
   if (testBtn) testBtn.onclick = () => handlers.onTestKey();
+
+  // AI Model selector
+  document.querySelectorAll("[data-setting-model]").forEach(btn => {
+    btn.onclick = () => {
+      settingsState.model = btn.dataset.settingModel;
+      handlers.onUpdateView();
+    };
+  });
 
   // Theme chips
   document.querySelectorAll("[data-setting-theme]").forEach(btn => {

@@ -1,9 +1,9 @@
-# HƯỚNG DẪN SỬ DỤNG CHI TIẾT QUÝTZ WEB (v2.0.1)
+# HƯỚNG DẪN SỬ DỤNG CHI TIẾT QUÝTZ WEB (v2.0.2)
 
 Tác giả: **@tozn607**  
 Nền tảng: Web (Trình duyệt máy tính & di động)  
-Ngày soạn: **26 Tháng 8 năm 2026**  
-Dành cho phiên bản: **v2.0.1**
+Ngày cập nhật: **06 Tháng 11 năm 2026**  
+Dành cho phiên bản: **v2.0.2**
 
 
 ## CHƯƠNG 1: MÀN HÌNH HƯỚNG DẪN CẤU HÌNH BAN ĐẦU & API KEY

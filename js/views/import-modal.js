@@ -4,6 +4,8 @@
 import { i18n } from "../localization/i18n.js";
 import { CEFR_LEVELS, THPT_SUBJECTS } from "../models/types.js";
 import { renderSF } from "../components/icons.js";
+import { APP_CONFIG } from "../config.js";
+import { storage } from "../services/storage.js";
 
 export function renderImportModal(project, modalState) {
   const isLLProject = project.projectType === "languageLearning";
@@ -42,6 +44,24 @@ export function renderImportModal(project, modalState) {
           </button>
         </div>
 
+        <!-- AI Model Switcher Sub-bar -->
+        <div style="padding: 7px 20px; background: rgba(122, 92, 204, 0.05); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+            ${renderSF("cpu", { size: "13px" })}
+            <span>Mô hình Gemini AI:</span>
+          </div>
+          <div class="segmented-control" style="font-size: 11px;">
+            ${(APP_CONFIG.availableModels || []).map(m => {
+              const active = (modalState.model || storage.settings?.model || APP_CONFIG.defaultModel) === m.id;
+              return `
+                <button class="segment-btn ${active ? 'active' : ''}" data-import-model="${m.id}" style="padding: 3px 10px; font-size: 11px; font-weight: 700;">
+                  ${m.name}
+                </button>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
         <!-- Tab Bar -->
         <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-card); display: flex; gap: 8px;">
           <div class="segmented-control" style="width: 100%;">
@@ -50,9 +70,9 @@ export function renderImportModal(project, modalState) {
               <button class="segment-btn ${activeTab === 'ai-gen-thpt' ? 'active' : ''}" id="tab-btn-ai-gen-thpt" style="flex: 1;">
                 Tạo đề bằng AI
               </button>
-              <!-- THPT Scanning Tab (Secondary with warning) -->
+              <!-- THPT Scanning Tab -->
               <button class="segment-btn ${activeTab === 'thpt' ? 'active' : ''}" id="tab-btn-thpt" style="flex: 1;">
-                Quét Đề THPT Quốc gia (3 Phần) <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
+                Quét Đề THPT Quốc gia (3 Phần)
               </button>
             ` : ''}
 
@@ -68,9 +88,9 @@ export function renderImportModal(project, modalState) {
               <button class="segment-btn ${activeTab === 'ai-gen-lang' ? 'active' : ''}" id="tab-btn-ai-gen-lang" style="flex: 1;">
                 Tạo đề bằng AI
               </button>
-              <!-- Language Scanning Tab (Secondary with warning) -->
+              <!-- Language Scanning Tab -->
               <button class="segment-btn ${activeTab === 'lang' ? 'active' : ''}" id="tab-btn-lang" style="flex: 1;">
-                Quét Đề Ngoại ngữ & CEFR <span class="badge badge-orange" style="font-size: 9px; padding: 2px 6px; margin-left: 4px;">WIP</span>
+                Quét Đề Ngoại ngữ & CEFR
               </button>
             ` : ''}
 
@@ -95,8 +115,16 @@ export function renderImportModal(project, modalState) {
               </p>
 
               <!-- Progress Bar Container -->
-              <div style="width: 100%; max-width: 480px; margin: 0 auto; background: var(--border-subtle); height: 10px; border-radius: 6px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);">
-                <div id="scan-progress-bar" style="width: ${modalState.scanProgress || 15}%; height: 100%; background: linear-gradient(90deg, #1f7ae8, #7a5ccc); border-radius: 6px; transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+              <div style="width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+                  <span>Tiến độ xử lý AI</span>
+                  <span id="scan-progress-percent" style="color: var(--color-deep-purple); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;">
+                    ${Math.round(modalState.scanProgress || 15)}%
+                  </span>
+                </div>
+                <div style="width: 100%; background: var(--border-subtle); height: 12px; border-radius: 999px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                  <div id="scan-progress-bar" style="width: ${modalState.scanProgress || 15}%; height: 100%; background: linear-gradient(90deg, #1f7ae8, #7a5ccc, #ff7a45); border-radius: 999px; transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
               </div>
 
               <div style="margin-top: 16px; font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -105,10 +133,10 @@ export function renderImportModal(project, modalState) {
             </div>
           ` : `
             ${activeTab === 'ai-gen-thpt' ? renderTHPTAIGenTab(project, modalState) : ''}
-            ${activeTab === 'thpt' ? renderTHPTGeminiTabWithWarning(project, modalState) : ''}
+            ${activeTab === 'thpt' ? renderTHPTGeminiTab(project, modalState) : ''}
             ${activeTab === 'gemini' ? renderGeneralGeminiTab(project, modalState) : ''}
             ${activeTab === 'ai-gen-lang' ? renderLanguageAIGenTab(project, modalState) : ''}
-            ${activeTab === 'lang' ? renderLanguageExamTabWithWarning(project, modalState) : ''}
+            ${activeTab === 'lang' ? renderLanguageExamTab(project, modalState) : ''}
             ${activeTab === 'premade' ? renderPremadeTab(project, modalState) : ''}
           `}
         </div>
@@ -149,22 +177,40 @@ export function renderImportModal(project, modalState) {
   `;
 }
 
+function renderAnswerFileCard(modalState, inputId, browseBtnId, removeBtnId, labelId) {
+  const hasFile = Boolean(modalState.selectedAnswerFileName);
+  return `
+    <div class="glass-card" style="border: 1px dashed ${hasFile ? 'rgba(31, 122, 232, 0.4)' : 'var(--border-subtle)'}; background: ${hasFile ? 'rgba(31, 122, 232, 0.04)' : 'var(--bg-card)'};">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label style="font-size: var(--text-xs); font-weight: 700; color: ${hasFile ? 'var(--color-ocean-blue)' : 'var(--text-secondary)'}; display: flex; align-items: center; gap: 6px;">
+          ${renderSF("checkmark.circle", { size: "14px", color: hasFile ? "var(--color-ocean-blue)" : "inherit" })}
+          ${i18n.t("separateAnswerFileLabel")}
+        </label>
+        ${hasFile ? `
+          <button class="btn btn-ghost btn-xs" id="${removeBtnId}" style="color: var(--color-coral-red); padding: 2px 6px; font-size: 11px; height: auto;">
+            ${renderSF("trash", { size: "12px" })} ${i18n.t("removeAnswerFileBtn")}
+          </button>
+        ` : ''}
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="file" id="${inputId}" accept=".docx,.pdf,.txt,.md" style="display: none;">
+        <button class="btn btn-secondary btn-sm" id="${browseBtnId}">
+          ${renderSF("doc.text", { size: "14px" })} ${i18n.t("selectAnswerFileBtn")}
+        </button>
+        <div style="font-size: var(--text-xs); color: ${hasFile ? 'var(--color-ocean-blue)' : 'var(--text-tertiary)'}; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: ${hasFile ? '600' : 'normal'};" id="${labelId}">
+          ${modalState.selectedAnswerFileName || i18n.t("noAnswerFileSelected")}
+        </div>
+      </div>
+      <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.4;">
+        ${i18n.t("separateAnswerFileDesc")}
+      </div>
+    </div>
+  `;
+}
+
 function renderTHPTGeminiTab(project, modalState) {
   return `
     <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Prominent WIP Warning Banner -->
-      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
-        <span style="font-size: 20px;">🚧</span>
-        <div>
-          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
-            TÍNH NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM (WIP - WORK IN PROGRESS)
-          </div>
-          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
-            Chế độ Quét Đề thi THPT Quốc gia (3 Phần) đang trong giai đoạn phát triển và thử nghiệm. Việc bóc tách công thức toán phức tạp và hình vẽ từ file tài liệu có thể chưa hoàn hảo và cần được kiểm tra lại trong Trình chỉnh sửa đề thi.
-          </div>
-        </div>
-      </div>
-
       <div class="greeting-badge" style="background: rgba(122, 92, 204, 0.1); border-color: rgba(122, 92, 204, 0.3); color: var(--color-deep-purple);">
         <span>🎓 <strong>Cấu trúc Đề thi THPT Quốc gia (3 Phần)</strong>: Phần I (4 lựa chọn 0.25đ), Phần II (Đúng/Sai 4 ý tối đa 1.0đ), Phần III (Trả lời ngắn).</span>
       </div>
@@ -184,6 +230,9 @@ function renderTHPTGeminiTab(project, modalState) {
           </div>
         </div>
       </div>
+
+      <!-- Optional Separate Answer File Card -->
+      ${renderAnswerFileCard(modalState, "file-thpt-ans-input", "btn-browse-thpt-ans", "btn-remove-thpt-ans", "lbl-selected-thpt-ans-filename")}
 
       <!-- Quiz Title -->
       <div>
@@ -230,6 +279,9 @@ function renderGeneralGeminiTab(project, modalState) {
           </div>
         </div>
       </div>
+
+      <!-- Optional Separate Answer File Card -->
+      ${renderAnswerFileCard(modalState, "file-doc-ans-input", "btn-browse-doc-ans", "btn-remove-doc-ans", "lbl-selected-doc-ans-filename")}
 
       <!-- Quiz Title -->
       <div>
@@ -293,19 +345,6 @@ function renderLanguageExamTab(project, modalState) {
 
   return `
     <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Prominent WIP Warning Banner -->
-      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
-        <span style="font-size: 20px;">🚧</span>
-        <div>
-          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
-            TÍNH NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM (WIP - WORK IN PROGRESS)
-          </div>
-          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
-            Chế độ Học Ngoại ngữ & Trích xuất Thẻ từ vựng CEFR đang trong giai đoạn thử nghiệm. Tính năng này yêu cầu tài liệu là đề thi ngoại ngữ có cấu trúc rõ ràng.
-          </div>
-        </div>
-      </div>
-
       <div class="greeting-badge" style="background: rgba(122, 92, 204, 0.1); border-color: rgba(122, 92, 204, 0.3); color: var(--color-deep-purple);">
         <span>${i18n.t("langLearningDesc")}</span>
       </div>
@@ -325,6 +364,9 @@ function renderLanguageExamTab(project, modalState) {
           </div>
         </div>
       </div>
+
+      <!-- Optional Separate Answer File Card -->
+      ${renderAnswerFileCard(modalState, "file-lang-ans-input", "btn-browse-lang-ans", "btn-remove-lang-ans", "lbl-selected-lang-ans-filename")}
 
       <!-- Quiz Title -->
       <div>
@@ -370,83 +412,310 @@ function renderPremadeTab(project, modalState) {
   `;
 }
 
+export function cleanRawVocabText(text) {
+  if (!text) return "";
+  let clean = text.trim();
+  if (clean.includes("{\\rtf") || clean.startsWith("{\\")) {
+    clean = clean.replace(/\{\\\*[\s\S]*?\}/g, "");
+    clean = clean.replace(/\{\\(?:fonttbl|colortbl|stylesheet|info)[\s\S]*?\}/gi, "");
+    clean = clean.replace(/\\(?:par|line)\b/gi, "\n");
+    clean = clean.replace(/\\([\{\}\\])/g, "$1");
+    clean = clean.replace(/\\\w+\d*\s?/g, " ");
+    clean = clean.replace(/[{}]/g, " ");
+  }
+  return clean.trim();
+}
+
+export function extractVocabList(rawText) {
+  const text = cleanRawVocabText(rawText);
+  if (!text || !text.trim()) return [];
+
+  const bulletOrNumberedRegex = /^[\s*\-•\d]+[\.\)\:\s\-]\s*/;
+  const posPattern = /\s*\(((?:adj|adv|noun|n|verb|v|phr\s*v|phrase|prep|idiom|collocation|a|vt|vi|pron|conj|int|exp))\)\s*/gi;
+
+  // Case 1: Continuous single-line or inline text with parenthetical POS tags (e.g. "amazing (adj) army-like (adj) ...")
+  if (!text.includes("\n") && !text.includes(";") && posPattern.test(text)) {
+    const items = [];
+    const pattern = /([^\(\)]+?)\s*\(((?:adj|adv|noun|n|verb|v|phr\s*v|phrase|prep|idiom|collocation|a|vt|vi|pron|conj|int|exp))\)/gi;
+    let match;
+    let lastIndex = 0;
+    while ((match = pattern.exec(text)) !== null) {
+      let rawChunk = match[1].trim();
+      const pos = match[2].trim().toLowerCase();
+      
+      const words = rawChunk.split(/\s+/).filter(Boolean);
+      if (words.length > 2) {
+        const mainWord = words[words.length - 1];
+        const precedingPhrase = words.slice(0, -1).join(" ");
+        items.push({ word: precedingPhrase, meaning: "", wordType: "" });
+        items.push({ word: mainWord, meaning: "", wordType: pos });
+      } else if (words.length === 2 && (pos === "adj" || pos === "v")) {
+        const isCompound = /^(coral|ice|sea|rain|solar|climate|global|public|long|short|well|ill)\b/i.test(rawChunk);
+        if (isCompound) {
+          items.push({ word: rawChunk, meaning: "", wordType: pos });
+        } else {
+          items.push({ word: words[0], meaning: "", wordType: "" });
+          items.push({ word: words[1], meaning: "", wordType: pos });
+        }
+      } else {
+        items.push({ word: rawChunk, meaning: "", wordType: pos });
+      }
+      lastIndex = pattern.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      const remaining = text.substring(lastIndex).trim();
+      if (remaining) {
+        items.push({ word: remaining, meaning: "", wordType: "" });
+      }
+    }
+    if (items.length > 0) return items;
+  }
+
+  const lines = text.split(/[\n;]+/).map(l => l.trim()).filter(Boolean);
+  const words = [];
+
+  for (const line of lines) {
+    const cleanedLine = line.replace(bulletOrNumberedRegex, "").trim();
+    if (!cleanedLine) continue;
+
+    const defMatch = cleanedLine.match(/^([a-zA-Z\s\-\'\/\(\)]+?)(?:\s*[:\-\–\—\=\>\→]\s*|\s*\[.*?\]\s*)(.+)$/);
+    if (defMatch && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(defMatch[1].trim())) {
+      const term = defMatch[1].trim();
+      if (term) {
+        words.push({ word: term, meaning: defMatch[2].trim() });
+        continue;
+      }
+    }
+
+    if (cleanedLine.includes(",")) {
+      const items = cleanedLine.split(",").map(i => i.trim()).filter(Boolean);
+      items.forEach(item => {
+        const itemClean = item.replace(bulletOrNumberedRegex, "").trim();
+        if (itemClean && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(itemClean)) {
+          words.push({ word: itemClean, meaning: "" });
+        }
+      });
+      continue;
+    }
+
+    if (lines.length === 1 && cleanedLine.split(/\s+/).length > 2 && !cleanedLine.includes(":") && !cleanedLine.includes("-")) {
+      const spaceWords = cleanedLine.split(/\s+/).filter(Boolean);
+      spaceWords.forEach(w => {
+        if (w && !/^(từ|word|vocabulary|nghĩa|meaning)$/i.test(w)) {
+          words.push({ word: w, meaning: "" });
+        }
+      });
+      continue;
+    }
+
+    words.push({ word: cleanedLine, meaning: "" });
+  }
+
+  return words;
+}
+
+export function countVocabItems(text) {
+  return extractVocabList(text).length;
+}
+
 // AI Generation Tabs
 
 // Language Learning Modes
-const LANGUAGE_MODES = [
-  { id: "thpt", name: "THPT Quốc gia", description: "Đề thi THPT môn Tiếng Anh theo chuẩn MOET" },
-  { id: "ielts", name: "IELTS", description: "Đề thi IELTS Academic" }
+export const LANGUAGE_MODES = [
+  { id: "thpt", name: "THPT Quốc gia", badge: "Chuẩn MOET", description: "Đề thi Tiếng Anh chuẩn cấu trúc Bộ GD&ĐT (Ngữ âm, Ngữ pháp, Đọc điền từ & Đọc hiểu kèm bài đọc, Flashcard)" },
+  { id: "ielts", name: "IELTS Academic", badge: "3 Bài đọc • 40 câu", description: "Đề thi IELTS Academic Reading hoàn chỉnh chuẩn quốc tế (3 bài đọc học thuật, 40 câu hỏi, 60 phút kèm Flashcard)" },
+  { id: "vocab", name: "Ôn tập từ vựng", badge: "Mới ★", description: "Nhập danh sách từ vựng bất kỳ để AI tạo câu hỏi ngữ cảnh & bộ thẻ Flashcard 3D đầy đủ" }
 ];
 
 function renderLanguageAIGenTab(project, modalState) {
   const mode = modalState.langAIMode || "thpt";
   const modeInfo = LANGUAGE_MODES.find(m => m.id === mode) || LANGUAGE_MODES[0];
+  const isVocabMode = mode === "vocab";
+
+  const wordCount = countVocabItems(modalState.langAIVocabList || "");
+  const vocabMultiplier = modalState.langAIVocabMultiplier || 2;
+  const computedVocabQuestions = Math.max(1, (wordCount > 0 ? wordCount : 5) * vocabMultiplier);
+
+  // Question count for non-vocab modes
+  const defaultCount = mode === "ielts" ? 15 : 20;
+  const qCount = modalState.langAIQuestionCount !== undefined ? modalState.langAIQuestionCount : defaultCount;
 
   return `
     <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Info Banner -->
-      <div class="glass-card">
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); text-align: center; padding: 16px;">
-          Tạo đề thi ngoại ngữ bằng AI mà không cần tải lên tài liệu. Chỉ cần mô tả yêu cầu và AI sẽ tạo ra bộ đề thi phù hợp.
-        </div>
-      </div>
-
       <!-- Mode Selector -->
       <div class="glass-card">
-        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          CHỌN LOẠI ĐỀ THI:
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">
+          CHỌN LOẠI ĐỀ THI NGOẠI NGỮ:
         </label>
-        <div style="display: flex; gap: 12px;">
-          ${LANGUAGE_MODES.map(mode => `
-            <label class="custom-radio">
-              <input type="radio" name="lang-ai-mode" value="${mode.id}" ${modalState.langAIMode === mode.id ? 'checked' : ''}>
-              <span style="font-size: var(--text-sm);">${mode.name}</span>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          ${LANGUAGE_MODES.map(m => `
+            <label class="custom-radio" style="flex: 1; min-width: 180px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1.5px solid ${mode === m.id ? 'var(--color-deep-purple)' : 'var(--border-subtle)'}; background: ${mode === m.id ? 'rgba(122, 92, 204, 0.08)' : 'transparent'}; cursor: pointer;">
+              <input type="radio" name="lang-ai-mode" value="${m.id}" ${mode === m.id ? 'checked' : ''} style="margin-right: 6px;">
+              <span style="font-size: var(--text-sm); font-weight: 700; color: var(--text-primary);">${m.name}</span>
+              <span class="badge ${m.id === 'vocab' ? 'badge-orange' : 'badge-purple'}" style="font-size: 9px; padding: 1px 5px; margin-left: 4px;">${m.badge}</span>
             </label>
           `).join('')}
         </div>
-        <div style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 8px;">
+        <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 8px; line-height: 1.45;">
           ${modeInfo.description}
         </div>
       </div>
 
-      <!-- CEFR Level -->
-      <div class="glass-card">
+      <!-- MODE-SPECIFIC: VOCABULARY LIST INPUT (When mode === "vocab") -->
+      ${isVocabMode ? `
+        <div class="glass-card" style="border-left: 3px solid var(--color-sunset-orange);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+              DANH SÁCH TỪ VỰNG CẦN ÔN TẬP (*):
+            </label>
+            <span class="badge badge-purple" id="badge-vocab-detected-count" style="font-size: 11px;">
+              ${wordCount > 0 ? `Đã nhận diện: ${wordCount} từ` : 'Dán danh sách từ, nghĩa hoặc ví dụ'}
+            </span>
+          </div>
+          <textarea class="form-textarea" id="textarea-lang-ai-vocab-list" placeholder="Nhập hoặc dán danh sách từ vựng vào đây (mỗi từ một dòng hoặc cách nhau bằng dấu phẩy)&#10;Ví dụ:&#10;resilient: có khả năng phục hồi&#10;mitigate&#10;sustainable - phát triển bền vững&#10;ubiquitous&#10;vulnerable" rows="5" style="font-family: monospace; font-size: 13px;">${escapeHtml(modalState.langAIVocabList || '')}</textarea>
+          <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+            💡 AI sẽ phân tích danh sách từ, tạo câu hỏi ngữ cảnh đa dạng và xuất 100% thẻ Flashcard có phiên âm IPA & nghĩa tiếng Việt.
+          </div>
+        </div>
+
+        <!-- Frequency Multiplier Toggle -->
+        <div class="glass-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary);">
+              TẦN SUẤT LẶP LẠI MỖI TỪ:
+            </label>
+            <span class="badge badge-teal" id="badge-vocab-calc-count" style="font-size: 11px; font-weight: 700;">
+              ${wordCount > 0 ? `${wordCount} từ × ${vocabMultiplier}x = ${computedVocabQuestions} câu hỏi` : `Mỗi từ xuất hiện ${vocabMultiplier} lần`}
+            </span>
+          </div>
+          <div class="segmented-control" style="width: 100%;">
+            <button type="button" class="segment-btn vocab-mult-btn ${vocabMultiplier === 1 ? 'active' : ''}" data-mult="1" style="flex: 1;">
+              1x
+            </button>
+            <button type="button" class="segment-btn vocab-mult-btn ${vocabMultiplier === 2 ? 'active' : ''}" data-mult="2" style="flex: 1;">
+              2x (Khuyên dùng)
+            </button>
+            <button type="button" class="segment-btn vocab-mult-btn ${vocabMultiplier === 3 ? 'active' : ''}" data-mult="3" style="flex: 1;">
+              3x (Luyện sâu)
+            </button>
+            <button type="button" class="segment-btn vocab-mult-btn ${vocabMultiplier === 4 ? 'active' : ''}" data-mult="4" style="flex: 1;">
+              4x (Thành thạo)
+            </button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.4;">
+            💡 Tần suất cao giúp mỗi từ được kiểm tra qua nhiều dạng bài khác nhau (điền từ trong ngữ cảnh, đồng nghĩa/trái nghĩa, collocation, câu hỏi định nghĩa) để khắc sâu trí nhớ.
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Quiz Title -->
+      <div>
         <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          TRÌNH ĐỘ CEFR:
+          TÊN BỘ ĐỀ THI (TÙY CHỌN):
         </label>
-        <select class="form-select" id="select-lang-ai-cefr">
-          ${Object.values(CEFR_LEVELS).map(lvl => `
-            <option value="${lvl.id}" ${modalState.langAICEFR === lvl.id ? 'selected' : ''}>${lvl.label}</option>
-          `).join('')}
-        </select>
+        <input type="text" class="form-input" id="input-lang-ai-quiz-title" placeholder="${isVocabMode ? 'Bộ đề Ôn tập từ vựng...' : (mode === 'ielts' ? 'Đề thi IELTS Reading...' : 'Đề thi Tiếng Anh THPT...')}" value="${escapeHtml(modalState.quizTitle || '')}">
       </div>
+
+      <!-- MODE-SPECIFIC: THPT MOET GUIDELINE INFO BANNER -->
+      ${mode === 'thpt' ? `
+        <div class="glass-card" style="border-left: 3px solid var(--color-deep-purple);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-deep-purple); text-transform: uppercase;">
+                📋 Định dạng Chuẩn Khảo thí Bộ GD&ĐT (Mẫu mới)
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; line-height: 1.45;">
+                Tự động tạo đúng <strong>40 câu hỏi trắc nghiệm</strong> (Đọc điền thông báo, Sắp xếp hội thoại/thư, Đọc điền khuyết câu & 2 bài Đọc hiểu 8 & 10 câu) với thời gian làm bài chuẩn <strong>50 phút</strong>.
+              </div>
+            </div>
+            <span class="badge badge-purple" style="font-size: 11px; font-weight: 700; padding: 4px 8px; white-space: nowrap;">
+              40 câu • 50 phút
+            </span>
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- MODE-SPECIFIC: IELTS OFFICIAL FORMAT INFO BANNER -->
+      ${mode === 'ielts' ? `
+        <div class="glass-card" style="border-left: 3px solid var(--color-ocean-blue);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-ocean-blue); text-transform: uppercase;">
+                🇬🇧 Định dạng Chuẩn IELTS Academic Reading
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; line-height: 1.45;">
+                Tự động tạo bài thi IELTS Reading hoàn chỉnh gồm <strong>3 bài đọc học thuật (Passage 1, 2, 3)</strong> với đúng <strong>40 câu hỏi</strong> đa dạng (Matching Headings, True/False/Not Given, Multiple Choice, Summary Completion) và thời gian làm bài chuẩn <strong>60 phút</strong>.
+              </div>
+            </div>
+            <span class="badge badge-blue" style="font-size: 11px; font-weight: 700; padding: 4px 8px; white-space: nowrap;">
+              3 bài đọc • 40 câu • 60 phút
+            </span>
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- MODE-SPECIFIC: IELTS FORECAST & CAMBRIDGE STYLES -->
+      ${mode === 'ielts' ? `
+        <div class="glass-card" style="border-left: 3px solid var(--color-cyan-teal);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+            <label style="font-size: var(--text-xs); font-weight: 700; color: var(--color-cyan-teal); text-transform: uppercase;">
+              🔍 BỘ ĐỀ DỰ ĐOÁN (IELTS FORECAST) & PHONG CÁCH CAMBRIDGE:
+            </label>
+            <span class="badge badge-teal" style="font-size: 10px; font-weight: 700;">
+              Cam 17-19 / Forecast Quý
+            </span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">
+            Chọn nhanh chủ đề dự đoán xu hướng thi thật hoặc để AI tự động tra cứu văn phong học thuật Cambridge (New Scientist, The Economist, Nature):
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            ${[
+              "Tự động tra cứu Forecast mới nhất & văn phong Cambridge",
+              "Khảo cổ học & Kỹ thuật văn minh cổ đại",
+              "Bảo tồn sinh thái biển & Ô nhiễm tiếng ồn đại dương",
+              "Tâm lý học nhận thức & Kinh tế học hành vi",
+              "Kỹ thuật phỏng sinh học (Biomimicry) & Đô thị tương lai",
+              "Trí tuệ nhân tạo & Thuyết tương đối ngôn ngữ học"
+            ].map(fTopic => {
+              const isSelected = (modalState.langAITopic === fTopic) || (!modalState.langAITopic && fTopic.startsWith('Tự động'));
+              return `
+                <button type="button" class="btn btn-sm btn-ielts-forecast ${isSelected ? 'btn-primary' : 'btn-secondary'}" data-topic="${escapeHtml(fTopic)}" style="font-size: 11px; padding: 4px 10px; border-radius: var(--radius-full);">
+                  ${fTopic}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
 
       <!-- Topic/Theme -->
       <div class="glass-card">
         <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          CHỦ ĐỀ / CHỦ NGHĨA:
+          ${isVocabMode ? 'ĐỊNH HƯỚNG NGỮ CẢNH / CHỦ ĐỀ (TÙY CHỌN):' : 'CHỦ ĐỀ / BÀI ĐỌC (TÙY CHỌN):'}
         </label>
-        <textarea class="form-textarea" id="textarea-lang-ai-topic" placeholder="Nhập chủ đề, chương hoặc mô tả ngắn gọn về nội dung muốn tạo đề thi..." rows="3">${escapeHtml(modalState.langAITopic || '')}</textarea>
+        <textarea class="form-textarea" id="textarea-lang-ai-topic" placeholder="${isVocabMode ? 'Để trống để AI tự động tạo ngữ cảnh tự nhiên bám sát nghĩa của từng từ vựng...' : 'Ví dụ: Trí tuệ nhân tạo, biến đổi khí hậu, lịch sử khảo cổ, giáo dục...'}" rows="2">${escapeHtml(modalState.langAITopic || '')}</textarea>
+        ${isVocabMode ? `
+          <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+            💡 Nếu để trống, AI sẽ tạo các câu hỏi với ngữ cảnh tự nhiên, chuẩn mực nhất theo đúng ngữ nghĩa và collocation của từng từ.
+          </div>
+        ` : ''}
       </div>
 
-      <!-- Difficulty Level -->
+      <!-- Difficulty Level (Themed Segmented Control) -->
       <div class="glass-card">
-        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          MỤC ĐỘ KHÓ:
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">
+          MỨC ĐỘ KHÓ:
         </label>
-        <div style="display: flex; gap: 12px;">
-          <label class="custom-radio">
-            <input type="radio" name="lang-ai-difficulty" value="easy" ${modalState.langAIDifficulty === 'easy' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Dễ</span>
-          </label>
-          <label class="custom-radio">
-            <input type="radio" name="lang-ai-difficulty" value="medium" ${modalState.langAIDifficulty === 'medium' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Trung bình</span>
-          </label>
-          <label class="custom-radio">
-            <input type="radio" name="lang-ai-difficulty" value="hard" ${modalState.langAIDifficulty === 'hard' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Khó</span>
-          </label>
+        <div class="segmented-control" style="width: 100%;">
+          <button type="button" class="segment-btn ${modalState.langAIDifficulty === 'easy' ? 'active' : ''}" data-lang-diff="easy" style="flex: 1;">
+            Dễ
+          </button>
+          <button type="button" class="segment-btn ${(!modalState.langAIDifficulty || modalState.langAIDifficulty === 'medium') ? 'active' : ''}" data-lang-diff="medium" style="flex: 1;">
+            Trung bình
+          </button>
+          <button type="button" class="segment-btn ${modalState.langAIDifficulty === 'hard' ? 'active' : ''}" data-lang-diff="hard" style="flex: 1;">
+            Khó
+          </button>
         </div>
       </div>
     </div>
@@ -495,7 +764,7 @@ function renderTHPTAIGenTab(project, modalState) {
       <!-- Part II: True/False -->
       <div class="glass-card">
         <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          PHẦN II: ĐỪNG / SAI 4 Ý (1.0đ/câu):
+          PHẦN II: ĐÚNG / SAI 4 Ý (1.0đ/câu):
         </label>
         <input type="number" min="0" max="10" class="form-input" id="input-thpt-ai-part2-count" value="${part2Count}">
         <span style="font-size: var(--text-xs); color: var(--text-tertiary);">Theo quy định MOET: ${subjectInfo.defaultPart2 || 4} câu</span>
@@ -515,76 +784,29 @@ function renderTHPTAIGenTab(project, modalState) {
         <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
           CHƯƠNG / CHỦ ĐỀ (TÙY CHỌN):
         </label>
-        <textarea class="form-textarea" id="textarea-thpt-ai-topics" placeholder="Nhập các chương, chủ đề muốn xuất đề (để trống để AI隨機選取)..." rows="3">${escapeHtml(modalState.thptAITopics || '')}</textarea>
+        <textarea class="form-textarea" id="textarea-thpt-ai-topics" placeholder="Nhập các chương, chủ đề muốn xuất đề (để trống để AI tự động chọn)..." rows="3">${escapeHtml(modalState.thptAITopics || '')}</textarea>
         <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 4px;">
-          Để trống để AI tạo đề thi ngẫu nhiên theo estánd MOET
+          Để trống để AI tạo đề thi ngẫu nhiên theo chuẩn MOET
         </p>
       </div>
 
-      <!-- Difficulty Level -->
+      <!-- Difficulty Level (Themed Segmented Control) -->
       <div class="glass-card">
-        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">
-          MỤC ĐỘ KHÓ:
+        <label style="font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">
+          MỨC ĐỘ KHÓ:
         </label>
-        <div style="display: flex; gap: 12px;">
-          <label class="custom-radio">
-            <input type="radio" name="thpt-ai-difficulty" value="easy" ${modalState.thptAIDifficulty === 'easy' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Dễ</span>
-          </label>
-          <label class="custom-radio">
-            <input type="radio" name="thpt-ai-difficulty" value="medium" ${modalState.thptAIDifficulty === 'medium' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Trung bình</span>
-          </label>
-          <label class="custom-radio">
-            <input type="radio" name="thpt-ai-difficulty" value="hard" ${modalState.thptAIDifficulty === 'hard' ? 'checked' : ''}>
-            <span style="font-size: var(--text-sm);">Khó</span>
-          </label>
+        <div class="segmented-control" style="width: 100%;">
+          <button type="button" class="segment-btn ${modalState.thptAIDifficulty === 'easy' ? 'active' : ''}" data-thpt-diff="easy" style="flex: 1;">
+            Dễ
+          </button>
+          <button type="button" class="segment-btn ${(!modalState.thptAIDifficulty || modalState.thptAIDifficulty === 'medium') ? 'active' : ''}" data-thpt-diff="medium" style="flex: 1;">
+            Trung bình
+          </button>
+          <button type="button" class="segment-btn ${modalState.thptAIDifficulty === 'hard' ? 'active' : ''}" data-thpt-diff="hard" style="flex: 1;">
+            Khó
+          </button>
         </div>
       </div>
-    </div>
-  `;
-}
-
-// Updated Scanning Tabs with Warnings
-
-function renderLanguageExamTabWithWarning(project, modalState) {
-  return `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Warning Banner -->
-      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
-        <span style="font-size: 20px;">🚧</span>
-        <div>
-          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
-            CẢNH BÁO: CHỨC NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM
-          </div>
-          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
-            Chế độ Quét Đề thi Ngoại ngữ & CEFR đang trong giai đoạn phát triển và thử nghiệm. Tính năng này yêu cầu tài liệu là đề thi ngoại ngữ có cấu trúc rõ ràng và có thể không ổn định.
-          </div>
-        </div>
-      </div>
-
-      ${renderLanguageExamTab(project, modalState)}
-    </div>
-  `;
-}
-
-function renderTHPTGeminiTabWithWarning(project, modalState) {
-  return `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Warning Banner -->
-      <div style="padding: 12px 16px; border-radius: var(--radius-md); background: rgba(224, 117, 51, 0.12); border: 1.5px solid var(--color-sunset-orange); display: flex; gap: 12px; align-items: flex-start;">
-        <span style="font-size: 20px;">🚧</span>
-        <div>
-          <div style="font-size: var(--text-xs); font-weight: 800; color: var(--color-sunset-orange);">
-            CẢNH BÁO: CHỨC NĂNG ĐANG PHÁT TRIỂN / THỬ NGHIỆM
-          </div>
-          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;">
-            Chế độ Quét Đề thi THPT Quốc gia (3 Phần) đang trong giai đoạn phát triển và thử nghiệm. Việc bóc tách công thức toán phức tạp và hình vẽ từ file tài liệu có thể chưa hoàn hảo và cần được kiểm tra lại trong Trình chỉnh sửa đề thi.
-          </div>
-        </div>
-      </div>
-
-      ${renderTHPTGeminiTab(project, modalState)}
     </div>
   `;
 }
@@ -596,6 +818,16 @@ export function bindImportModalEvents(modalState, handlers) {
 
   const cancelBtn = document.getElementById("btn-cancel-import");
   if (cancelBtn) cancelBtn.onclick = () => handlers.onClose();
+
+  // Model switch buttons
+  document.querySelectorAll("[data-import-model]").forEach(btn => {
+    btn.onclick = () => {
+      const selectedModel = btn.dataset.importModel;
+      modalState.model = selectedModel;
+      storage.saveSettings({ model: selectedModel });
+      handlers.onUpdateView();
+    };
+  });
 
   // Tab buttons
   const tabTHPT = document.getElementById("tab-btn-thpt");
@@ -661,6 +893,30 @@ export function bindImportModalEvents(modalState, handlers) {
     };
   }
 
+  // Answer File Inputs (Optional separate answer files)
+  const bindAnswerFileInput = (browseBtnId, inputId, removeBtnId) => {
+    const browseBtn = document.getElementById(browseBtnId);
+    const fileInput = document.getElementById(inputId);
+    const removeBtn = document.getElementById(removeBtnId);
+
+    if (browseBtn && fileInput) {
+      browseBtn.onclick = () => fileInput.click();
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file && handlers.onAnswerFileSelected) handlers.onAnswerFileSelected(file);
+      };
+    }
+    if (removeBtn) {
+      removeBtn.onclick = () => {
+        if (handlers.onAnswerFileRemoved) handlers.onAnswerFileRemoved();
+      };
+    }
+  };
+
+  bindAnswerFileInput("btn-browse-lang-ans", "file-lang-ans-input", "btn-remove-lang-ans");
+  bindAnswerFileInput("btn-browse-thpt-ans", "file-thpt-ans-input", "btn-remove-thpt-ans");
+  bindAnswerFileInput("btn-browse-doc-ans", "file-doc-ans-input", "btn-remove-doc-ans");
+
   // Quiz Title Inputs
   const thptTitleInput = document.getElementById("input-thpt-quiz-title");
   if (thptTitleInput) {
@@ -675,6 +931,11 @@ export function bindImportModalEvents(modalState, handlers) {
   const langTitleInput = document.getElementById("input-lang-quiz-title");
   if (langTitleInput) {
     langTitleInput.oninput = (e) => { modalState.quizTitle = e.target.value; };
+  }
+
+  const langAITitleInput = document.getElementById("input-lang-ai-quiz-title");
+  if (langAITitleInput) {
+    langAITitleInput.oninput = (e) => { modalState.quizTitle = e.target.value; };
   }
 
   // Checkbox Auto-generate
@@ -694,7 +955,6 @@ export function bindImportModalEvents(modalState, handlers) {
     };
   });
 
-
   // CEFR Selector
   const cefrSelect = document.getElementById("select-import-cefr");
   if (cefrSelect) {
@@ -704,7 +964,60 @@ export function bindImportModalEvents(modalState, handlers) {
   // Language AI Generation Inputs
   const langAIModeRadios = document.getElementsByName("lang-ai-mode");
   langAIModeRadios.forEach(radio => {
-    radio.onchange = (e) => { modalState.langAIMode = e.target.value; };
+    radio.onchange = (e) => {
+      modalState.langAIMode = e.target.value;
+      if (e.target.value === "thpt" || e.target.value === "ielts") {
+        modalState.langAIQuestionCount = 40;
+      }
+      handlers.onUpdateView();
+    };
+  });
+
+  const langAIVocabListInput = document.getElementById("textarea-lang-ai-vocab-list");
+  if (langAIVocabListInput) {
+    langAIVocabListInput.oninput = (e) => {
+      modalState.langAIVocabList = e.target.value;
+      const cnt = countVocabItems(e.target.value);
+      const mult = modalState.langAIVocabMultiplier || 2;
+      const totalQ = Math.max(1, (cnt > 0 ? cnt : 5) * mult);
+      modalState.langAIQuestionCount = totalQ;
+
+      const detectedBadge = document.getElementById("badge-vocab-detected-count");
+      if (detectedBadge) {
+        detectedBadge.textContent = cnt > 0 ? `Đã nhận diện: ${cnt} từ` : 'Dán danh sách từ, nghĩa hoặc ví dụ';
+      }
+
+      const calcBadge = document.getElementById("badge-vocab-calc-count");
+      if (calcBadge) {
+        calcBadge.textContent = cnt > 0 ? `${cnt} từ × ${mult}x = ${totalQ} câu hỏi` : `Mỗi từ xuất hiện ${mult} lần`;
+      }
+    };
+  }
+
+  // Vocabulary Frequency Multiplier Buttons
+  document.querySelectorAll(".vocab-mult-btn").forEach(btn => {
+    btn.onclick = () => {
+      const mult = parseInt(btn.dataset.mult, 10) || 2;
+      modalState.langAIVocabMultiplier = mult;
+      const cnt = countVocabItems(modalState.langAIVocabList || "");
+      modalState.langAIQuestionCount = Math.max(1, (cnt > 0 ? cnt : 5) * mult);
+      handlers.onUpdateView();
+    };
+  });
+
+  // Question Count Input and Quick Buttons (for non-vocab modes)
+  const langAICountInput = document.getElementById("input-lang-ai-count");
+  if (langAICountInput) {
+    langAICountInput.oninput = (e) => {
+      modalState.langAIQuestionCount = parseInt(e.target.value) || 10;
+    };
+  }
+
+  document.querySelectorAll(".quick-count-btn").forEach(btn => {
+    btn.onclick = () => {
+      modalState.langAIQuestionCount = parseInt(btn.dataset.count) || 10;
+      handlers.onUpdateView();
+    };
   });
 
   const langAICEFRSelect = document.getElementById("select-lang-ai-cefr");
@@ -717,9 +1030,29 @@ export function bindImportModalEvents(modalState, handlers) {
     langAITopicInput.oninput = (e) => { modalState.langAITopic = e.target.value; };
   }
 
-  const langAIDifficultyRadios = document.getElementsByName("lang-ai-difficulty");
-  langAIDifficultyRadios.forEach(radio => {
-    radio.onchange = (e) => { modalState.langAIDifficulty = e.target.value; };
+  // IELTS Forecast Chip Buttons
+  document.querySelectorAll(".btn-ielts-forecast").forEach(btn => {
+    btn.onclick = () => {
+      const topicVal = btn.dataset.topic || "";
+      modalState.langAITopic = topicVal.startsWith("Tự động") ? "" : topicVal;
+      handlers.onUpdateView();
+    };
+  });
+
+  // Themed Difficulty Segmented Control for Language AI
+  document.querySelectorAll("button[data-lang-diff]").forEach(btn => {
+    btn.onclick = () => {
+      modalState.langAIDifficulty = btn.dataset.langDiff;
+      handlers.onUpdateView();
+    };
+  });
+
+  // Themed Difficulty Segmented Control for THPT AI
+  document.querySelectorAll("button[data-thpt-diff]").forEach(btn => {
+    btn.onclick = () => {
+      modalState.thptAIDifficulty = btn.dataset.thptDiff;
+      handlers.onUpdateView();
+    };
   });
 
   // THPT AI Generation Inputs
@@ -770,11 +1103,6 @@ export function bindImportModalEvents(modalState, handlers) {
   if (thptAITopicsInput) {
     thptAITopicsInput.oninput = (e) => { modalState.thptAITopics = e.target.value; };
   }
-
-  const thptAIDifficultyRadios = document.getElementsByName("thpt-ai-difficulty");
-  thptAIDifficultyRadios.forEach(radio => {
-    radio.onchange = (e) => { modalState.thptAIDifficulty = e.target.value; };
-  });
 
   // Scan Actions
   const thptScanBtn = document.getElementById("btn-start-thpt-scan");

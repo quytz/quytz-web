@@ -2,11 +2,11 @@
   <img src="assets/AppIcon.png" width="128" height="128" alt="Quýtz Web App Icon">
 </p>
 
-# Quýtz Web (v2.0.1)
+# Quýtz Web (v2.0.2)
 
 [![Web Supported](https://img.shields.io/badge/Web-Modern_Browsers-orange.svg)](https://tozn607.github.io/quizmaster/)
 [![Language](https://img.shields.io/badge/Stack-Vanilla_JS_•_CSS3-orange.svg)](js/)
-[![AI Powered](https://img.shields.io/badge/Gemini_AI-3.5_Flash_Lite-purple.svg)](https://aistudio.google.com)
+[![AI Powered](https://img.shields.io/badge/Gemini_AI-3.5_Flash_Lite_•_3.8_Flash-purple.svg)](https://aistudio.google.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > **Ứng dụng Web tự học trắc nghiệm & tạo bộ đề với AI**  
